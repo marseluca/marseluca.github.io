@@ -23,7 +23,7 @@
 </nav>
 
 <!-- Navbar -->
-<div class="w3-top">
+<div class="w3-top" style="display:none;">
  <div class="w3-bar w3-theme-d2 w3-left-align">
   <a class="w3-bar-item w3-button w3-hide-medium w3-hide-large w3-right w3-hover-white w3-theme-d2" href="javascript:void(0);" onclick="openNav()"><i class="fa fa-bars"></i></a>
   <a href="#" class="w3-bar-item w3-button w3-teal"><i class="fa fa-home w3-margin-right"></i>Luca Marseglia</a>
@@ -79,21 +79,33 @@
 </div>
 
 <!-- Contatti Container -->
-<div class="w3-container w3-padding-64 w3-theme-l5" id="team">
+<div class="w3-container w3-padding-64 w3-theme-l5" id="team" style="background-color:white">
     
     <table>
         <tr>
-            <td><img src="profile.jpeg" style="max-width:100px"></td>
-            <td><h2>Contatti</h2>
-                <p>I miei contatti</p></td>
+            <td><img src="profile.jpeg" style="max-width:150px"></td>
+            <td>&nbsp;&nbsp;&nbsp;</td>
+            <td><h2>Luca Marseglia</h2>
+                <p><a href="mailto:lucamarseglia99@gmail.com">lucamarseglia99@gmail.com</a></p>
+                <p><a href="linkedin.com/in/marseglialuca">linkedin.com/in/marseglialuca</a></p></td>
         </tr>
     </table>
 
+    
 
 </div>
 
+<div style="padding-left:30px">
+<h2>I Miei Progetti</h2>
+                    <ul>
+                        <li>Model Predictive Control per l'Adaptive Cruise Control</li>
+                        <li>Field Oriented Control su un Motore Asincrono Trifase</li>
+                        <li>Tecniche di Controllo Avanzate sul Temperature Control Lab</li>
+                    </ul>
+</div>
+
 <!-- Progetti Row -->
-<div class="w3-row-padding w3-padding-64 w3-theme-l1" id="work">
+<div class="w3-row-padding w3-padding-64 w3-theme-l1" id="work"  style="display:none;">
 
 <div class="w3-quarter">
 <h2>I Miei Progetti</h2>
@@ -103,7 +115,7 @@
 <div class="w3-quarter">
 <div class="w3-card w3-white" style="margin:5px;padding-bottom:15px">
   <div class="w3-container">
-  <h3>Field Oriented Control sul Motore Asincrono</h3>
+  <h3>Model Predictive Control per l'Adaptive Cruise Control</h3>
   <p>Una breve descrizione sul progetto</p>
   <a href="#">Apri su GitHub</a>
   </div>
@@ -113,7 +125,7 @@
 <div class="w3-quarter">
 <div class="w3-card w3-white" style="margin:5px;padding-bottom:15px">
   <div class="w3-container">
-  <h3>Progetto 1</h3>
+  <h3>Field Oriented Control su un Motore Asincrono Trifase</h3>
   <p>Una breve descrizione sul progetto</p>
   <a href="#">Apri su GitHub</a>
   </div>
@@ -123,7 +135,7 @@
 <div class="w3-quarter">
 <div class="w3-card w3-white" style="margin:5px;padding-bottom:15px">
   <div class="w3-container">
-  <h3>Progetto 1</h3>
+  <h3>Tecniche di Controllo Avanzate sul Temperature Control Lab</h3>
   <p>Una breve descrizione sul progetto</p>
   <a href="#">Apri su GitHub</a>
   </div>
@@ -249,7 +261,7 @@
 </div>
 
 <!-- Image of location/map -->
-<img src="/w3images/map.jpg" class="w3-image w3-greyscale-min" style="width:100%;"  style="display:none;">
+<img src="/w3images/map.jpg" class="w3-image w3-greyscale-min" style="width:100%;display:none;">
 
 <!-- Footer -->
 <footer class="w3-container w3-padding-32 w3-theme-d1 w3-center"  style="display:none;">
