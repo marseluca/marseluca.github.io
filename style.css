@@ -1,28 +1,24 @@
 body {
-    background-color: rgb(1, 85, 158);
     font-family: consolas;
-    color: #bec7ca;
 }
 
 a {
-    color: white;
     text-decoration: none;
     cursor: pointer;
 }
 
 a:hover {
-    color: #87b4cc;
+    color: black;
     text-decoration: underline;
 }
 
 #header {
     padding:20px;
-    background-color:rgb(6, 68, 134);
-    color:rgb(34, 132, 217);
+    background-color:rgb(181, 185, 194);
 }
 
 #header a {
-    color: rgb(34, 132, 217);
+    
 }
 
 #content {
