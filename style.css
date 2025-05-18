@@ -1,5 +1,10 @@
+@font-face {
+  font-family: bodyfont;
+  src: url(OpenSans-Regular.ttf);
+}
+
 body {
-    font-family: consolas;
+    font-family: bodyfont;
 }
 
 a {
@@ -12,9 +17,12 @@ a:hover {
     text-decoration: underline;
 }
 
+a:visited {
+    color: grey;
+}
+
 #header {
     padding:20px;
-    background-color:rgb(181, 185, 194);
 }
 
 #header a {
@@ -28,5 +36,5 @@ a:hover {
 }
 
 hr {
-    border: 1px solid white;
+    border: 1px solid black;
 }
