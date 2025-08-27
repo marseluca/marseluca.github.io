@@ -1,40 +1,55 @@
-@font-face {
-  font-family: bodyfont;
-  src: url(OpenSans-Regular.ttf);
-}
+/* Stile base per tutta la pagina */
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
 
-body {
-    font-family: bodyfont;
-}
+        /* HEADER */
+        header {
+            background-color: #333;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+        }
 
-a {
-    text-decoration: none;
-    cursor: pointer;
-}
+        /* CONTENUTO */
+        main {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
 
-a:hover {
-    color: black;
-    text-decoration: underline;
-}
+        /* RESPONSIVITÀ */
+        @media (max-width: 600px) {
+            header {
+                font-size: 18px;
+            }
+            main {
+                margin: 10px;
+                padding: 15px;
+            }
+        }
 
-a:visited {
-    color: grey;
-}
+        /* LINK */
+        a {
+            color: #0077cc;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s ease, border-bottom 0.3s ease;
+        }
 
-#header {
-    padding:20px;
-}
+        a:hover {
+            border-bottom: 2px solid #005fa3;
+        }
 
-#header a {
-    
-}
+        a:active {
+            
+        }
 
-#content {
-    padding-top: 20px;
-    padding-left: 20px;
-    padding-right: 20px;
-}
-
-hr {
-    border: 1px solid black;
-}
+        a:visited {
+        }
