@@ -27,14 +27,75 @@
 
     <header>
         <h1>marseluca.github.io</h1>
-        <a href="/index.html" target="_blank">Home</a> |
-        <a href="about.html" target="_blank">Su di me</a>
+        <a href="/index.html">Home</a> |
+        <a href="about.html">Contatti</a>
     </header>
 
     <main>
         <h2>Sistema Massa-molla-smorzatore</h2>
         Per ricavare il sistema massa-molla-smorzatore, si applica il secondo principio della dinamica alla massa \(m\), per il quale:
         \[ \sum_{i=1}^N \vec{F} = m \vec{a} \]
+        Nel nostro caso, le forze agenti sulla massa sono:
+        <ul>
+            <li>Forza elastica: \(F_e = kx\)</li>
+            <li>Forza di attrito viscoso: \(F_a = b\dot{x}\)</li>
+            <li>Forza esterna: \(F\)</li>
+        </ul>
+        La forza elastica e la forza di attrito viscoso sono entrambe negative, in quanto opposte al verso di spostamento della massa.
+        Quindi, per il secondo principio della dinamica, si ha:
+        \[ F - kx - b\dot{x} = m\ddot{x} \]
+        Da cui si ricava l'equazione differenziale del sistema massa-molla-smorzatore:
+        \[ m\ddot{x} + b\dot{x} + kx = F \]
+        In cui la forza esterna F rappresenta la perturbazione del sistema.
+        Se consideriamo anche un ingresso di controllo \(u\), l'equazione differenziale diventa:
+        \[ m\ddot{x} + b\dot{x} + kx = F + u \]
+        Se consideriamo il sistema in assenza di perturbazioni esterne, l'equazione differenziale si riduce a:
+        \[ m\ddot{x} + b\dot{x} + kx = u \]
+        Per risolvere l'equazione differenziale, si può utilizzare la trasformata di Laplace, ottenendo la funzione di trasferimento del sistema:
+        \[ ms^2X(s) + bsX(s) + kX(s) = U(s) \]
+        \[ X(s)(ms^2 + bs + k) = U(s) \]
+        \[ G(s) = \frac{X(s)}{U(s)} = \frac{1}{ms^2 + bs + k} \]
 
+        <h2>Risposta al gradino</h2>
+        <h3>Analisi del valore a regime</h3>
+        La risposta al gradino del sistema massa-molla-smorzatore può essere analizzata considerando un ingresso a gradino unitario, ovvero \(u(t) = 1(t)\).
+        La trasformata di Laplace di un ingresso a gradino unitario è \(U(s) = \frac{1}{s}\).
+        La funzione di trasferimento del sistema è:
+        \[ G(s) = \frac{1}{ms^2 + bs + k} \]
+        La risposta del sistema in frequenza è data dal prodotto della funzione di trasferimento e dell'ingresso:
+        \[ Y(s) = G(s)U(s) = \frac{1}{ms^2 + bs + k} \cdot \frac{1}{s} = \frac{1}{s(ms^2 + bs + k)} \]
+        Per trovare il valore a regime della risposta al gradino, si può utilizzare il teorema del valore finale:
+        \[ \lim_{t \to \infty} y(t) = \lim_{s \to 0} sY(s) = \lim_{s \to 0} s \cdot \frac{1}{s(ms^2 + bs + k)} = \lim_{s \to 0} \frac{1}{ms^2 + bs + k} = \frac{1}{k} \]
+        Quindi, il valore a regime della risposta al gradino del sistema massa-molla-smorzatore è:
+        \[ \lim_{t \to \infty} y(t) = \frac{1}{k} \]
+        <h3>Analisi del transitorio</h3>
+        Per analizzare il transitorio della risposta al gradino del sistema, si possono considerare due parametri:
+        <ul>
+            <li>Tempo di assestamento</li>
+            <li>Sovraelongazione</li>
+        </ul>
+        Il tempo di assestamento è il tempo necessario affinché la risposta del sistema si stabilizzi entro un certo intervallo intorno al valore a regime.
+        Di solito l'intervallo è il 2% o il 5% del valore a regime.
+        La sovraelongazione è la massima escursione della risposta oltre il valore a regime, espressa in percentuale del valore a regime.
+        Per calcolare questi parametri, si può utilizzare la forma standard della funzione di trasferimento del sistema massa-molla-smorzatore:
+        \[ G(s) = \frac{\omega_n^2}{s^2 + 2\zeta\omega_n s + \omega_n^2} \]
+        In cui:
+        \[ \omega_n = \sqrt{\frac{k}{m}} \] è la pulsazione naturale del sistema
+        \[ \zeta = \frac{b}{2\sqrt{mk}} \] è il coefficiente di smorzamento del sistema
+        A seconda del valore del coefficiente di smorzamento \(\zeta\), il sistema può essere:
+        <ul>
+            <li>Sovrasmorzato (\(\zeta > 1\))</li>
+            <li>Criticamente smorzato (\(\zeta = 1\))</li>
+            <li>Sottosmorzato (\(0 < \zeta < 1\))</li>
+            <li>Non smorzato (\(\zeta = 0\))</li>
+        </ul>
+        Per un sistema sottosmorzato, il tempo di assestamento e la sovraelongazione sono dati dalle seguenti formule:
+        \[ T_s \approx \frac{4}{\zeta\omega_n} \] (per il 2% del valore a regime)
+        \[ M_p = e^{-\frac{\pi\zeta}{\sqrt{1-\zeta^2}}} \cdot 100\% \]
+        Per un sistema criticamente smorzato o sovrasmorzato, il tempo di assestamento è dato da:
+        \[ T_s \approx \frac{4}{\zeta\omega_n}  \] (per il 2% del valore a regime)
+        E la sovraelongazione è zero:
+        \[ M_p = 0\% \]
+    </main>
 </body>
 </html>
