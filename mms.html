@@ -63,9 +63,12 @@
         La funzione di trasferimento del sistema è:
         \[ G(s) = \frac{1}{ms^2 + bs + k} \]
         La risposta del sistema in frequenza è data dal prodotto della funzione di trasferimento e dell'ingresso:
-        \[ Y(s) = G(s)U(s) = \frac{1}{ms^2 + bs + k} \cdot \frac{1}{s} = \frac{1}{s(ms^2 + bs + k)} \]
+        \[ Y(s) = G(s)U(s) = \frac{1}{ms^2 + bs + k} \cdot \frac{1}{s} \]
+        \[ = \frac{1}{s(ms^2 + bs + k)} \]
         Per trovare il valore a regime della risposta al gradino, si può utilizzare il teorema del valore finale:
-        \[ \lim_{t \to \infty} y(t) = \lim_{s \to 0} sY(s) = \lim_{s \to 0} s \cdot \frac{1}{s(ms^2 + bs + k)} = \lim_{s \to 0} \frac{1}{ms^2 + bs + k} = \frac{1}{k} \]
+        \[ \lim_{t \to \infty} y(t) = \lim_{s \to 0} sY(s) \]
+        \[ = \lim_{s \to 0} s \cdot \frac{1}{s(ms^2 + bs + k)} \]
+        \[ = \lim_{s \to 0} \frac{1}{ms^2 + bs + k} = \frac{1}{k} \]
         Quindi, il valore a regime della risposta al gradino del sistema massa-molla-smorzatore è:
         \[ \lim_{t \to \infty} y(t) = \frac{1}{k} \]
         <h3>Analisi del transitorio</h3>
@@ -80,22 +83,106 @@
         Per calcolare questi parametri, si può utilizzare la forma standard della funzione di trasferimento del sistema massa-molla-smorzatore:
         \[ G(s) = \frac{\omega_n^2}{s^2 + 2\zeta\omega_n s + \omega_n^2} \]
         In cui:
-        \[ \omega_n = \sqrt{\frac{k}{m}} \] è la pulsazione naturale del sistema
-        \[ \zeta = \frac{b}{2\sqrt{mk}} \] è il coefficiente di smorzamento del sistema
-        A seconda del valore del coefficiente di smorzamento \(\zeta\), il sistema può essere:
         <ul>
-            <li>Sovrasmorzato (\(\zeta > 1\))</li>
-            <li>Criticamente smorzato (\(\zeta = 1\))</li>
-            <li>Sottosmorzato (\(0 < \zeta < 1\))</li>
-            <li>Non smorzato (\(\zeta = 0\))</li>
+        <li>\( \omega_n  \) è la pulsazione naturale del sistema</li>
+        <li>\( \zeta \) è il coefficiente di smorzamento del sistema</li>
         </ul>
-        Per un sistema sottosmorzato, il tempo di assestamento e la sovraelongazione sono dati dalle seguenti formule:
-        \[ T_s \approx \frac{4}{\zeta\omega_n} \] (per il 2% del valore a regime)
-        \[ M_p = e^{-\frac{\pi\zeta}{\sqrt{1-\zeta^2}}} \cdot 100\% \]
-        Per un sistema criticamente smorzato o sovrasmorzato, il tempo di assestamento è dato da:
-        \[ T_s \approx \frac{4}{\zeta\omega_n}  \] (per il 2% del valore a regime)
-        E la sovraelongazione è zero:
-        \[ M_p = 0\% \]
+        Possiamo così ricavare i parametri \(\omega_n\) e \(\zeta\) in funzione dei parametri fisici del sistema \(m\), \(b\) e \(k\):
+        <ul>
+        <li>\( \omega_n = \sqrt{\frac{k}{m}} \)</li>
+        <li>\( \zeta = \frac{b}{2\sqrt{mk}} \)</li>
+        </ul>
+        
+        Il tempo di assestamento e la sovraelongazione sono dati dalle seguenti formule:
+        <ul>
+            <li>\( T_s \approx \frac{4}{\zeta\omega_n} \) (per il 2% del valore a regime)</li>
+            <li>\( M_p = e^{-\frac{\pi\zeta}{\sqrt{1-\zeta^2}}}\cdot 100\% \)</li>
+        </ul>
+        <h2>Risultati</h2>
+        Consideriamo un sistema reale con i seguenti parametri:
+        <ul>
+            <li>Massa \(m = 250 \, kg\)</li>
+            <li>Costante elastica \(k = 20000 \, N/m\)</li>
+            <li>Coefficiente di attrito viscoso \(b = 500 \, Ns/m\)</li>
+        </ul>
+        Calcoliamo i parametri \(\omega_n\) e \(\zeta\):
+        <ul>    
+            <li>\( \omega_n = \sqrt{\frac{20000}{250}} = 8.944 \, rad/s\)</li>
+            <li>\( \zeta = \frac{500}{2\sqrt{250 \cdot 20000}} = 0.1581\)</li>
+        </ul>
+        Calcoliamo il valore a regime della risposta al gradino:
+        \[ \lim_{t \to \infty} y(t) = \frac{1}{20000} = 5\cdot 10^{-5} \, m \]
+        Calcoliamo il tempo di assestamento e la sovraelongazione:
+        <ul>
+            <li>\( T_s \approx \frac{4}{0.1581 \cdot 8.944} = 2.83 \, s\)</li>
+            <li>\( M_p = e^{-\frac{\pi \cdot 0.1581}{\sqrt{1-0.1581^2}}} \cdot 100\% = 59\% \)</li>
+        </ul>
+        Ci si aspetta quindi che la risposta al gradino del sistema massa-molla-smorzatore abbia un valore a regime di \(5 \cdot 10^{-5} \, m\), un tempo di assestamento di circa \(2.83 \, s\) e un picco massimo del \(59\%\) oltre il valore a regime,
+        corrispondente a circa \(8 \cdot 10^{-5} \, m\). Inotre, essendo il coefficiente di smorzamento molto minore di 1, il sistema è fortemente sottosmorzato e presenta ampie oscillazioni nel transitorio.
+        <h3>Simulazione in Simulink</h3>
+        La simulazione in Simulink conferma i risultati teorici ottenuti:<br><br>
+        <center><img src="mms_simulink.png"></center>
+    
+    <h3>Presenza di disturbi sull'ingresso</h3>
+    La presenza di disturbi sull'ingresso può influenzare la risposta del sistema massa-molla-smorzatore in diversi modi, a seconda della natura e dell'ampiezza del disturbo.
+    Il disturbo può essere modellato come un segnale additivo sull'ingresso del sistema, cosicché l'equazione differenziale diventa:
+    \[ m\ddot{x} + b\dot{x} + kx = u + F \]
+    Dove \(F\) rappresenta il disturbo, ossia un forzamento esterno non desiderato che agisce sul sistema.
+    I disturbi possono essere di vario tipo. Nel nostro caso, consideriamo un segnale con finestre a gradino di ampiezza variabile, che simula un disturbo impulsivo che agisce sul sistema in momenti specifici:
+    \[ F(t) = \begin{cases}
+    0, & t < 1 \\
+    -6000, & 1 \leq t < 1.5 \\
+    0, & 1.5 \leq t < 7 \\
+    -4000, & 7 \leq t < 7.5 \\
+    0, & t \geq 7.5
+    \end{cases}
+    \]
+    Il sistema presenta il seguente comportamento in presenza di tale disturbo:<br><br>
+    <center><img src="mms_disturbance.png"></center><br><br>
+    Si nota che il disturbo provoca delle deviazioni dalla traiettoria, con un'ampiezza delle oscillazioni che supera i 20 cm.
+
+    <h2>Controllo PID</h2>
+    Un controllo PID è un tipo di controllo retroazionato ampiamente utilizzato nei sistemi di controllo automatico per regolare vari processi. Il controllo PID combina tre azioni di controllo distinte: 
+    proporzionale, integrale e derivativa, per ottenere una risposta desiderata del sistema.
+    <ul>
+    <li>L'azione proporzionale (P) è basata sull'errore attuale tra il valore desiderato (setpoint) e il valore misurato. L'azione proporzionale produce una risposta proporzionale all'errore, cercando di ridurlo rapidamente.</li>
+    <li>L'azione integrale (I) tiene conto dell'errore accumulato nel tempo. Questa azione è utile per eliminare l'offset che può verificarsi con l'azione proporzionale da sola, garantendo che il sistema raggiunga e mantenga il setpoint nel lungo termine.</li>
+    <li>L'azione derivativa (D) si basa sulla velocità di variazione dell'errore. Questa azione aiuta a prevedere il comportamento futuro del sistema e a smorzare le oscillazioni, migliorando la stabilità del sistema.</li>
+    </ul>
+    La combinazione di queste tre azioni consente al controllo PID di adattarsi a un'ampia varietà di sistemi e condizioni operative, rendendolo uno strumento versatile ed efficace per il controllo automatico.
+    La legge di controllo PID può essere espressa matematicamente come:
+    \[ u(t) = K_p e(t) + K_i \int e(t) dt + K_d d\frac{e(t)}{dt} \]
+    Dove:
+    <ul>
+        <li>\(u(t)\) è l'uscita del controllore (segnale di controllo)</li>
+        <li>\(e(t)\) è l'errore tra il setpoint e la variabile di processo</li>
+        <li>\(K_p\) è il guadagno proporzionale</li>
+        <li>\(K_i\) è il guadagno integrale</li>
+        <li>\(K_d\) è il guadagno derivativo</li>
+    </ul>
+    L'implementazione di un controllo PID richiede la sintonia dei guadagni \(K_p\), \(K_i\) e \(K_d\) per ottenere le prestazioni desiderate del sistema, come la velocità di risposta, la stabilità e la riduzione dell'errore a regime.
+    <br><br>
+    In MATLAB è possibile utilizzare il blocco PID Controller per implementare un controllo PID sul sistema massa-molla-smorzatore.
+    Il tuning dei guadagni può essere effettuata manualmente o utilizzando la funzione di autotuning del blocco.
+    Il tuning automatico può essere eseguito selezionando il blocco PID Controller, facendo clic con il tasto destro del mouse e scegliendo "Tune...".
+    Dopo aver eseguito il tuning, i guadagni ottimali per il nostro sistema sono:
+    <ul>
+        <li>\(K_p = 2660067276.03698\)</li>
+        <li>\(K_i = 643576168521.694\)</li>
+        <li>\(K_d = 2228583.88155931\)</li>
+    </ul>
+    La simulazione in Simulink con il controllo PID mostra una risposta al gradino decisamente migliorata rispetto al sistema senza controllo:
+    <br><br>
+    <center><img src="mms_pidres1.png"></center>
+    <br><br>
+    Vediamo ora l'effetto del disturbo impulsivo sul sistema con controllo PID, confrontandolo con il sistema senza controllo:
+    <br><br>
+    <center><img src="mms_pidres2.png"></center>
+    <br><br>
+    Possiamo osservare che il sistema con controllo PID riesce a mantenere la posizione desiderata con un'oscillazione minima, nonostante la presenza del disturbo, al contrario del sistema senza controllo che presenta oscillazioni significative.
+    <br>
+    In conclusione, l'implementazione di un controllo PID sul sistema massa-molla-smorzatore migliora significativamente la risposta del sistema, riducendo l'errore a regime e aumentando la stabilità in presenza di disturbi esterni.    
+     <br><br>
     </main>
 </body>
 </html>

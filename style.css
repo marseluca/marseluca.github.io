@@ -3,6 +3,7 @@
             margin: 0;
             font-family: Arial, sans-serif;
             background-color: #f5f5f5;
+            line-height: 1.5;
         }
 
         /* HEADER */
@@ -51,4 +52,8 @@
         }
 
         a:visited {
+        }
+
+        img {
+            max-width: 70%;
         }
