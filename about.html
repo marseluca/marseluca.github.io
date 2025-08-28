@@ -1,39 +1,69 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
-
-    <!-- START KATEX -->
-
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" integrity="sha384-5TcZemv2l/9On385z///+d7MSYlvIEw9FuZTIdZ14vJLqWphw7e7ZPuOiCHJcFCP" crossorigin="anonymous">
-
-    <!-- The loading of KaTeX is deferred to speed up page rendering -->
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" integrity="sha384-cMkvdD8LoxVzGF/RPUKAcvmm49FQ0oxwDF3BGKtDXcEc+T1b2N+teh/OJfpU0jr6" crossorigin="anonymous"></script>
-
-    <!-- To automatically render math in text elements, include the auto-render extension: -->
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js" integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh" crossorigin="anonymous"
-        onload="renderMathInElement(document.body);"></script>
-  
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-    <!-- END KATEX -->
-
-    <title>Luca Marseglia</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contattami - Luca Marseglia</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <header>
-        <h1>marseluca.github.io</h1>
-        <a href="/index.html">Home</a>&nbsp;&nbsp;
-        <a href="about.html">Contatti</a>
+  <header>
+        <div class="logo">
+            <h1>marseluca.github.io</h1>
+        </div>
+        <nav>
+            <a href="/index.html">Home</a>
+            <a href="about.html">Contatti</a>
+        </nav>
     </header>
 
-    <main>
-        <h2>Contatti</h2>
-        -
+  <main>
+
+      <!-- SEZIONE SU DI ME -->
+      <section class="about-me">
+          <div class="about-photo">
+              <img src="profile.jpeg" alt="Foto di Luca Marseglia">
+          </div>
+          <div class="about-text">
+            <h2>Su di me</h2>
+              <p>
+                  Ciao! Mi chiamo <strong>Luca Marseglia</strong> e sono un ingegnere appassionato di
+                  automazione, robotica e nuove tecnologie.  
+                  In questo sito condivido i miei progetti, esperimenti e ciò che imparo
+                  durante il mio percorso accademico e professionale.
+              </p>
+              <p>
+                  Oltre all’ingegneria, mi piace imparare nuove lingue, fare lunghe camminate
+                  con il mio cane e approfondire i temi legati all’innovazione tecnologica.
+              </p>
+          </div>
+      </section>
+
+      <!-- FORM CONTATTO -->
+      <section class="contact">
+          <h2>Contattami</h2>
+          <p>Hai domande o vuoi metterti in contatto con me? Compila il modulo qui sotto:</p>
+          
+          <form action="contact.php" method="POST" class="contact-form">
+              <label for="name">Nome</label>
+              <input type="text" id="name" name="name" required>
+
+              <label for="email">Email</label>
+              <input type="email" id="email" name="email" required>
+
+              <label for="message">Messaggio</label>
+              <textarea id="message" name="message" rows="6" required></textarea>
+
+              <button type="submit">Invia</button>
+          </form>
+      </section>
+
+  </main>
+
+  <footer>
+      <p>© 2025 Luca Marseglia – Tutti i diritti riservati</p>
+  </footer>
 
 </body>
 </html>
