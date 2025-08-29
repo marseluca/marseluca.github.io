@@ -8,13 +8,26 @@
     body {
       font-family: Arial, sans-serif;
       margin: 0;
-      padding-top: 30px; /* spazio per titolo */
-      padding-bottom: 90px; /* spazio per riepilogo fisso in basso */
+      padding-top: 30px; 
       background: #fafafa;
     }
     h1 {
       text-align: center;
-      margin: 20px 0;
+      margin: 20px 0 10px 0;
+    }
+    .options-btn {
+      display: block;
+      margin: 0 auto 20px auto;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    .options-btn:hover {
+      background-color: #0056b3;
     }
     form {
       margin: 20px auto;
@@ -29,6 +42,9 @@
       font-size: 14px;
       border: 1px solid #ccc;
       border-radius: 5px;
+    }
+    input[autocomplete="off"] {
+      autocomplete: off;
     }
     button {
       cursor: pointer;
@@ -52,45 +68,14 @@
       background-color: #ff4d4d;
       color: white;
       border: none;
-      padding: 5px 10px;
+      padding: 4px 8px;
       cursor: pointer;
-      border-radius: 4px;
+      border-radius: 50%;
+      font-weight: bold;
     }
-    /* Pulsanti principali */
-    .btn-container {
-      text-align: center;
-      margin: 20px 0;
-      display: flex;
-      justify-content: center;
-      gap: 15px;
-      flex-wrap: wrap;
+    .delete-btn:hover {
+      background-color: #b02a37;
     }
-    .delete-all-btn {
-      background-color: #dc3545;
-      color: white;
-      border: none;
-      padding: 10px 15px;
-      border-radius: 5px;
-    }
-    .delete-all-btn:hover { background-color: #b02a37; }
-
-    .toggle-btn {
-      background-color: #007bff;
-      color: white;
-      border: none;
-      padding: 10px 15px;
-      border-radius: 5px;
-    }
-    .toggle-btn:hover { background-color: #0056b3; }
-
-    .info-btn {
-      background-color: #6c757d;
-      color: white;
-      border: none;
-      padding: 10px 15px;
-      border-radius: 5px;
-    }
-    .info-btn:hover { background-color: #495057; }
 
     /* Etichette Ruoli */
     .role-label {
@@ -104,44 +89,6 @@
     .role-D { background-color: #007bff; }
     .role-C { background-color: #fd7e14; }
     .role-A { background-color: #dc3545; }
-
-    /* Footer fisso con riepilogo */
-    footer {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      background: #f5f5f5;
-      border-top: 2px solid #ccc;
-      box-shadow: 0px -2px 5px rgba(0,0,0,0.1);
-      z-index: 1000;
-      padding: 5px 0;
-      transition: max-height 0.3s ease;
-      overflow: hidden;
-    }
-    footer.collapsed {
-      max-height: 0;
-      padding: 0;
-      border: none;
-      box-shadow: none;
-    }
-    .summary {
-      max-width: 900px;
-      margin: auto;
-    }
-    .summary table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
-    .summary th, .summary td {
-      border: 1px solid #ccc;
-      padding: 4px;
-      text-align: center;
-    }
-    .summary th {
-      background: #eee;
-    }
 
     /* Popup (modal) */
     .modal {
@@ -157,9 +104,10 @@
     .modal-content {
       background: white;
       padding: 20px;
-      max-width: 500px;
+      max-width: 600px;
+      width: 90%;
       border-radius: 8px;
-      text-align: left;
+      text-align: center;
       box-shadow: 0px 2px 10px rgba(0,0,0,0.3);
     }
     .modal-content h2 {
@@ -174,30 +122,53 @@
       cursor: pointer;
       float: right;
     }
+    .delete-all-btn, .info-btn {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 5px;
+      color: white;
+      border: none;
+      font-size: 14px;
+    }
+    .delete-all-btn {
+      background-color: #dc3545;
+    }
+    .delete-all-btn:hover { background-color: #b02a37; }
+    .info-btn {
+      background-color: #6c757d;
+    }
+    .info-btn:hover { background-color: #495057; }
 
-    /* Responsivo */
-    @media (max-width: 600px) {
-      form {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      input, select, button {
-        width: 100%;
-      }
-      table, th, td {
-        font-size: 12px;
-      }
-      .summary table {
-        font-size: 11px;
-      }
+    /* Tabella riepilogo */
+    .summary {
+      margin-top: 20px;
+    }
+    .summary table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+    .summary th, .summary td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      text-align: center;
+    }
+    .summary th {
+      background: #eee;
     }
   </style>
 </head>
 <body>
   <h1>Gestore Asta</h1>
 
-  <form id="playerForm">
-    <input type="text" id="nome" placeholder="Nome Calciatore" required>
+  <!-- Pulsante Opzioni sotto al titolo -->
+  <button class="options-btn" onclick="openOptions()">⚙️ Opzioni</button>
+
+  <form id="playerForm" autocomplete="off">
+    <input type="text" id="nome" placeholder="Nome Calciatore" required autocomplete="off">
     <input type="number" id="crediti" placeholder="Crediti Spesi" min="1" required>
     <select id="ruolo" required>
       <option value="">Seleziona Ruolo</option>
@@ -209,7 +180,7 @@
     <button type="submit">Aggiungi</button>
   </form>
 
-  <table id="playersTable">
+  <table id="playersTable" style="display:none;">
     <thead>
       <tr>
         <th>Nome</th>
@@ -221,28 +192,30 @@
     <tbody></tbody>
   </table>
 
-  <div class="btn-container">
-    <button class="delete-all-btn" onclick="deleteAll()">🗑️ Elimina Tutto</button>
-    <button class="toggle-btn" onclick="toggleFooter()">📊 Mostra/Nascondi Riepilogo</button>
-    <button class="info-btn" onclick="openInfo()">ℹ️ Info</button>
-  </div>
+  <!-- Popup Opzioni -->
+  <div id="optionsModal" class="modal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeOptions()">Chiudi</button>
+      <h2>Opzioni</h2>
+      <button class="delete-all-btn" onclick="deleteAll()">🗑️ Elimina Tutto</button>
+      <button class="info-btn" onclick="openInfo()">ℹ️ Info</button>
 
-  <footer id="footerSummary">
-    <div class="summary" id="summaryBox">
-      <table>
-        <thead>
-          <tr>
-            <th><span class="role-label role-P">P</span></th>
-            <th><span class="role-label role-D">D</span></th>
-            <th><span class="role-label role-C">C</span></th>
-            <th><span class="role-label role-A">A</span></th>
-            <th>Totale Mancante</th>
-          </tr>
-        </thead>
-        <tbody id="summaryTableBody"></tbody>
-      </table>
+      <div class="summary" id="summaryBox">
+        <table>
+          <thead>
+            <tr>
+              <th><span class="role-label role-P">P</span></th>
+              <th><span class="role-label role-D">D</span></th>
+              <th><span class="role-label role-C">C</span></th>
+              <th><span class="role-label role-A">A</span></th>
+              <th>Totale Mancante</th>
+            </tr>
+          </thead>
+          <tbody id="summaryTableBody"></tbody>
+        </table>
+      </div>
     </div>
-  </footer>
+  </div>
 
   <!-- Popup Info -->
   <div id="infoModal" class="modal">
@@ -252,17 +225,17 @@
       <p>✅ Inserisci il <b>nome del calciatore</b>, i <b>crediti spesi</b> e seleziona il <b>ruolo</b>, poi premi <b>Aggiungi</b>.</p>
       <p>📋 Il giocatore verrà aggiunto alla tabella principale e i dati saranno salvati automaticamente sul tuo browser.</p>
       <p>🔄 Anche se chiudi o ricarichi la pagina, i dati resteranno disponibili (salvati in locale).</p>
-      <p>🗑️ Puoi eliminare singoli giocatori oppure usare <b>Elimina tutto</b> per svuotare la lista.</p>
-      <p>📊 Il riepilogo in basso mostra i crediti spesi per ruolo e il totale mancante dal budget.</p>
-      <p>ℹ️ Usa i pulsanti per gestire al meglio l'asta.</p>
+      <p>🗑️ Puoi eliminare singoli giocatori cliccando la <b>X</b> rossa, oppure usare <b>Elimina tutto</b> per svuotare la lista.</p>
+      <p>📊 Il riepilogo mostra i crediti spesi per ruolo e il totale mancante dal budget.</p>
     </div>
   </div>
 
   <script>
     const form = document.getElementById("playerForm");
+    const table = document.getElementById("playersTable");
     const tableBody = document.querySelector("#playersTable tbody");
     const summaryTableBody = document.getElementById("summaryTableBody");
-    const footerSummary = document.getElementById("footerSummary");
+    const optionsModal = document.getElementById("optionsModal");
     const infoModal = document.getElementById("infoModal");
 
     const budgetTotale = 1000;
@@ -277,6 +250,12 @@
     };
 
     function renderTable() {
+      if (players.length > 0) {
+        table.style.display = "table";
+      } else {
+        table.style.display = "none";
+      }
+
       players.sort((a, b) => rolesOrder.indexOf(a.ruolo) - rolesOrder.indexOf(b.ruolo));
       tableBody.innerHTML = "";
       players.forEach((player, index) => {
@@ -285,7 +264,7 @@
           <td>${player.nome}</td>
           <td>${player.crediti}</td>
           <td>${roleLabels[player.ruolo]}</td>
-          <td><button class="delete-btn" onclick="deletePlayer(${index})">Elimina</button></td>
+          <td><button class="delete-btn" onclick="deletePlayer(${index})">X</button></td>
         `;
         tableBody.appendChild(row);
       });
@@ -299,14 +278,11 @@
     function renderSummary() {
       let summaryData = { "Portiere": 0, "Difensore": 0, "Centrocampista": 0, "Attaccante": 0 };
       let totaleSpeso = 0;
-
       players.forEach(player => {
         summaryData[player.ruolo] += parseInt(player.crediti);
         totaleSpeso += parseInt(player.crediti);
       });
-
       let totaleMancante = budgetTotale - totaleSpeso;
-
       summaryTableBody.innerHTML = `
         <tr>
           <td>${summaryData["Portiere"]}</td>
@@ -345,14 +321,16 @@
       }
     };
 
-    window.toggleFooter = function() {
-      footerSummary.classList.toggle("collapsed");
+    // Gestione modali
+    window.openOptions = function() {
+      optionsModal.style.display = "flex";
     };
-
+    window.closeOptions = function() {
+      optionsModal.style.display = "none";
+    };
     window.openInfo = function() {
       infoModal.style.display = "flex";
     };
-
     window.closeInfo = function() {
       infoModal.style.display = "none";
     };
