@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Asta Fantacalcio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding-top: 30px; /* spazio per titolo */
+      padding-bottom: 90px; /* spazio per riepilogo fisso in basso */
+      background: #fafafa;
+    }
+    h1 {
+      text-align: center;
+      margin: 20px 0;
+    }
+    form {
+      margin: 20px auto;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 800px;
+    }
+    input, select, button {
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      cursor: pointer;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      font-size: 14px;
+      background: white;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      text-align: center;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .delete-btn {
+      background-color: #ff4d4d;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    /* Pulsanti principali */
+    .btn-container {
+      text-align: center;
+      margin: 20px 0;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    .delete-all-btn {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+    }
+    .delete-all-btn:hover { background-color: #b02a37; }
+
+    .toggle-btn {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+    }
+    .toggle-btn:hover { background-color: #0056b3; }
+
+    .info-btn {
+      background-color: #6c757d;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+    }
+    .info-btn:hover { background-color: #495057; }
+
+    /* Etichette Ruoli */
+    .role-label {
+      display: inline-block;
+      color: white;
+      font-weight: bold;
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+    .role-P { background-color: #28a745; }
+    .role-D { background-color: #007bff; }
+    .role-C { background-color: #fd7e14; }
+    .role-A { background-color: #dc3545; }
+
+    /* Footer fisso con riepilogo */
+    footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: #f5f5f5;
+      border-top: 2px solid #ccc;
+      box-shadow: 0px -2px 5px rgba(0,0,0,0.1);
+      z-index: 1000;
+      padding: 5px 0;
+      transition: max-height 0.3s ease;
+      overflow: hidden;
+    }
+    footer.collapsed {
+      max-height: 0;
+      padding: 0;
+      border: none;
+      box-shadow: none;
+    }
+    .summary {
+      max-width: 900px;
+      margin: auto;
+    }
+    .summary table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .summary th, .summary td {
+      border: 1px solid #ccc;
+      padding: 4px;
+      text-align: center;
+    }
+    .summary th {
+      background: #eee;
+    }
+
+    /* Popup (modal) */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: white;
+      padding: 20px;
+      max-width: 500px;
+      border-radius: 8px;
+      text-align: left;
+      box-shadow: 0px 2px 10px rgba(0,0,0,0.3);
+    }
+    .modal-content h2 {
+      margin-top: 0;
+    }
+    .close-btn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      float: right;
+    }
+
+    /* Responsivo */
+    @media (max-width: 600px) {
+      form {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      input, select, button {
+        width: 100%;
+      }
+      table, th, td {
+        font-size: 12px;
+      }
+      .summary table {
+        font-size: 11px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Gestore Asta</h1>
+
+  <form id="playerForm">
+    <input type="text" id="nome" placeholder="Nome Calciatore" required>
+    <input type="number" id="crediti" placeholder="Crediti Spesi" min="1" required>
+    <select id="ruolo" required>
+      <option value="">Seleziona Ruolo</option>
+      <option value="Portiere">Portiere</option>
+      <option value="Difensore">Difensore</option>
+      <option value="Centrocampista">Centrocampista</option>
+      <option value="Attaccante">Attaccante</option>
+    </select>
+    <button type="submit">Aggiungi</button>
+  </form>
+
+  <table id="playersTable">
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Crediti</th>
+        <th>Ruolo</th>
+        <th>Azione</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="btn-container">
+    <button class="delete-all-btn" onclick="deleteAll()">🗑️ Elimina Tutto</button>
+    <button class="toggle-btn" onclick="toggleFooter()">📊 Mostra/Nascondi Riepilogo</button>
+    <button class="info-btn" onclick="openInfo()">ℹ️ Info</button>
+  </div>
+
+  <footer id="footerSummary">
+    <div class="summary" id="summaryBox">
+      <table>
+        <thead>
+          <tr>
+            <th><span class="role-label role-P">P</span></th>
+            <th><span class="role-label role-D">D</span></th>
+            <th><span class="role-label role-C">C</span></th>
+            <th><span class="role-label role-A">A</span></th>
+            <th>Totale Mancante</th>
+          </tr>
+        </thead>
+        <tbody id="summaryTableBody"></tbody>
+      </table>
+    </div>
+  </footer>
+
+  <!-- Popup Info -->
+  <div id="infoModal" class="modal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeInfo()">Chiudi</button>
+      <h2>Come usare il Gestore Asta</h2>
+      <p>✅ Inserisci il <b>nome del calciatore</b>, i <b>crediti spesi</b> e seleziona il <b>ruolo</b>, poi premi <b>Aggiungi</b>.</p>
+      <p>📋 Il giocatore verrà aggiunto alla tabella principale e i dati saranno salvati automaticamente sul tuo browser.</p>
+      <p>🔄 Anche se chiudi o ricarichi la pagina, i dati resteranno disponibili (salvati in locale).</p>
+      <p>🗑️ Puoi eliminare singoli giocatori oppure usare <b>Elimina tutto</b> per svuotare la lista.</p>
+      <p>📊 Il riepilogo in basso mostra i crediti spesi per ruolo e il totale mancante dal budget.</p>
+      <p>ℹ️ Usa i pulsanti per gestire al meglio l'asta.</p>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById("playerForm");
+    const tableBody = document.querySelector("#playersTable tbody");
+    const summaryTableBody = document.getElementById("summaryTableBody");
+    const footerSummary = document.getElementById("footerSummary");
+    const infoModal = document.getElementById("infoModal");
+
+    const budgetTotale = 1000;
+    let players = JSON.parse(localStorage.getItem("players")) || [];
+
+    const rolesOrder = ["Portiere", "Difensore", "Centrocampista", "Attaccante"];
+    const roleLabels = {
+      "Portiere": '<span class="role-label role-P">P</span>',
+      "Difensore": '<span class="role-label role-D">D</span>',
+      "Centrocampista": '<span class="role-label role-C">C</span>',
+      "Attaccante": '<span class="role-label role-A">A</span>'
+    };
+
+    function renderTable() {
+      players.sort((a, b) => rolesOrder.indexOf(a.ruolo) - rolesOrder.indexOf(b.ruolo));
+      tableBody.innerHTML = "";
+      players.forEach((player, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${player.nome}</td>
+          <td>${player.crediti}</td>
+          <td>${roleLabels[player.ruolo]}</td>
+          <td><button class="delete-btn" onclick="deletePlayer(${index})">Elimina</button></td>
+        `;
+        tableBody.appendChild(row);
+      });
+      renderSummary();
+    }
+
+    function savePlayers() {
+      localStorage.setItem("players", JSON.stringify(players));
+    }
+
+    function renderSummary() {
+      let summaryData = { "Portiere": 0, "Difensore": 0, "Centrocampista": 0, "Attaccante": 0 };
+      let totaleSpeso = 0;
+
+      players.forEach(player => {
+        summaryData[player.ruolo] += parseInt(player.crediti);
+        totaleSpeso += parseInt(player.crediti);
+      });
+
+      let totaleMancante = budgetTotale - totaleSpeso;
+
+      summaryTableBody.innerHTML = `
+        <tr>
+          <td>${summaryData["Portiere"]}</td>
+          <td>${summaryData["Difensore"]}</td>
+          <td>${summaryData["Centrocampista"]}</td>
+          <td>${summaryData["Attaccante"]}</td>
+          <td>${totaleMancante}</td>
+        </tr>
+      `;
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const nome = document.getElementById("nome").value.trim();
+      const crediti = document.getElementById("crediti").value;
+      const ruolo = document.getElementById("ruolo").value;
+      if (nome && crediti && ruolo) {
+        players.push({ nome, crediti: parseInt(crediti), ruolo });
+        savePlayers();
+        renderTable();
+        form.reset();
+      }
+    });
+
+    window.deletePlayer = function(index) {
+      players.splice(index, 1);
+      savePlayers();
+      renderTable();
+    };
+
+    window.deleteAll = function() {
+      if (confirm("Vuoi eliminare tutti i calciatori dalla lista?")) {
+        players = [];
+        savePlayers();
+        renderTable();
+      }
+    };
+
+    window.toggleFooter = function() {
+      footerSummary.classList.toggle("collapsed");
+    };
+
+    window.openInfo = function() {
+      infoModal.style.display = "flex";
+    };
+
+    window.closeInfo = function() {
+      infoModal.style.display = "none";
+    };
+
+    renderTable();
+  </script>
+</body>
+</html>
