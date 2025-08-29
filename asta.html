@@ -29,26 +29,38 @@
     .options-btn:hover {
       background-color: #0056b3;
     }
+
+    /* Form ordinato */
     form {
       margin: 20px auto;
       display: flex;
       gap: 10px;
-      flex-wrap: wrap;
       justify-content: center;
       max-width: 800px;
+      flex-wrap: wrap;
+      align-items: center;
     }
-    input, select, button {
+    form input, form select, form button {
       padding: 10px;
       font-size: 14px;
       border: 1px solid #ccc;
       border-radius: 5px;
     }
-    input[autocomplete="off"] {
-      autocomplete: off;
+    form input, form select {
+      flex: 1;
+      min-width: 150px;
     }
-    button {
+    form button {
+      flex: 0 0 auto;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
       cursor: pointer;
     }
+    form button:hover {
+      background-color: #45a049;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -159,12 +171,36 @@
     .summary th {
       background: #eee;
     }
+
+    .budget-input {
+      margin: 10px 0;
+      text-align: left;
+    }
+    .budget-input label {
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    .budget-input input {
+      width: 120px;
+      padding: 6px;
+    }
+
+    /* Mobile */
+    @media (max-width: 600px) {
+      form {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      form input, form select, form button {
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
   <h1>Gestore Asta</h1>
 
-  <!-- Pulsante Opzioni sotto al titolo -->
+  <!-- Pulsante Opzioni -->
   <button class="options-btn" onclick="openOptions()">⚙️ Opzioni</button>
 
   <form id="playerForm" autocomplete="off">
@@ -200,6 +236,13 @@
       <button class="delete-all-btn" onclick="deleteAll()">🗑️ Elimina Tutto</button>
       <button class="info-btn" onclick="openInfo()">ℹ️ Info</button>
 
+      <!-- Campo Budget -->
+      <div class="budget-input">
+        <label for="budgetInput">Budget:</label>
+        <input type="number" id="budgetInput" value="1000" min="0">
+      </div>
+
+      <!-- Riepilogo crediti -->
       <div class="summary" id="summaryBox">
         <table>
           <thead>
@@ -208,7 +251,7 @@
               <th><span class="role-label role-D">D</span></th>
               <th><span class="role-label role-C">C</span></th>
               <th><span class="role-label role-A">A</span></th>
-              <th>Totale Mancante</th>
+              <th>Rimanenti</th>
             </tr>
           </thead>
           <tbody id="summaryTableBody"></tbody>
@@ -226,7 +269,7 @@
       <p>📋 Il giocatore verrà aggiunto alla tabella principale e i dati saranno salvati automaticamente sul tuo browser.</p>
       <p>🔄 Anche se chiudi o ricarichi la pagina, i dati resteranno disponibili (salvati in locale).</p>
       <p>🗑️ Puoi eliminare singoli giocatori cliccando la <b>X</b> rossa, oppure usare <b>Elimina tutto</b> per svuotare la lista.</p>
-      <p>📊 Il riepilogo mostra i crediti spesi per ruolo e il totale mancante dal budget.</p>
+      <p>📊 Il riepilogo mostra i crediti spesi per ruolo e i crediti <b>rimanenti</b> dal budget impostato.</p>
     </div>
   </div>
 
@@ -237,8 +280,9 @@
     const summaryTableBody = document.getElementById("summaryTableBody");
     const optionsModal = document.getElementById("optionsModal");
     const infoModal = document.getElementById("infoModal");
+    const budgetInput = document.getElementById("budgetInput");
 
-    const budgetTotale = 1000;
+    let budgetTotale = parseInt(budgetInput.value);
     let players = JSON.parse(localStorage.getItem("players")) || [];
 
     const rolesOrder = ["Portiere", "Difensore", "Centrocampista", "Attaccante"];
@@ -282,14 +326,14 @@
         summaryData[player.ruolo] += parseInt(player.crediti);
         totaleSpeso += parseInt(player.crediti);
       });
-      let totaleMancante = budgetTotale - totaleSpeso;
+      let rimanenti = budgetTotale - totaleSpeso;
       summaryTableBody.innerHTML = `
         <tr>
           <td>${summaryData["Portiere"]}</td>
           <td>${summaryData["Difensore"]}</td>
           <td>${summaryData["Centrocampista"]}</td>
           <td>${summaryData["Attaccante"]}</td>
-          <td>${totaleMancante}</td>
+          <td>${rimanenti}</td>
         </tr>
       `;
     }
@@ -334,6 +378,12 @@
     window.closeInfo = function() {
       infoModal.style.display = "none";
     };
+
+    // Aggiorna budget dinamicamente
+    budgetInput.addEventListener("input", () => {
+      budgetTotale = parseInt(budgetInput.value) || 0;
+      renderSummary();
+    });
 
     renderTable();
   </script>
