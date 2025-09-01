@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Word Count Analysis Tool</title>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f6f8;
+      color: #333;
+      line-height: 1.6;
+    }
+    header {
+      background: #0073e6;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.8rem;
+    }
+    main {
+      max-width: 900px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+    .instructions {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      margin-bottom: 25px;
+    }
+    .note {
+      margin-top: 10px;
+      padding: 10px;
+      background: #fff3cd;
+      border: 1px solid #ffeeba;
+      border-radius: 6px;
+      color: #856404;
+      font-size: 0.95rem;
+    }
+    input[type="file"], .generate-btn, .back-btn {
+      display: block;
+      margin: 15px 0 30px 0;
+      padding: 10px 16px;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    .generate-btn, .back-btn {
+      background: #0073e6;
+      color: white;
+      cursor: pointer;
+      border: none;
+      transition: background 0.2s;
+    }
+    .generate-btn:hover, .back-btn:hover {
+      background: #005bb5;
+    }
+    h2 {
+      margin-top: 40px;
+      color: #0073e6;
+      border-bottom: 2px solid #0073e6;
+      padding-bottom: 5px;
+      display: none;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 15px;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+    }
+    th, td {
+      padding: 10px 14px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+    th {
+      background-color: #0073e6;
+      color: white;
+      font-weight: bold;
+    }
+    tr:hover {
+      background-color: #f1f9ff;
+    }
+    .total-row {
+      font-weight: bold;
+      background: #e8f4ff;
+    }
+    .copy-link {
+      color: #fff;
+      text-decoration: underline;
+      font-size: 0.9rem;
+      margin-left: 8px;
+      cursor: pointer;
+    }
+    .download-btn {
+      display: inline-block;
+      margin-bottom: 40px;
+      padding: 8px 16px;
+      background: #0073e6;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .download-btn:hover {
+      background: #005bb5;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Word Count Analysis Tool</h1>
+  </header>
+  <main>
+    <div class="instructions" id="instructionsBox">
+      <h2>How to use the tool</h2>
+      <p>
+        Upload a CSV file with translation statistics to analyze the word counts by project and fuzzy breakdown.  
+        Then click <strong>Generate Tables</strong> to create the results.
+      </p>
+      <ul>
+        <li><strong>Fuzzy Breakdown 0–79.9%</strong>: Shows word counts for Post-Edit and Translation.</li>
+        <li><strong>Fuzzy Breakdown 80–100%</strong>: Combines 80–99.9% and 100% matches into one group, showing totals per project.</li>
+      </ul>
+      <p>
+        Use the <u>Copy</u> links in the headers to copy column values to your clipboard.  
+        Click <strong>Download as Excel</strong> to export the results.
+      </p>
+      <div class="note">
+        ⚠️ The column <strong>Fuzzy Breakdown</strong> must contain exactly these values:  
+        <code>0 - 79.9%</code>, <code>80 - 99.9%</code>, <code>100%</code>
+      </div>
+      <h2>How to trust this website</h2>
+      <p>
+        Your data is safe: this tool is plain HTML and JavaScript.  
+        It runs entirely in your browser, does not upload any file to a server, and works offline.  
+        If you want to verify this, right-click on the page and select <strong>View Page Source</strong>.  
+        You can copy the code and even send it to ChatGPT for review.
+      </p>
+    </div>
+
+    <input type="file" id="csvFile" accept=".csv">
+    <button class="generate-btn" id="generateBtn" style="display:none;">Generate Tables</button>
+    <button class="back-btn" id="backBtn" style="display:none;">Go Back</button>
+
+    <h2 id="table1Title">Fuzzy Breakdown 0 - 79.9%</h2>
+    <div id="table1"></div>
+
+    <h2 id="table2Title">Fuzzy Breakdown 80 - 100%</h2>
+    <div id="table2"></div>
+  </main>
+
+  <script>
+    let parsedData = null;
+
+    document.getElementById('csvFile').addEventListener('change', function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          parsedData = results.data;
+          document.getElementById('generateBtn').style.display = "block";
+        }
+      });
+    });
+
+    document.getElementById('generateBtn').addEventListener('click', function () {
+      if (parsedData) {
+        // hide instructions
+        document.getElementById('instructionsBox').style.display = "none";
+        document.getElementById('backBtn').style.display = "block";
+
+        processCSV(parsedData);
+      }
+    });
+
+    document.getElementById('backBtn').addEventListener('click', function () {
+      parsedData = null;
+      document.getElementById('csvFile').value = "";
+      document.getElementById('generateBtn').style.display = "none";
+      document.getElementById('backBtn').style.display = "none";
+      document.getElementById('instructionsBox').style.display = "block";
+      document.getElementById('table1').innerHTML = "";
+      document.getElementById('table2').innerHTML = "";
+      document.getElementById('table1Title').style.display = "none";
+      document.getElementById('table2Title').style.display = "none";
+    });
+
+    function normalizeWorkflow(value) {
+      if (!value) return "";
+      return value.trim().replace("-", " "); // "Post-Edit" -> "Post Edit"
+    }
+
+    function processCSV(data) {
+      let table1Data = {};
+      let table2Data = {};
+
+      data.forEach(row => {
+        const project = (row["Project"] || "").trim();
+        const fuzzy = (row["Fuzzy Breakdown"] || "").trim();
+        const workflow = normalizeWorkflow(row["Workflow Step"] || "");
+        const wordCount = parseInt((row["Word Count"] || "0").trim()) || 0;
+
+        if (fuzzy === "0 - 79.9%") {
+          if (!table1Data[project]) {
+            table1Data[project] = { Project: project, PostEdit: 0, Translation: 0 };
+          }
+          if (workflow === "Post Edit") {
+            table1Data[project].PostEdit += wordCount;
+          } else if (workflow === "Translation") {
+            table1Data[project].Translation += wordCount;
+          }
+        }
+
+        if (fuzzy === "80 - 99.9%" || fuzzy === "100%") {
+          if (!table2Data[project]) {
+            table2Data[project] = { Project: project, PostEdit: 0, Translation: 0 };
+          }
+          if (workflow === "Post Edit") {
+            table2Data[project].PostEdit += wordCount;
+          } else if (workflow === "Translation") {
+            table2Data[project].Translation += wordCount;
+          }
+        }
+      });
+
+      renderTable("table1", Object.values(table1Data));
+      renderTable("table2", Object.values(table2Data));
+      if (Object.keys(table1Data).length > 0) document.getElementById("table1Title").style.display = "block";
+      if (Object.keys(table2Data).length > 0) document.getElementById("table2Title").style.display = "block";
+    }
+
+    function renderTable(containerId, data) {
+      if (data.length === 0) {
+        document.getElementById(containerId).innerHTML = "<p>No data available</p>";
+        return;
+      }
+
+      let totalPostEdit = 0;
+      let totalTranslation = 0;
+
+      let html = `<table id="${containerId}Table"><thead><tr>
+        <th>Project <span class="copy-link" onclick="copyColumn('${containerId}',0)">Copy</span></th>
+        <th>Word Count (Post Edit) <span class="copy-link" onclick="copyColumn('${containerId}',1)">Copy</span></th>
+        <th>Word Count (Translation) <span class="copy-link" onclick="copyColumn('${containerId}',2)">Copy</span></th>
+      </tr></thead><tbody>`;
+
+      data.forEach(row => {
+        html += `<tr>
+          <td data-label="Project">${row.Project}</td>
+          <td data-label="Word Count (Post Edit)">${row.PostEdit}</td>
+          <td data-label="Word Count (Translation)">${row.Translation}</td>
+        </tr>`;
+        totalPostEdit += row.PostEdit;
+        totalTranslation += row.Translation;
+      });
+
+      html += `<tr class="total-row">
+        <td>Total</td>
+        <td>${totalPostEdit}</td>
+        <td>${totalTranslation}</td>
+      </tr>`;
+
+      html += "</tbody></table>";
+      html += `<button class="download-btn" onclick="downloadTableAsExcel('${containerId}')">Download as Excel</button>`;
+      document.getElementById(containerId).innerHTML = html;
+    }
+
+    function copyColumn(containerId, colIndex) {
+      const table = document.querySelector(`#${containerId} table`);
+      const rows = table.querySelectorAll("tbody tr");
+      let values = [];
+      rows.forEach(r => {
+        const cells = r.querySelectorAll("td");
+        if (cells[colIndex] && cells[0].innerText !== "Total") {
+          values.push(cells[colIndex].innerText);
+        }
+      });
+      navigator.clipboard.writeText(values.join("\n"))
+        .then(() => alert("Column copied to clipboard!"))
+        .catch(err => console.error("Copy error:", err));
+    }
+
+    function downloadTableAsExcel(containerId) {
+      const table = document.querySelector(`#${containerId}Table`);
+      const clone = table.cloneNode(true);
+      clone.querySelectorAll(".copy-link").forEach(el => el.remove());
+      const wb = XLSX.utils.table_to_book(clone, { sheet: containerId });
+      XLSX.writeFile(wb, containerId + ".xlsx");
+    }
+  </script>
+</body>
+</html>
