@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Next Step</title>
+  <meta name="theme-color" content="#0ea5e9" />
+  <style>
+    :root{
+      --bg: #0b1220;            /* dark background for OLED */
+      --card: #0f172a;          /* slate-900 */
+      --muted: #94a3b8;         /* slate-400 */
+      --txt: #e5e7eb;           /* gray-200 */
+      --accent: #0ea5e9;        /* sky-500 */
+      --accent-2: #22c55e;      /* green-500 */
+      --danger: #ef4444;        /* red-500 */
+      --shadow: 0 10px 24px rgba(0,0,0,.35);
+      --radius: 18px;
+    }
+
+    *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body{ height:100%; }
+    body{
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+      background: radial-gradient(1200px 800px at 50% -200px, rgba(14,165,233,.12), transparent 60%), var(--bg);
+      color: var(--txt);
+    }
+
+    /* App shell */
+    .app{ max-width: 520px; margin:0 auto; min-height:100dvh; display:flex; flex-direction:column; padding: env(safe-area-inset-top) env(safe-area-inset-right) calc(env(safe-area-inset-bottom) + 72px) env(safe-area-inset-left); }
+
+    header{
+      position: sticky; top: 0; z-index: 5;
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      background: linear-gradient(180deg, rgba(11,18,32,0.9), rgba(11,18,32,0.75) 60%, transparent);
+      padding: 20px 16px 10px;
+      backdrop-filter: saturate(1.2) blur(6px);
+    }
+    .brand{ display:flex; align-items:center; gap:10px; font-weight: 700; letter-spacing:.2px; }
+    .brand .dot{ width:10px; height:10px; border-radius:50%; background: var(--accent-2); box-shadow:0 0 0 6px rgba(34,197,94,.15); }
+    .brand span{ font-size:20px; }
+
+    .back-btn{
+      display:none; border:1px solid rgba(148,163,184,.2); background:rgba(15,23,42,.7); color:var(--txt);
+      padding:10px 12px; border-radius:12px; box-shadow: var(--shadow); font-weight:600; text-decoration:none;
+      touch-action: manipulation; user-select:none;
+    }
+    .back-btn:active{ transform: translateY(1px); }
+
+    main{ flex:1; display:grid; }
+
+    /* Views */
+    .view{ display:none; padding: 6px 16px 16px; }
+    .view.active{ display:block; }
+
+    /* HOME */
+    .welcome{ margin: 6px 0 14px; color: var(--muted); font-size:14px; }
+
+    .grid{ display:grid; grid-template-columns: 1fr; gap:16px; }
+
+    .card{
+      display:flex; align-items:center; justify-content:space-between; gap:16px;
+      background: linear-gradient(180deg, rgba(15,23,42,.85), rgba(15,23,42,.6));
+      border:1px solid rgba(148,163,184,.18);
+      border-radius: var(--radius);
+      padding: 18px 16px; box-shadow: var(--shadow);
+      text-decoration:none; color:inherit;
+      touch-action: manipulation;
+    }
+    .card:active{ transform: scale(.99); }
+
+    .card h2{ margin:0; font-size:18px; }
+    .pill{ font-size:12px; color:#0b1220; background: var(--accent); padding:6px 10px; border-radius:999px; font-weight:700; }
+    .card.urgent{ border-color: rgba(239,68,68,.35); box-shadow: 0 10px 24px rgba(239,68,68,.12); }
+    .card.urgent .pill{ background: var(--danger); color: #fff; }
+
+    /* LIST VIEW */
+    .list-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin: 2px 2px 12px; }
+    .list-title{ font-size:22px; font-weight:800; letter-spacing:.2px; display:flex; align-items:center; gap:10px; }
+    .count{ font-size:12px; color:var(--muted); }
+
+    .todos{ display:flex; flex-direction:column; gap:10px; }
+
+    .todo{ display:flex; align-items:center; gap:12px; background: rgba(15,23,42,.7); border:1px solid rgba(148,163,184,.18); border-radius: 16px; padding: 14px 12px; box-shadow: var(--shadow); }
+    .todo button.as-text{ all:unset; cursor:pointer; width:100%; padding:6px 4px; line-height:1.3; }
+
+    .empty{ text-align:center; color:var(--muted); padding: 24px 8px; }
+
+    /* Add bar fixed at bottom */
+    .addbar{ position: fixed; left:50%; bottom: max(8px, env(safe-area-inset-bottom)); transform: translateX(-50%); width: min(520px, calc(100% - 16px)); display:flex; gap:10px; align-items:center; background: rgba(15,23,42,.9); border:1px solid rgba(148,163,184,.25); border-radius: 16px; padding: 10px; box-shadow: var(--shadow); z-index: 10; }
+    .addbar input{ flex:1; font-size:16px; padding: 14px 12px; border-radius: 12px; border:1px solid rgba(148,163,184,.2); background:#0b1220; color:var(--txt); }
+    .addbar button{ font-weight:800; font-size:16px; padding: 14px 16px; border-radius: 12px; border:none; background: var(--accent); color:#001018; box-shadow: var(--shadow); touch-action: manipulation; user-select:none; }
+    .addbar button:active{ transform: translateY(1px); }
+
+    /* Modal */
+    .modal-backdrop{ position:fixed; inset:0; background: rgba(0,0,0,.5); display:none; align-items:flex-end; justify-content:center; padding: 12px; z-index: 30; }
+    .modal-backdrop.show{ display:flex; }
+    .modal{ width:min(520px, 100%); background: var(--card); border:1px solid rgba(148,163,184,.25); border-radius: 16px; box-shadow: var(--shadow); padding: 14px; }
+    .modal h3{ margin: 6px 6px 12px; font-size:18px; }
+    .actions{ display:flex; flex-direction:column; gap:10px; }
+    .btn{ display:flex; align-items:center; justify-content:center; gap:10px; border:none; border-radius: 12px; padding: 14px; font-weight:800; }
+    .btn.primary{ background: var(--accent-2); color:#05120a; }
+    .btn.danger{ background: var(--danger); color:#fff; }
+    .btn.ghost{ background: rgba(148,163,184,.12); color: var(--txt); }
+
+    /* Animations */
+    .fade-out{ animation: fadeOut .28s ease forwards; }
+    @keyframes fadeOut{ to{ opacity:0; transform: translateY(6px) scale(.98); } }
+
+    /* Desktop tweaks */
+    @media (min-width:640px){ .grid{ grid-template-columns: 1fr 1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header>
+      <a class="back-btn" id="backBtn" href="#home" aria-label="Back">← Home</a>
+      <div class="brand">
+        <span class="dot" aria-hidden="true"></span>
+        <span>Next Step</span>
+      </div>
+      <div style="width:64px;" aria-hidden="true"></div>
+    </header>
+
+    <main>
+      <!-- HOME VIEW -->
+      <section class="view active" id="home" role="region" aria-label="Home">
+        <p class="welcome">Tap a board to manage your tasks.</p>
+        <div class="grid">
+          <a class="card urgent" href="#urgent">
+            <h2>Urgenti</h2>
+            <span class="pill" id="badgeUrgent">0</span>
+          </a>
+          <a class="card" href="#normal">
+            <h2>Non urgenti</h2>
+            <span class="pill" id="badgeNormal">0</span>
+          </a>
+          <a class="card" href="#completed">
+            <h2>Completate</h2>
+            <span class="pill" id="badgeCompleted">0</span>
+          </a>
+        </div>
+      </section>
+
+      <!-- URGENT LIST VIEW -->
+      <section class="view" id="urgent" role="region" aria-label="Urgent tasks">
+        <div class="list-header">
+          <div class="list-title">🔥 Urgenti <span class="count" id="countUrgent"></span></div>
+        </div>
+        <div class="todos" id="todosUrgent"></div>
+        <p class="empty" id="emptyUrgent" hidden>Nessuna attività urgente. Aggiungine una sotto.</p>
+      </section>
+
+      <!-- NORMAL LIST VIEW -->
+      <section class="view" id="normal" role="region" aria-label="Non-urgent tasks">
+        <div class="list-header">
+          <div class="list-title">🌿 Non urgenti <span class="count" id="countNormal"></span></div>
+        </div>
+        <div class="todos" id="todosNormal"></div>
+        <p class="empty" id="emptyNormal" hidden>Nessuna attività. Aggiungine una sotto.</p>
+      </section>
+
+      <!-- COMPLETED LIST VIEW -->
+      <section class="view" id="completed" role="region" aria-label="Completed tasks">
+        <div class="list-header">
+          <div class="list-title">✅ Completate <span class="count" id="countCompleted"></span></div>
+        </div>
+        <div class="todos" id="todosCompleted"></div>
+        <p class="empty" id="emptyCompleted" hidden>Nessuna attività completata.</p>
+      </section>
+    </main>
+
+    <!-- Add bar (shown on list views except completed) -->
+    <form class="addbar" id="addBar" hidden autocomplete="off">
+      <input id="taskInput" name="task" type="text" inputmode="text" placeholder="Aggiungi attività…" aria-label="Nuova attività" required />
+      <button id="addBtn" type="submit">Add</button>
+    </form>
+
+    <!-- Modal for task actions -->
+    <div class="modal-backdrop" id="modal">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <h3 id="modalTitle">Azione</h3>
+        <div class="actions" id="modalActions">
+          <!-- buttons injected dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Simple SPA Router + Store ---
+    const $ = (sel, ctx=document) => ctx.querySelector(sel);
+    const app = $('#app');
+
+    const KEYS = {
+      urgent: 'nextstep_tasks_urgent',
+      normal: 'nextstep_tasks_normal',
+      completed: 'nextstep_tasks_completed'
+    };
+
+    const store = {
+      read(list){
+        try{ return JSON.parse(localStorage.getItem(KEYS[list])) || []; }
+        catch{ return []; }
+      },
+      write(list, items){ localStorage.setItem(KEYS[list], JSON.stringify(items)); },
+      add(list, text){
+        const items = store.read(list);
+        items.push({ id: crypto.randomUUID?.() || String(Date.now()+Math.random()), text: text.trim() });
+        store.write(list, items);
+        return items;
+      },
+      remove(list, id){
+        const items = store.read(list).filter(it => it.id !== id);
+        store.write(list, items);
+        return items;
+      },
+      complete(fromList, id){
+        // move item to completed with timestamp
+        const src = store.read(fromList);
+        const idx = src.findIndex(it => it.id === id);
+        if(idx === -1) return;
+        const [item] = src.splice(idx,1);
+        store.write(fromList, src);
+        const dest = store.read('completed');
+        dest.unshift({ id: item.id, text: item.text, doneAt: Date.now() });
+        store.write('completed', dest);
+      }
+    };
+
+    // Views & elements
+    const views = { home: $('#home'), urgent: $('#urgent'), normal: $('#normal'), completed: $('#completed') };
+
+    const DOM = {
+      backBtn: $('#backBtn'),
+      addBar: $('#addBar'),
+      input: $('#taskInput'),
+      addBtn: $('#addBtn'),
+
+      // Urgent
+      todosUrgent: $('#todosUrgent'),
+      emptyUrgent: $('#emptyUrgent'),
+      countUrgent: $('#countUrgent'),
+      badgeUrgent: $('#badgeUrgent'),
+
+      // Normal
+      todosNormal: $('#todosNormal'),
+      emptyNormal: $('#emptyNormal'),
+      countNormal: $('#countNormal'),
+      badgeNormal: $('#badgeNormal'),
+
+      // Completed
+      todosCompleted: $('#todosCompleted'),
+      emptyCompleted: $('#emptyCompleted'),
+      countCompleted: $('#countCompleted'),
+      badgeCompleted: $('#badgeCompleted'),
+
+      modal: $('#modal'),
+      modalActions: $('#modalActions'),
+      modalTitle: $('#modalTitle')
+    };
+
+    // Render helpers
+    function renderList(kind){
+      const items = store.read(kind);
+      let listEl, emptyEl, countEl, badgeEl;
+      if(kind === 'urgent'){ listEl = DOM.todosUrgent; emptyEl = DOM.emptyUrgent; countEl = DOM.countUrgent; badgeEl = DOM.badgeUrgent; }
+      else if(kind === 'normal'){ listEl = DOM.todosNormal; emptyEl = DOM.emptyNormal; countEl = DOM.countNormal; badgeEl = DOM.badgeNormal; }
+      else { listEl = DOM.todosCompleted; emptyEl = DOM.emptyCompleted; countEl = DOM.countCompleted; badgeEl = DOM.badgeCompleted; }
+
+      listEl.innerHTML = '';
+      emptyEl.hidden = items.length !== 0;
+
+      items.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'todo';
+        const btn = document.createElement('button');
+        btn.className = 'as-text';
+        btn.textContent = kind === 'completed' && item.doneAt ? `${item.text}  •  ${timeAgo(item.doneAt)}` : item.text;
+        btn.addEventListener('click', () => openTaskMenu(kind, item));
+        row.appendChild(btn);
+        listEl.appendChild(row);
+      });
+
+      countEl.textContent = items.length ? `• ${items.length}` : '';
+      if(badgeEl) badgeEl.textContent = String(items.length);
+    }
+
+    function timeAgo(ts){
+      const s = Math.floor((Date.now()-ts)/1000);
+      if(s < 60) return s + 's ago';
+      const m = Math.floor(s/60); if(m < 60) return m + 'm ago';
+      const h = Math.floor(m/60); if(h < 24) return h + 'h ago';
+      const d = Math.floor(h/24); return d + 'd ago';
+    }
+
+    // Modal logic
+    let currentCtx = null; // { kind, id, text }
+    function openTaskMenu(kind, item){
+      currentCtx = { kind, id: item.id, text: item.text };
+      DOM.modalTitle.textContent = item.text;
+      DOM.modalActions.innerHTML = '';
+      if(kind !== 'completed'){
+        addActionButton('Completa', 'primary', () => { completeTask(kind, item.id); });
+      }
+      addActionButton('Elimina', 'danger', () => { deleteTask(kind, item.id); });
+      addActionButton('Annulla', 'ghost', closeModal);
+      DOM.modal.classList.add('show');
+    }
+    function addActionButton(label, style, handler){
+      const b = document.createElement('button');
+      b.className = `btn ${style}`; b.textContent = label; b.addEventListener('click', handler);
+      DOM.modalActions.appendChild(b);
+    }
+    function closeModal(){ DOM.modal.classList.remove('show'); currentCtx = null; }
+    DOM.modal.addEventListener('click', (e) => { if(e.target === DOM.modal) closeModal(); });
+
+    function completeTask(kind, id){
+      closeModal();
+      store.complete(kind, id);
+      renderList(kind);
+      renderList('completed');
+    }
+    function deleteTask(kind, id){
+      closeModal();
+      store.remove(kind, id);
+      renderList(kind);
+    }
+
+    // Router
+    function show(viewId){
+      Object.values(views).forEach(v => v.classList.remove('active'));
+      views[viewId].classList.add('active');
+
+      const onList = viewId !== 'home';
+      DOM.backBtn.style.display = onList ? 'inline-flex' : 'none';
+      // Hide add bar on completed
+      DOM.addBar.hidden = !(viewId === 'urgent' || viewId === 'normal');
+
+      // Update lists; no auto-focus on input
+      if(onList){
+        if(viewId === 'urgent') renderList('urgent');
+        else if(viewId === 'normal') renderList('normal');
+        else if(viewId === 'completed') renderList('completed');
+      } else {
+        renderList('urgent');
+        renderList('normal');
+        renderList('completed');
+      }
+
+      app.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    window.addEventListener('hashchange', handleRoute);
+    function handleRoute(){
+      const hash = location.hash.replace('#','') || 'home';
+      if(!(hash in views)) return show('home');
+      show(hash);
+    }
+
+    // Add new task
+    DOM.addBar.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const text = DOM.input.value.trim();
+      if(!text) return;
+      const kind = location.hash.includes('urgent') ? 'urgent' : 'normal';
+      store.add(kind, text);
+      DOM.input.value = '';
+      renderList(kind);
+    });
+
+    // First paint
+    if(!location.hash) location.hash = '#home';
+    handleRoute();
+  </script>
+</body>
+</html>
