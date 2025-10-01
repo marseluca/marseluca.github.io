@@ -128,26 +128,25 @@
     <div class="instructions" id="instructionsBox">
       <h2>How to use the tool</h2>
       <p>
-        Upload a CSV file with translation statistics to analyze the word counts by project and fuzzy breakdown.  
+        Upload a CSV file with translation statistics to analyze the word counts by project and fuzzy breakdown.
         Then click <strong>Generate Tables</strong> to create the results.
       </p>
       <ul>
         <li><strong>Fuzzy Breakdown 0–79.9%</strong>: Shows word counts for Post-Edit and Translation.</li>
-        <li><strong>Fuzzy Breakdown 80–100%</strong>: Combines 80–99.9% and 100% matches into one group, showing totals per project.</li>
+        <li><strong>Fuzzy Breakdown 80–100%</strong>: Combines <em>80–99.9%</em>, <em>100%</em>, and <em>80–100%</em> (if present) into one group, showing totals per project.</li>
       </ul>
       <p>
-        Use the <u>Copy</u> links in the headers to copy column values to your clipboard.  
+        Use the <u>Copy</u> links in the headers to copy column values to your clipboard.
         Click <strong>Download as Excel</strong> to export the results.
       </p>
       <div class="note">
-        ⚠️ The column <strong>Fuzzy Breakdown</strong> must contain exactly these values:  
-        <code>0 - 79.9%</code>, <code>80 - 99.9%</code>, <code>100%</code>
+        ⚠️ The column <strong>Fuzzy Breakdown</strong> is matched flexibly. Accepted forms include: <code>0 - 79.9%</code>, <code>0–79.9%</code>, <code>80 - 99.9%</code>, <code>80–99.9%</code>, <code>100%</code>, and <code>80 - 100%</code> / <code>80–100%</code>.
       </div>
       <h2>How to trust this website</h2>
       <p>
-        Your data is safe: this tool is plain HTML and JavaScript.  
-        It runs entirely in your browser, does not upload any file to a server, and works offline.  
-        If you want to verify this, right-click on the page and select <strong>View Page Source</strong>.  
+        Your data is safe: this tool is plain HTML and JavaScript.
+        It runs entirely in your browser, does not upload any file to a server, and works offline.
+        If you want to verify this, right-click on the page and select <strong>View Page Source</strong>.
         You can copy the code and even send it to ChatGPT for review.
       </p>
     </div>
@@ -204,7 +203,37 @@
 
     function normalizeWorkflow(value) {
       if (!value) return "";
-      return value.trim().replace("-", " "); // "Post-Edit" -> "Post Edit"
+      return value.trim().replace("-", " "); // "Post-Edit" -> "Post Edit" (first dash)
+    }
+
+    // NEW: normalize fuzzy labels to a compact canonical form
+    // Returns one of: "0-79.9", "80-99.9", "100", "80-100", or "" if unknown
+    function normalizeFuzzy(value) {
+      if (!value) return "";
+      let v = String(value)
+        .trim()
+        .replace(/[–—]/g, "-")     // normalize en/em dashes to hyphen
+        .replace(/\s+/g, " ")      // collapse spaces
+        .replace(/\s*-\s*/g, "-") // trim spaces around hyphen
+        .replace(/%/g, "");         // drop percent sign
+      v = v.toLowerCase();
+
+      // Known patterns
+      if (v === "0-79.9") return "0-79.9";
+      if (v === "80-99.9") return "80-99.9";
+      if (v === "100") return "100";
+      if (v === "80-100") return "80-100";
+
+      // Fallbacks: try to detect numeric ranges like "80 - 100" or "0 - 79.9"
+      const m = v.match(/^(\d+(?:\.\d+)?)\-(\d+(?:\.\d+)?)$/);
+      if (m) {
+        const a = parseFloat(m[1]);
+        const b = parseFloat(m[2]);
+        if (a === 0 && Math.abs(b - 79.9) < 1e-6) return "0-79.9";
+        if (a === 80 && Math.abs(b - 99.9) < 1e-6) return "80-99.9";
+        if (a === 80 && b === 100) return "80-100";
+      }
+      return ""; // unknown / unhandled
     }
 
     function processCSV(data) {
@@ -213,11 +242,12 @@
 
       data.forEach(row => {
         const project = (row["Project"] || "").trim();
-        const fuzzy = (row["Fuzzy Breakdown"] || "").trim();
+        const fuzzyRaw = (row["Fuzzy Breakdown"] || "").trim();
+        const fuzzy = normalizeFuzzy(fuzzyRaw);
         const workflow = normalizeWorkflow(row["Workflow Step"] || "");
         const wordCount = parseInt((row["Word Count"] || "0").trim()) || 0;
 
-        if (fuzzy === "0 - 79.9%") {
+        if (fuzzy === "0-79.9") {
           if (!table1Data[project]) {
             table1Data[project] = { Project: project, PostEdit: 0, Translation: 0 };
           }
@@ -228,7 +258,7 @@
           }
         }
 
-        if (fuzzy === "80 - 99.9%" || fuzzy === "100%") {
+        if (fuzzy === "80-99.9" || fuzzy === "100" || fuzzy === "80-100") {
           if (!table2Data[project]) {
             table2Data[project] = { Project: project, PostEdit: 0, Translation: 0 };
           }
