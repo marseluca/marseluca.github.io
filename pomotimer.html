@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pomodoro Focus Timer</title>
+
+  <style>
+    :root {
+      /* Palette autunnale chiara */
+      --bg-page: #fff9f2;          /* crema chiaro */
+      --bg-card: #fff3e0;          /* pesca / sabbia calda */
+      --accent:  #c74f2b;          /* terracotta / ruggine */
+      --accent-soft: rgba(199,79,43,0.08);
+      --accent-border: rgba(199,79,43,0.4);
+
+      --text-main: #3a2a1c;        /* marrone scuro leggibile */
+      --text-dim: #8a6a4f;         /* marrone tenue */
+
+      --danger-bg: rgba(183,45,34,0.08);
+      --danger-text: #b72d22;      /* rosso mattone */
+
+      --skip-bg: rgba(217,119,6,0.08); /* arancio foglia secca trasparente */
+      --skip-text: #b45309;           /* arancio bruciato */
+
+      --radius-xl: 1.5rem;
+      --shadow-card: 0 30px 80px rgba(0,0,0,0.08);
+      --font-stack: system-ui, -apple-system, BlinkMacSystemFont,
+        "Inter", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      background:
+        radial-gradient(circle at 20% 20%, #fff3e0 0%, #fff9f2 60%),
+        var(--bg-page);
+      color: var(--text-main);
+      font-family: var(--font-stack);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .app-shell {
+      width: 100%;
+      max-width: 480px;
+      background-color: var(--bg-card);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-card);
+      padding: 2rem 1.5rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      position: relative;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      flex-wrap: wrap;
+      row-gap: .5rem;
+    }
+
+    header .brand {
+      font-weight: 600;
+      color: var(--text-main);
+      font-size: 0.95rem;
+      letter-spacing: -0.03em;
+      display: flex;
+      align-items: baseline;
+      gap: 0.4rem;
+    }
+
+    header .tag {
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 0.7rem;
+      font-weight: 500;
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.5rem;
+      border: 1px solid var(--accent-border);
+    }
+
+    /* --- Viste --- */
+    .view {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 1.5rem;
+    }
+    .view.active {
+      display: flex;
+    }
+
+    /* --- TIMER VIEW --- */
+    .timer-display {
+      font-size: clamp(3.5rem, 4vw + 2rem, 5rem);
+      font-weight: 600;
+      letter-spacing: -0.05em;
+      line-height: 1;
+      user-select: none;
+      font-variant-numeric: tabular-nums;
+
+      color: var(--accent);
+      text-shadow: 0 2px 2px rgba(0,0,0,0.05);
+    }
+
+    .session-label {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      font-weight: 500;
+      margin-top: -0.5rem;
+    }
+
+    .timer-controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+
+    button.action-btn {
+      appearance: none;
+      border: 0;
+      cursor: pointer;
+      border-radius: var(--radius-xl);
+      padding: 0.9rem 1.2rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      line-height: 1.2;
+      min-width: 110px;
+      transition: all 0.15s ease;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.07);
+      border: 1px solid rgba(0,0,0,0.05);
+      background-color: var(--accent);
+      color: #fff9f2;
+    }
+
+    button.action-btn.secondary {
+      background-color: rgba(0,0,0,0.04);
+      color: var(--text-dim);
+    }
+
+    button.action-btn.danger {
+      background-color: var(--danger-bg);
+      color: var(--danger-text);
+    }
+
+    button.action-btn.skip {
+      background-color: var(--skip-bg);
+      color: var(--skip-text);
+    }
+
+    button.action-btn:active {
+      transform: scale(0.97);
+    }
+
+    /* NAV AREA (timer view bottom row) */
+    .bottom-nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+
+    .nav-btn {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: 1px solid var(--accent-border);
+      font-weight: 600;
+      font-size: 0.8rem;
+      border-radius: 0.75rem;
+      padding: 0.6rem 0.9rem;
+      cursor: pointer;
+      min-width: 140px;
+      text-align: center;
+      line-height: 1.2;
+      box-shadow: 0 15px 30px rgba(0,0,0,0.07);
+    }
+    .nav-btn:active {
+      transform: scale(0.97);
+    }
+
+    /* --- STATS VIEW --- */
+    .stats-header {
+      width: 100%;
+      text-align: left;
+    }
+
+    .stats-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .stats-title-row h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: -0.04em;
+      color: var(--text-main);
+    }
+
+    .stats-title-row small {
+      color: var(--text-dim);
+      font-size: 0.75rem;
+      line-height: 1.2;
+    }
+
+    .table-wrapper {
+      width: 100%;
+      background-color: rgba(255,255,255,0.4);
+      border-radius: 1rem;
+      border: 1px solid rgba(0,0,0,0.07);
+      overflow-x: auto;
+      box-shadow: inset 0 0 40px rgba(0,0,0,0.03);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 360px;
+      font-size: 0.85rem;
+      color: var(--text-main);
+    }
+
+    thead {
+      background-color: rgba(0,0,0,0.03);
+      color: var(--text-dim);
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.75rem 1rem;
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-top: 1px solid rgba(0,0,0,0.06);
+    }
+
+    tbody tr:last-child {
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+    }
+
+    .delete-btn {
+      background: var(--danger-bg);
+      color: var(--danger-text);
+      font-weight: 600;
+      font-size: 0.75rem;
+      border: 1px solid rgba(0,0,0,0.05);
+      border-radius: 0.6rem;
+      padding: 0.4rem 0.6rem;
+      cursor: pointer;
+      line-height: 1.2;
+      min-width: 2.5rem;
+      text-align: center;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.07);
+    }
+    .delete-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* --- LOFI VIEW --- */
+    .lofi-header {
+      width: 100%;
+      text-align: left;
+    }
+
+    .lofi-header h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: -0.04em;
+      color: var(--text-main);
+    }
+
+    .lofi-header small {
+      color: var(--text-dim);
+      font-size: 0.75rem;
+      line-height: 1.2;
+    }
+
+    .lofi-frame-wrapper {
+      width: 100%;
+      background-color: rgba(255,255,255,0.4);
+      border-radius: 1rem;
+      border: 1px solid rgba(0,0,0,0.07);
+      box-shadow: inset 0 0 40px rgba(0,0,0,0.03);
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0;
+    }
+
+    .lofi-iframe {
+      width: 100%;
+      min-height: 200px;
+      border: 0;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.7rem;
+      color: var(--text-dim);
+    }
+
+    @media (min-width: 480px) {
+      .app-shell {
+        padding: 2rem;
+      }
+      .lofi-iframe {
+        min-height: 300px;
+      }
+    }
+
+    /* utility per l'accessibilità visiva di <h1> nascosto */
+    .visually-hidden {
+      position: absolute;
+      left: -9999px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <header>
+      <div class="brand">
+        <span>Pomodoro Focus</span>
+        <span class="tag">beta</span>
+      </div>
+      <div id="today-summary" aria-live="polite">
+        <!-- JS: "Oggi: 1h 15m · 2 skip" -->
+      </div>
+    </header>
+
+    <!-- TIMER VIEW -->
+    <section id="view-timer" class="view active" aria-labelledby="timer-heading">
+      <h1 id="timer-heading" class="visually-hidden">
+        Timer Pomodoro
+      </h1>
+
+      <div class="timer-display" id="timer-display">25:00</div>
+      <div class="session-label" id="session-label">Sessione di focus</div>
+
+      <div class="timer-controls">
+        <button class="action-btn" id="start-pause-btn">Start</button>
+        <button class="action-btn secondary" id="reset-btn">Reset</button>
+        <button class="action-btn skip" id="skip-btn">Skip</button>
+      </div>
+
+      <div class="bottom-nav">
+        <button class="nav-btn" id="open-stats-btn">📊 Statistiche</button>
+        <button class="nav-btn" id="open-lofi-btn">🎶 LoFi Playlist</button>
+      </div>
+    </section>
+
+    <!-- STATS VIEW -->
+    <section id="view-stats" class="view" aria-labelledby="stats-heading">
+      <div class="stats-header">
+        <div class="stats-title-row">
+          <h2 id="stats-heading">Statistiche complessive</h2>
+          <small>Somma minuti concentrati e sessioni skippate / giorno</small>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Giorno</th>
+              <th>Ore totali</th>
+              <th>Skippate</th>
+              <th>Elimina</th>
+            </tr>
+          </thead>
+          <tbody id="stats-body">
+            <!-- rows injected by JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="bottom-nav">
+        <button class="nav-btn" id="back-to-timer-btn-stats">⏱ Torna al timer</button>
+      </div>
+    </section>
+
+    <!-- LOFI VIEW -->
+    <section id="view-lofi" class="view" aria-labelledby="lofi-heading">
+      <div class="lofi-header">
+        <h2 id="lofi-heading">LoFi · Focus Playlist</h2>
+        <small>Musica morbida per restare in flow 🍂</small>
+      </div>
+
+      <div class="lofi-frame-wrapper">
+        <!-- SoundCloud embed -->
+        <iframe
+          class="lofi-iframe"
+          allow="autoplay"
+          scrolling="no"
+          src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/adam-rashid-780928135/sets/lofi-bass&color=%23c74f2b&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"
+        ></iframe>
+      </div>
+
+      <div class="bottom-nav">
+        <button class="nav-btn" id="back-to-timer-btn-lofi">⏱ Torna al timer</button>
+      </div>
+    </section>
+
+    <footer>
+      Modalità Pomodoro 25/5 · dati salvati in locale
+    </footer>
+  </div>
+
+  <script>
+    /************************************
+     * STATE & CONSTANTS
+     ************************************/
+    const POMODORO_SECONDS = 25 * 60; // 25 min
+    let remainingSeconds = POMODORO_SECONDS;
+    let running = false;
+    let intervalId = null;
+
+    // statsData per giorno:
+    // {
+    //   "YYYY-MM-DD": {
+    //      totalMinutes: 75,
+    //      skippedCount: 2
+    //   }
+    // }
+    let statsData = {};
+
+    /************************************
+     * DOM REFS
+     ************************************/
+    const timerDisplayEl = document.getElementById("timer-display");
+    const startPauseBtn  = document.getElementById("start-pause-btn");
+    const resetBtn       = document.getElementById("reset-btn");
+    const skipBtn        = document.getElementById("skip-btn");
+    const sessionLabelEl = document.getElementById("session-label");
+
+    const openStatsBtn   = document.getElementById("open-stats-btn");
+    const openLofiBtn    = document.getElementById("open-lofi-btn");
+
+    const backToTimerBtnStats = document.getElementById("back-to-timer-btn-stats");
+    const backToTimerBtnLofi  = document.getElementById("back-to-timer-btn-lofi");
+
+    const viewTimer      = document.getElementById("view-timer");
+    const viewStats      = document.getElementById("view-stats");
+    const viewLofi       = document.getElementById("view-lofi");
+
+    const statsBodyEl    = document.getElementById("stats-body");
+    const todaySummaryEl = document.getElementById("today-summary");
+
+    /************************************
+     * UTIL
+     ************************************/
+    function pad2(n) {
+      return String(n).padStart(2, "0");
+    }
+
+    function formatMMSS(totalSeconds) {
+      const m = Math.floor(totalSeconds / 60);
+      const s = totalSeconds % 60;
+      return `${pad2(m)}:${pad2(s)}`;
+    }
+
+    function getTodayKey() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = pad2(now.getMonth() + 1);
+      const d = pad2(now.getDate());
+      return `${y}-${m}-${d}`;
+    }
+
+    function minutesToHoursStr(mins) {
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      return `${h}h ${m}m`;
+    }
+
+    function getOrInitToday() {
+      const key = getTodayKey();
+      if (!statsData[key]) {
+        statsData[key] = {
+          totalMinutes: 0,
+          skippedCount: 0,
+        };
+      }
+      return key;
+    }
+
+    /************************************
+     * LOCAL STORAGE
+     ************************************/
+    function loadStats() {
+      try {
+        const raw = localStorage.getItem("pomodoroStatsV2");
+        if (raw) {
+          statsData = JSON.parse(raw);
+        } else {
+          // migrazione vecchio formato
+          const legacyRaw = localStorage.getItem("pomodoroStats");
+          if (legacyRaw) {
+            const legacy = JSON.parse(legacyRaw);
+            statsData = {};
+            Object.keys(legacy).forEach(dayKey => {
+              statsData[dayKey] = {
+                totalMinutes: legacy[dayKey],
+                skippedCount: 0,
+              };
+            });
+          } else {
+            statsData = {};
+          }
+        }
+      } catch (e) {
+        console.warn("Errore lettura stats", e);
+        statsData = {};
+      }
+    }
+
+    function saveStats() {
+      localStorage.setItem("pomodoroStatsV2", JSON.stringify(statsData));
+    }
+
+    /************************************
+     * CORE LOGIC: UPDATE STATS
+     ************************************/
+    function addMinutesToToday(mins, skipped=false) {
+      const key = getOrInitToday();
+      statsData[key].totalMinutes += mins;
+      if (skipped) {
+        statsData[key].skippedCount += 1;
+      }
+      saveStats();
+    }
+
+    /************************************
+     * TIMER LOGIC
+     ************************************/
+    function renderTimer() {
+      timerDisplayEl.textContent = formatMMSS(remainingSeconds);
+    }
+
+    function tick() {
+      if (!running) return;
+      remainingSeconds -= 1;
+      if (remainingSeconds <= 0) {
+        remainingSeconds = 0;
+        renderTimer();
+        finishPomodoro();
+        return;
+      }
+      renderTimer();
+    }
+
+    function startTimer() {
+      if (running) return;
+      running = true;
+      startPauseBtn.textContent = "Pausa";
+      sessionLabelEl.textContent = "In corso…";
+      intervalId = setInterval(tick, 1000);
+    }
+
+    function pauseTimer() {
+      running = false;
+      startPauseBtn.textContent = "Riprendi";
+      sessionLabelEl.textContent = "In pausa";
+      clearInterval(intervalId);
+      intervalId = null;
+    }
+
+    function resetTimer() {
+      running = false;
+      clearInterval(intervalId);
+      intervalId = null;
+      remainingSeconds = 25 * 60;
+      renderTimer();
+      startPauseBtn.textContent = "Start";
+      sessionLabelEl.textContent = "Sessione di focus";
+    }
+
+    // Fine naturale (timer arriva a 0)
+    function finishPomodoro() {
+      running = false;
+      clearInterval(intervalId);
+      intervalId = null;
+      startPauseBtn.textContent = "Start";
+      sessionLabelEl.textContent = "Pomodoro completato! ✅";
+
+      // aggiungi 25 minuti interi
+      addMinutesToToday(25, false);
+
+      refreshUIAfterStatsChange();
+
+      // reset timer
+      remainingSeconds = 25 * 60;
+      renderTimer();
+
+      if (window.navigator && window.navigator.vibrate) {
+        window.navigator.vibrate([200, 100, 200]);
+      }
+      alert("Pomodoro finito! Pausa breve 🍂");
+    }
+
+    // Skip manuale
+    function skipSession() {
+      const secondsElapsed = (25 * 60) - remainingSeconds;
+      const minutesElapsed = Math.floor(secondsElapsed / 60); // arrotonda per difetto
+
+      if (minutesElapsed > 0) {
+        addMinutesToToday(minutesElapsed, true);
+      } else {
+        // anche se 0 minuti, conta come skip vuoto
+        addMinutesToToday(0, true);
+      }
+
+      running = false;
+      clearInterval(intervalId);
+      intervalId = null;
+
+      remainingSeconds = 25 * 60;
+      renderTimer();
+
+      startPauseBtn.textContent = "Start";
+      sessionLabelEl.textContent = "Sessione skippata ⏭";
+
+      refreshUIAfterStatsChange();
+    }
+
+    /************************************
+     * STATS RENDER / DELETE
+     ************************************/
+    function renderStatsTable() {
+      statsBodyEl.innerHTML = "";
+
+      // giorni in ordine decrescente
+      const days = Object.keys(statsData).sort((a, b) => b.localeCompare(a));
+
+      days.forEach(dayKey => {
+        const { totalMinutes, skippedCount } = statsData[dayKey];
+
+        const row = document.createElement("tr");
+
+        const tdDay = document.createElement("td");
+        tdDay.textContent = dayKey;
+
+        const tdHours = document.createElement("td");
+        tdHours.textContent = minutesToHoursStr(totalMinutes);
+
+        const tdSkip = document.createElement("td");
+        tdSkip.textContent = skippedCount;
+
+        const tdDel = document.createElement("td");
+        const delBtn = document.createElement("button");
+        delBtn.className = "delete-btn";
+        delBtn.textContent = "🗑";
+        delBtn.addEventListener("click", () => {
+          delete statsData[dayKey];
+          saveStats();
+          refreshUIAfterStatsChange();
+        });
+        tdDel.appendChild(delBtn);
+
+        row.appendChild(tdDay);
+        row.appendChild(tdHours);
+        row.appendChild(tdSkip);
+        row.appendChild(tdDel);
+
+        statsBodyEl.appendChild(row);
+      });
+
+      if (days.length === 0) {
+        const emptyRow = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = 4;
+        td.style.color = "var(--text-dim)";
+        td.style.fontStyle = "italic";
+        td.style.textAlign = "center";
+        td.style.padding = "1.5rem";
+        td.textContent = "Nessuna sessione registrata ancora 🙂";
+        emptyRow.appendChild(td);
+        statsBodyEl.appendChild(emptyRow);
+      }
+    }
+
+    function renderTodaySummary() {
+      const todayKey = getTodayKey();
+      const todayEntry = statsData[todayKey] || { totalMinutes: 0, skippedCount: 0 };
+      const mins = todayEntry.totalMinutes;
+      const skips = todayEntry.skippedCount;
+      todaySummaryEl.textContent =
+        "Oggi: " + minutesToHoursStr(mins) + " · " + skips + " skip";
+    }
+
+    function refreshUIAfterStatsChange() {
+      renderTodaySummary();
+      renderStatsTable();
+    }
+
+    /************************************
+     * NAV BETWEEN VIEWS
+     ************************************/
+    function showTimerView() {
+      viewTimer.classList.add("active");
+      viewStats.classList.remove("active");
+      viewLofi.classList.remove("active");
+    }
+
+    function showStatsView() {
+      viewStats.classList.add("active");
+      viewTimer.classList.remove("active");
+      viewLofi.classList.remove("active");
+      renderStatsTable();
+    }
+
+    function showLofiView() {
+      viewLofi.classList.add("active");
+      viewTimer.classList.remove("active");
+      viewStats.classList.remove("active");
+      // iframe è già nell'HTML, non serve altro per ora
+    }
+
+    /************************************
+     * EVENT LISTENERS
+     ************************************/
+    startPauseBtn.addEventListener("click", () => {
+      if (!running) {
+        startTimer();
+      } else {
+        pauseTimer();
+      }
+    });
+
+    resetBtn.addEventListener("click", resetTimer);
+    skipBtn.addEventListener("click", skipSession);
+
+    openStatsBtn.addEventListener("click", showStatsView);
+    openLofiBtn.addEventListener("click", showLofiView);
+
+    backToTimerBtnStats.addEventListener("click", showTimerView);
+    backToTimerBtnLofi.addEventListener("click", showTimerView);
+
+    /************************************
+     * INIT
+     ************************************/
+    loadStats();
+    renderTimer();
+    refreshUIAfterStatsChange();
+  </script>
+</body>
+</html>
