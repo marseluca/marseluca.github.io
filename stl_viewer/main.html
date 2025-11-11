@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Viewstl Javascript Plugin - Simple Example</title>
+        
+    </head>
+
+    <body>
+        <div id="stl_cont" style="width:500px;height:500px;margin:0 auto;"></div>
+
+        <script src="stl_viewer.min.js"></script>
+        <script src="parser.min.js"></script>
+        <script src="load_stl.min.js"></script>
+        <script src="webgl_detector.js"></script>
+        <script src="CanvasRenderer.js"></script>
+        <script src="OrbitControls.js"></script>
+        <script src="TrackballControls.js"></script>
+        <script src="Projector.js"></script>
+        <script src="three.min.js"></script>       
+        <script>
+            var stl_viewer=new StlViewer
+            (
+                document.getElementById("stl_cont"),
+                {
+                    models:
+                    [
+                        {filename:"targhetta_diego.stl"}
+                    ]
+                }
+            );
+        </script>
+        
+    </body>
+</html>
