@@ -1,37 +1,27 @@
-<!doctype html>
-<html lang="it">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>STL – Simple Viewer</title>
-  <style>
-    html, body { height: 100%; margin: 0; background:#0f1115; }
-    #stl_cont { width: 100vw; height: 100vh; }
-  </style>
-</head>
-<body>
-  <div id="stl_cont"></div>
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Viewstl Javascript Plugin - Simple Example</title>
+        
+    </head>
 
-  <script src="stl_viewer.min.js"></script>
-  <script>
-    const viewer = new StlViewer(document.getElementById("stl_cont"), {
-      // Colore di sfondo del canvas (opzionale: puoi ometterlo e usare solo il CSS)
-      bgcolor: "#0f1115",
-      // Rotazione automatica molto lenta (se supportata dalla tua versione)
-      auto_rotate: true,
-      // Modello
-      models: [{
-        filename: "./stl_viewer/targhetta_diego.stl",
-        color: "#9bb4ff",     // colore più leggibile
-        opacity: 1.0,
-        // Se lo vedi “sdraiato” o fuori asse, prova una rotazione iniziale:
-        rotationx: -90,       // gradi (prova -90 o 90)
-        rotationy: 0,
-        rotationz: 0,
-        // Se lo STL è in millimetri e risulta enorme: scala a metri
-        // scale: 0.001
-      }]
-    });
-  </script>
-</body>
+    <body>
+        <div id="stl_cont" style="width:500px;height:500px;margin:0 auto;"></div>
+
+        <script src="stl_viewer.min.js"></script>    
+        <script>
+            var stl_viewer=new StlViewer
+            (
+                document.getElementById("stl_cont"),
+                {
+                    auto-rotate:true,
+                    models:
+                    [
+                        {filename:"./stl_viewer/targhetta_diego.stl"}
+                    ]
+                }
+            );
+        </script>
+        
+    </body>
 </html>
