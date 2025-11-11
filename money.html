@@ -1,169 +1,182 @@
 <!DOCTYPE html>
-<!-- FinanceApp v2.4 — 2025-10-31 — Dark mode + Light toggle + per‑account colors + stats fix -->
+<!-- FinanceApp v2.5 — Tema unico scuro, colori neutri -->
 <html lang="it">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FinanceApp — Gestione Finanziaria (Mobile‑first)</title>
+  <title>FinanceApp — Gestione Finanziaria</title>
   <style>
-    /* ========= THEME ========= */
-    /* Default: DARK */
-    :root{
-      --bg:#0e1311;           /* background */
-      --surface:#121a17;      /* cards */
-      --ink:#e9f6ee;          /* primary text */
-      --muted:#a4cdb9;        /* secondary text */
-      --line:#274a3b;         /* borders */
-      --accent:#66e39e;       /* primary accent */
-      --accent-600:#33c37d;   /* darker accent */
-      --warn:#e9b86b;
-      --danger:#ff8078;
-    }
-    /* Light theme override when .theme-light is on <html> */
-    html.theme-light{
-      --bg:#eef7f1;
-      --surface:#ffffff;
-      --ink:#0f2a1c;
-      --muted:#426e56;
-      --line:#c6e0ce;
-      --accent:#5fd399;
-      --accent-600:#38b77f;
-      --warn:#e3a74e;
-      --danger:#e56a61;
+    :root {
+      --bg: #1a1a1a;
+      --surface: #232323;
+      --ink: #f0f0f0;
+      --muted: #a0a0a0;
+      --line: #3a3a3a;
+      --accent: #4c8cff;
+      --warn: #e9b86b;
+      --danger: #ff6f6f;
     }
 
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{margin:0; font:16px/1.6 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif; color:var(--ink); background:var(--bg);}  
-
-    header{position:sticky; top:0; z-index:5; background:var(--surface); border-bottom:2px solid var(--accent-600);}    
-    .wrap{max-width:760px; margin:0 auto; padding:14px;}
-
-    .brand{display:flex; align-items:center; gap:10px; font-weight:800; color:var(--accent)}
-    .logo{width:28px; height:28px; border-radius:8px; background:linear-gradient(135deg, var(--accent), var(--accent-600));}
-
-    /* ======== COMPONENTS ======== */
-    .card{background:var(--surface); border:2px solid var(--line); border-radius:14px; padding:14px; margin-bottom:12px;}
-    .kpi{display:flex; justify-content:space-between; align-items:center; gap:8px; padding:12px; border:2px solid var(--accent-600); border-radius:12px; background:color-mix(in oklab, var(--accent) 10%, transparent)}
-    .kpi .value{font-size:2rem; font-weight:900; color:var(--accent)}
-
-    label{display:block; font-size:1rem; color:var(--muted); margin-bottom:6px}
-    input[type="text"], input[type="number"], input[type="month"]{
-      width:100%; padding:12px; border-radius:12px; border:2px solid var(--line); background:transparent; color:var(--ink);
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font: 16px/1.6 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
     }
-    input:focus{outline:2px solid var(--accent-600); border-color:var(--accent-600)}
 
-    button{appearance:none; border:none; cursor:pointer; border-radius:12px; padding:12px 14px; font-weight:800; color:#05150e; background:var(--accent);} 
-    button.ghost{background:transparent; color:var(--accent); border:2px solid var(--accent)}
-    button.warn{background:var(--warn); color:#201606}
+    header {
+      position: sticky;
+      top: 0;
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      z-index: 10;
+    }
 
-    .accounts{display:grid; gap:10px}
-    .account{padding:14px; border-radius:12px; background:var(--surface); border:2px solid var(--line); position:relative; overflow:hidden}
-    .account .swatch{position:absolute; inset:0 0 auto 0; height:6px; background:var(--acc-color)}
-    .account .name{font-weight:900; margin:10px 0 4px; color:var(--acc-color)}
-    .account .bal{font-size:1.4rem; font-weight:900; color:var(--ink)}
-    .account .month{font-size:.9rem; color:var(--muted)}
+    .wrap { max-width: 760px; margin: 0 auto; padding: 14px; }
+    .brand { font-weight: 800; color: var(--accent); }
 
-    .toolbar{display:flex; gap:8px; margin-top:10px}
+    button {
+      appearance: none;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 14px;
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+    }
+    button.ghost {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
 
-    main{padding:14px}
-    [data-view]{display:none}
-    [data-view].active{display:block}
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
 
-    /* ===== STATS ===== */
-    .barwrap{display:flex; align-items:flex-end; gap:8px; height:160px; padding:6px 0; border-bottom:2px solid var(--accent-600); background:color-mix(in oklab, var(--accent) 8%, transparent)}
-    .bar{flex:1; border-radius:8px 8px 0 0; background:linear-gradient(180deg, var(--accent), var(--accent-600)); outline:2px solid var(--line); min-height:4px; transition:height .25s}
-    table{width:100%; border-collapse:collapse; background:transparent; border:2px solid var(--accent-600)}
-    th,td{padding:10px; text-align:left; border-bottom:1px solid var(--line)}
-    th{font-weight:800; color:var(--ink); background:color-mix(in oklab, var(--accent) 15%, transparent)}
+    .kpi {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      padding: 10px;
+    }
+    .kpi .value {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--accent);
+    }
 
-    dialog{border:none; border-radius:14px; padding:0; background:var(--surface); color:var(--ink); width:min(520px,92vw);} 
-    dialog::backdrop{background:rgba(0,0,0,.45)}
-    .modal-head{padding:12px; border-bottom:2px solid var(--accent-600); display:flex; justify-content:space-between; align-items:center; color:var(--accent)}
-    .modal-body{padding:12px}
-    .modal-actions{padding:12px; display:flex; gap:8px; justify-content:flex-end; border-top:2px solid var(--accent-600)}
+    .accounts { display: grid; gap: 10px; }
+    .account {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+    }
+    .account .name {
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
 
-    .muted{color:var(--muted)}
+    .barwrap { display: flex; align-items: flex-end; gap: 6px; height: 140px; }
+    .bar {
+      flex: 1;
+      background: var(--accent);
+      border-radius: 4px 4px 0 0;
+      min-height: 4px;
+      transition: height 0.25s;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 8px;
+      text-align: left;
+    }
+    th { color: var(--accent); font-weight: 700; }
+
+    input[type="text"], input[type="number"], input[type="month"] {
+      width: 100%;
+      background: #121212;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--ink);
+      padding: 8px;
+    }
+
+    dialog {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: var(--ink);
+      width: min(480px, 92vw);
+    }
+    dialog::backdrop { background: rgba(0,0,0,0.5); }
   </style>
 </head>
 <body>
   <header>
-    <div class="wrap" style="display:flex; align-items:center; justify-content:space-between; gap:10px">
-      <div class="brand"><div class="logo" aria-hidden="true"></div> FinanceApp <span id="ver" class="muted" style="margin-left:8px; font-weight:600">v2.4</span></div>
-      <div style="display:flex; gap:8px; align-items:center">
+    <div class="wrap" style="display:flex; justify-content:space-between; align-items:center;">
+      <div class="brand">FinanceApp</div>
+      <div style="display:flex; gap:8px;">
         <button class="ghost" onclick="nav('home')">Home</button>
         <button class="ghost" onclick="nav('stats')">Statistiche</button>
-        <button class="ghost" id="themeBtn" title="Cambia tema">Tema</button>
       </div>
     </div>
   </header>
 
   <main class="wrap">
-    <!-- HOME -->
     <section id="view-home" data-view class="active">
       <div class="card">
-        <div style="display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap">
-          <div style="min-width:180px; flex:1">
-            <label for="monthView">Mese</label>
-            <input type="month" id="monthView" />
-          </div>
-          <div class="kpi" style="flex:2">
-            <div>
-              <div class="muted" style="font-weight:700">Budget complessivo</div>
-              <div class="value" id="totalBudget">€ 0,00</div>
-            </div>
-          </div>
+        <label for="monthView">Mese</label>
+        <input type="month" id="monthView" />
+        <div class="kpi">
+          <div>Budget complessivo</div>
+          <div class="value" id="totalBudget">€ 0,00</div>
         </div>
       </div>
 
       <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
-          <h3 style="margin:0; color:var(--accent)">Conti correnti</h3>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h3>Conti correnti</h3>
           <button onclick="nav('add')">+ Aggiungi</button>
         </div>
         <div id="accounts" class="accounts"></div>
       </div>
     </section>
 
-    <!-- ADD ACCOUNT -->
     <section id="view-add" data-view>
       <div class="card">
-        <h3 style="margin-top:0; color:var(--accent)">Aggiungi conto corrente</h3>
-        <div class="row">
-          <div>
-            <label for="accountName">Nome del conto</label>
-            <input id="accountName" type="text" placeholder="Es. Conto Principale" />
-          </div>
-          <div>
-            <label for="initialAmount">Bilancio iniziale (per il mese corrente)</label>
-            <input id="initialAmount" type="number" step="0.01" placeholder="0.00" />
-          </div>
-        </div>
-        <div class="toolbar">
+        <h3>Aggiungi conto corrente</h3>
+        <label for="accountName">Nome del conto</label>
+        <input id="accountName" type="text" />
+        <label for="initialAmount">Bilancio iniziale</label>
+        <input id="initialAmount" type="number" step="0.01" />
+        <div style="margin-top:10px; display:flex; gap:8px;">
           <button class="ghost" onclick="nav('home')">Indietro</button>
           <button onclick="addAccount()">Aggiungi</button>
         </div>
       </div>
     </section>
 
-    <!-- STATS -->
     <section id="view-stats" data-view>
       <div class="card">
-        <h3 style="margin-top:0; color:var(--accent)">Ultimi 6 mesi — Totale & Variazione</h3>
+        <h3>Ultimi 6 mesi</h3>
         <div id="bars" class="barwrap"></div>
-        <div style="overflow:auto; max-height:420px; margin-top:8px">
-          <table>
-            <thead>
-              <tr>
-                <th>Mese</th>
-                <th>Totale</th>
-                <th>Variazione vs mese precedente</th>
-              </tr>
-            </thead>
-            <tbody id="statsTable"></tbody>
-          </table>
-        </div>
-        <div class="toolbar">
+        <table>
+          <thead><tr><th>Mese</th><th>Totale</th><th>Δ</th></tr></thead>
+          <tbody id="statsTable"></tbody>
+        </table>
+        <div style="margin-top:10px; display:flex; gap:8px;">
           <button class="ghost" onclick="nav('home')">Indietro</button>
           <button class="ghost" onclick="buildStats()">Aggiorna</button>
         </div>
@@ -171,140 +184,67 @@
     </section>
   </main>
 
-  <!-- MODAL -->
   <dialog id="editModal">
     <form method="dialog">
-      <div class="modal-head">
-        <strong>Modifica bilancio</strong>
-        <button class="ghost" value="cancel">Chiudi</button>
+      <div style="padding:10px; border-bottom:1px solid var(--line); font-weight:700;">Modifica bilancio</div>
+      <div style="padding:10px;">
+        <label for="editAccountName">Conto</label>
+        <input id="editAccountName" type="text" disabled />
+        <label for="editMonth">Mese</label>
+        <input id="editMonth" type="month" />
+        <label for="editAmount">Bilancio</label>
+        <input id="editAmount" type="number" step="0.01" />
       </div>
-      <div class="modal-body">
-        <div class="row">
-          <div>
-            <label for="editAccountName">Conto</label>
-            <input id="editAccountName" type="text" disabled />
-          </div>
-          <div>
-            <label for="editMonth">Mese</label>
-            <input id="editMonth" type="month" />
-          </div>
-        </div>
-        <div class="row" style="margin-top:8px">
-          <div>
-            <label for="editAmount">Bilancio per il mese selezionato</label>
-            <input id="editAmount" type="number" step="0.01" />
-          </div>
-        </div>
-      </div>
-      <div class="modal-actions">
-        <button class="ghost" value="cancel" id="btnCancelEdit">Annulla</button>
+      <div style="padding:10px; display:flex; justify-content:flex-end; gap:8px; border-top:1px solid var(--line);">
+        <button class="ghost" value="cancel">Annulla</button>
         <button class="warn" value="confirm" id="btnSaveEdit">Salva</button>
       </div>
     </form>
   </dialog>
 
   <script>
-    /* ===== Storage & utils ===== */
-    const LS_KEY = 'financeapp_v1';
-    const fmt = new Intl.NumberFormat('it-IT', { style:'currency', currency:'EUR' });
+    const LS_KEY = 'financeapp_v2';
+    const fmt = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' });
     function ym(d){ const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); return `${y}-${m}`; }
-    function monthLabel(yyyyMM){ const [y,m]=yyyyMM.split('-').map(Number); const d=new Date(y,m-1,1); return d.toLocaleDateString('it-IT',{month:'long', year:'numeric'}); }
-    function load(){ try{ const raw=localStorage.getItem(LS_KEY); return raw? JSON.parse(raw): {accounts:[]}; }catch{ return {accounts:[]}; } }
-    function save(data){ localStorage.setItem(LS_KEY, JSON.stringify(data)); }
+    function monthLabel(yyyyMM){ const [y,m]=yyyyMM.split('-').map(Number); return new Date(y,m-1,1).toLocaleDateString('it-IT',{month:'short',year:'2-digit'}); }
+    function load(){ try{ return JSON.parse(localStorage.getItem(LS_KEY))||{accounts:[]}; }catch{ return {accounts:[]}; } }
+    function save(d){ localStorage.setItem(LS_KEY, JSON.stringify(d)); }
 
-    /* Color utility: deterministic HSL from string (account-specific color) */
-    function hashString(str){ let h=5381; for(let i=0;i<str.length;i++){ h=((h<<5)+h) + str.charCodeAt(i); } return Math.abs(h); }
-    function accountColor(seed){
-      const h = hashString(seed) % 360;        // hue 0..359
-      const s = 72;                            // saturation
-      const l = 55;                            // lightness for dark bg
-      return `hsl(${h} ${s}% ${l}%)`;
-    }
+    function hashString(s){ let h=5381; for(let i=0;i<s.length;i++){ h=((h<<5)+h)+s.charCodeAt(i); } return Math.abs(h); }
+    function accountColor(seed){ const c = hashString(seed)%200+55; return `rgb(${c},${c},${c})`; }
 
-    /* ===== Theme handling (manual toggle + persistence) ===== */
-    const THEME_KEY = 'financeapp_theme';
-    function applyTheme(theme){
-      // theme: 'dark' | 'light' | null
-      document.documentElement.classList.toggle('theme-light', theme === 'light');
-      localStorage.setItem(THEME_KEY, theme || 'dark');
-      document.getElementById('themeBtn').textContent = theme === 'light' ? 'Tema: Chiaro' : 'Tema: Scuro';
-    }
-    function initTheme(){
-      const saved = localStorage.getItem(THEME_KEY);
-      if(saved === 'light' || saved === 'dark') applyTheme(saved);
-      else applyTheme('dark');
-      document.getElementById('themeBtn').addEventListener('click', ()=>{
-        const now = document.documentElement.classList.contains('theme-light') ? 'dark' : 'light';
-        applyTheme(now);
-      });
-    }
+    let state=load();
+    let selectedMonth=ym(new Date());
 
-    /* ===== State ===== */
-    let state = load();
-    let selectedMonth = ym(new Date());
+    const accountsEl=document.getElementById('accounts');
+    const totalBudgetEl=document.getElementById('totalBudget');
+    const monthView=document.getElementById('monthView');
 
-    /* ===== Elements ===== */
-    const monthView = document.getElementById('monthView');
-    const totalBudgetEl = document.getElementById('totalBudget');
-    const accountsEl = document.getElementById('accounts');
+    function sumForMonth(m){return state.accounts.reduce((a,b)=>a+(b.monthlyBalances?.[m]||0),0);}
+    function refresh(){ totalBudgetEl.textContent=fmt.format(sumForMonth(selectedMonth)); }
 
-    /* ===== Navigation ===== */
-    function nav(view){
-      document.querySelectorAll('[data-view]').forEach(v=>v.classList.remove('active'));
-      document.getElementById(`view-${view}`).classList.add('active');
-      if(view==='stats') buildStats();
-    }
-
-    /* ===== Calculations ===== */
-    function sumForMonth(yyyyMM){ return state.accounts.reduce((acc,a)=> acc + (a.monthlyBalances?.[yyyyMM] ?? 0), 0); }
-
-    function refreshTotal(){ totalBudgetEl.textContent = fmt.format(sumForMonth(selectedMonth)); }
-
-    /* ===== Render ===== */
     function renderAccounts(){
-      if(!state.accounts.length){ accountsEl.innerHTML = '<div class="muted">Nessun conto presente. Aggiungine uno.</div>'; return; }
-      accountsEl.innerHTML = '';
+      accountsEl.innerHTML='';
+      if(!state.accounts.length){accountsEl.innerHTML='<div class="muted">Nessun conto.</div>';return;}
       for(const a of state.accounts){
-        const bal = a.monthlyBalances?.[selectedMonth] ?? 0;
-        const color = accountColor(a.id + a.name);
-        const bg = color.replace('hsl','hsla').replace('%)', ' / 0.12)'); // faint background
-        const el = document.createElement('div');
-        el.className = 'account';
-        el.style.borderColor = color;
-        el.style.background = `linear-gradient(180deg, ${bg}, transparent)`;
-        el.innerHTML = `
-          <div class="swatch" style="--acc-color:${color}"></div>
-          <div class="name" style="--acc-color:${color}">${a.name}</div>
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px">
-            <div>
-              <div class="bal">${fmt.format(bal)}</div>
-              <div class="month">${monthLabel(selectedMonth)}</div>
-            </div>
-            <button class="ghost" style="border-color:${color}; color:${color}" onclick="openEdit('${a.id}')">Modifica</button>
-          </div>
-        `;
+        const bal=a.monthlyBalances?.[selectedMonth]||0;
+        const el=document.createElement('div');
+        el.className='account';
+        el.style.borderColor=accountColor(a.name);
+        el.innerHTML=`<div class='name'>${a.name}</div><div>${fmt.format(bal)}</div><button class='ghost' onclick="openEdit('${a.id}')">Modifica</button>`;
         accountsEl.appendChild(el);
       }
     }
 
-    /* ===== Add account ===== */
     function addAccount(){
-      const name=document.getElementById('accountName').value.trim();
-      const initial=parseFloat(document.getElementById('initialAmount').value||'0');
-      if(!name){alert('Inserisci un nome per il conto.');return;}
-      const id=crypto.randomUUID?.()||'id_'+Math.random().toString(36).slice(2);
-      const acct={id,name,monthlyBalances:{[selectedMonth]:isFinite(initial)?initial:0}};
-      state.accounts.push(acct);
-      save(state);
-      document.getElementById('accountName').value='';
-      document.getElementById('initialAmount').value='';
-      renderAccounts();
-      refreshTotal();
-      buildStats();
-      nav('home');
+      const n=document.getElementById('accountName').value.trim();
+      const v=parseFloat(document.getElementById('initialAmount').value)||0;
+      if(!n)return alert('Inserisci nome conto');
+      const id=Math.random().toString(36).slice(2);
+      state.accounts.push({id,name:n,monthlyBalances:{[selectedMonth]:v}});
+      save(state);renderAccounts();refresh();nav('home');
     }
 
-    /* ===== Edit balance (monthly) ===== */
     const editModal=document.getElementById('editModal');
     const editAccountName=document.getElementById('editAccountName');
     const editMonth=document.getElementById('editMonth');
@@ -312,77 +252,42 @@
     let editingId=null;
 
     function openEdit(id){
-      const acct=state.accounts.find(a=>a.id===id); if(!acct) return;
-      editingId=id;
-      editAccountName.value=acct.name;
-      editMonth.value=selectedMonth;
-      editAmount.value=String(acct.monthlyBalances?.[editMonth.value] ?? 0);
-      editModal.showModal();
+      const a=state.accounts.find(x=>x.id===id);if(!a)return;
+      editingId=id;editAccountName.value=a.name;editMonth.value=selectedMonth;editAmount.value=a.monthlyBalances?.[selectedMonth]||0;editModal.showModal();
     }
 
-    document.getElementById('btnSaveEdit').addEventListener('click',(e)=>{
+    document.getElementById('btnSaveEdit').addEventListener('click',e=>{
       e.preventDefault();
-      const m=editMonth.value;
-      const amt=parseFloat(editAmount.value||'0');
       const idx=state.accounts.findIndex(a=>a.id===editingId);
       if(idx>-1){
-        state.accounts[idx].monthlyBalances=state.accounts[idx].monthlyBalances||{};
-        state.accounts[idx].monthlyBalances[m]=isFinite(amt)?amt:0;
+        const m=editMonth.value;
+        const val=parseFloat(editAmount.value)||0;
+        state.accounts[idx].monthlyBalances[m]=val;
         save(state);
+        renderAccounts();refresh();buildStats();
       }
-      renderAccounts();
-      refreshTotal();
-      buildStats();
-      editModal.close('confirm');
+      editModal.close();
     });
 
-    document.getElementById('btnCancelEdit').addEventListener('click',(e)=>{ e.preventDefault(); editModal.close('cancel'); });
+    function nav(v){document.querySelectorAll('[data-view]').forEach(x=>x.classList.remove('active'));document.getElementById(`view-${v}`).classList.add('active');if(v==='stats')buildStats();}
 
-    /* ===== Stats (last 6 months) ===== */
-    function lastSixMonths(){ const out=[]; const today=new Date(); for(let i=5;i>=0;i--){ const d=new Date(today.getFullYear(), today.getMonth()-i, 1); out.push( ym(d) ); } return out; }
-
+    function lastSix(){const o=[];const d=new Date();for(let i=5;i>=0;i--){o.push(ym(new Date(d.getFullYear(),d.getMonth()-i,1)));}return o;}
     function buildStats(){
-      const months=lastSixMonths();
-      const totals=months.map(m=> sumForMonth(m));
-      // Bars
-      const bars=document.getElementById('bars');
-      bars.innerHTML='';
-      const max=Math.max(1,...totals.map(v=>Math.abs(v)));
-      for(const t of totals){
-        const h=Math.round((Math.abs(t)/max)*140)+4;
-        const bar=document.createElement('div');
-        bar.className='bar';
-        bar.style.height=h+'px';
-        bar.title=fmt.format(t);
-        bars.appendChild(bar);
-      }
-      // Table
-      const tbody=document.getElementById('statsTable');
-      tbody.innerHTML='';
-      months.forEach((m,i)=>{
-        const t=totals[i];
-        const prev=i>0?totals[i-1]:null;
-        const delta=prev===null?null:t-prev;
-        const tr=document.createElement('tr');
-        tr.innerHTML=`
-          <td>${monthLabel(m)}</td>
-          <td>${fmt.format(t)}</td>
-          <td>${delta===null? '—' : `${fmt.format(delta)} ${delta>0?'⬆️':(delta<0?'⬇️':'⟷')}`}</td>
-        `;
-        tbody.appendChild(tr);
+      const m=lastSix();
+      const vals=m.map(mm=>sumForMonth(mm));
+      const bars=document.getElementById('bars');bars.innerHTML='';
+      const max=Math.max(...vals,1);
+      for(const v of vals){const b=document.createElement('div');b.className='bar';b.style.height=(v/max*120+4)+'px';bars.appendChild(b);}
+      const tb=document.getElementById('statsTable');tb.innerHTML='';
+      m.forEach((mm,i)=>{
+        const d=i?vals[i]-vals[i-1]:0;
+        tb.innerHTML+=`<tr><td>${monthLabel(mm)}</td><td>${fmt.format(vals[i])}</td><td>${i?fmt.format(d):'—'}</td></tr>`;
       });
     }
 
-    /* ===== Init ===== */
-    function init(){
-      initTheme();
-      monthView.value=selectedMonth;
-      monthView.addEventListener('change',()=>{ selectedMonth=monthView.value; refreshTotal(); renderAccounts(); });
-      renderAccounts();
-      refreshTotal();
-      buildStats();
-    }
-    init();
+    monthView.value=selectedMonth;
+    monthView.addEventListener('change',()=>{selectedMonth=monthView.value;renderAccounts();refresh();});
+    renderAccounts();refresh();buildStats();
   </script>
 </body>
 </html>
