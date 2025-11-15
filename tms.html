@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Translation Platform – Job Board (Mock)</title>
+  <title>Binance Translation – Job Board (Mock)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
@@ -169,6 +169,7 @@
       background-color: var(--yellow);
     }
 
+
     /* Search / filter rows */
     .search-row {
       display: flex;
@@ -218,7 +219,6 @@
     .btn-default:hover { background-color: #fafafa; }
 
     .btn-primary {
-      background-color: --yellow;
       background-color: var(--yellow);
       color: #111;
     }
@@ -517,7 +517,7 @@
       font-size: 16px;
     }
 
-    /* Modal for Instructions */
+    /* Modal for Instructions / Context */
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -563,6 +563,12 @@
       color: #262626;
     }
 
+    .context-image {
+      width: 100%;
+      border-radius: 4px;
+      display: block;
+    }
+
     @media (max-width: 768px) {
       .navbar { padding: 0 12px; }
       .page { padding: 16px 12px 24px; }
@@ -575,8 +581,8 @@
   <!-- NAVBAR -->
   <div class="navbar">
     <div class="navbar-left">
-      <div class="brand-logo" id="logo-link">TP</div>
-      <div class="brand-text">Translation Platform</div>
+      <div class="brand-logo" id="logo-link">BT</div>
+      <div class="brand-text">Binance Translation</div>
     </div>
     <div class="navbar-right">
       <span class="navbar-link">Settings</span>
@@ -765,7 +771,7 @@
         </thead>
         <tbody>
           <!-- Row 0 -->
-          <tr class="editor-row" data-row="0">
+          <tr class="editor-row" data-row="0" data-context="img/context-identity-verification.png">
             <td>0</td>
             <td>
               <div class="editor-original original-raw">
@@ -784,6 +790,9 @@ Complete identity verification to start chatting. &lt;highlight&gt;Verify Now&lt
                 <button class="btn btn-default btn-small btn-history">
                   History
                 </button>
+                <button class="btn btn-default btn-small btn-context">
+                  Context
+                </button>
                 <button class="btn btn-default btn-small btn-instructions">
                   Instructions
                 </button>
@@ -795,7 +804,7 @@ Complete identity verification to start chatting. &lt;highlight&gt;Verify Now&lt
           </tr>
 
           <!-- Row 1 -->
-          <tr class="editor-row" data-row="1">
+          <tr class="editor-row" data-row="1" data-context="img/context-pay-now.png">
             <td>1</td>
             <td>
               <div class="editor-original original-raw">
@@ -814,6 +823,9 @@ Pay Now
                 <button class="btn btn-default btn-small btn-history">
                   History
                 </button>
+                <button class="btn btn-default btn-small btn-context">
+                  Context
+                </button>
                 <button class="btn btn-default btn-small btn-instructions">
                   Instructions
                 </button>
@@ -825,7 +837,7 @@ Pay Now
           </tr>
 
           <!-- Row 2 -->
-          <tr class="editor-row" data-row="2">
+          <tr class="editor-row" data-row="2" data-context="img/context-balance.png">
             <td>2</td>
             <td>
               <div class="editor-original original-raw">
@@ -844,6 +856,9 @@ Your available balance is {{amount}}.
                 <button class="btn btn-default btn-small btn-history">
                   History
                 </button>
+                <button class="btn btn-default btn-small btn-context">
+                  Context
+                </button>
                 <button class="btn btn-default btn-small btn-instructions">
                   Instructions
                 </button>
@@ -855,7 +870,7 @@ Your available balance is {{amount}}.
           </tr>
 
           <!-- Row 3 -->
-          <tr class="editor-row" data-row="3">
+          <tr class="editor-row" data-row="3" data-context="img/context-all-balance.png">
             <td>3</td>
             <td>
               <div class="editor-original original-raw">
@@ -874,6 +889,9 @@ Your available balance is {{amount}}.
                 <button class="btn btn-default btn-small btn-history">
                   History
                 </button>
+                <button class="btn btn-default btn-small btn-context">
+                  Context
+                </button>
                 <button class="btn btn-default btn-small btn-instructions">
                   Instructions
                 </button>
@@ -885,7 +903,7 @@ Your available balance is {{amount}}.
           </tr>
 
           <!-- Row 4 -->
-          <tr class="editor-row" data-row="4">
+          <tr class="editor-row" data-row="4" data-context="img/context-cannot-undo.png">
             <td>4</td>
             <td>
               <div class="editor-original original-raw">
@@ -904,6 +922,9 @@ This action cannot be undone.
                 <button class="btn btn-default btn-small btn-history">
                   History
                 </button>
+                <button class="btn btn-default btn-small btn-context">
+                  Context
+                </button>
                 <button class="btn btn-default btn-small btn-instructions">
                   Instructions
                 </button>
@@ -915,7 +936,7 @@ This action cannot be undone.
           </tr>
 
           <!-- Row 5 -->
-          <tr class="editor-row" data-row="5">
+          <tr class="editor-row" data-row="5" data-context="img/context-network-fee.png">
             <td>5</td>
             <td>
               <div class="editor-original original-raw">
@@ -933,6 +954,9 @@ Network fee will be deducted from your total amount.
                 </button>
                 <button class="btn btn-default btn-small btn-history">
                   History
+                </button>
+                <button class="btn btn-default btn-small btn-context">
+                  Context
                 </button>
                 <button class="btn btn-default btn-small btn-instructions">
                   Instructions
@@ -962,16 +986,37 @@ Network fee will be deducted from your total amount.
     </div>
   </div>
 
+  <!-- Context modal -->
+  <div class="modal-backdrop" id="context-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Context</div>
+        <button class="modal-close" id="context-modal-close">×</button>
+      </div>
+      <div class="modal-body">
+        <img
+          id="context-modal-image"
+          class="context-image"
+          src="https://via.placeholder.com/520x260?text=Context+image"
+          alt="Context image"
+        />
+        <p id="context-modal-caption" style="margin-top:8px;font-size:12px;color:#666;">
+          Example context image for the selected string. In production this should point to the real UI screenshot.
+        </p>
+      </div>
+    </div>
+  </div>
+
   <script>
     const CURRENT_USER = "lucamarseglia99@gmail.com";
 
-    // Removed the "2025-8-17_AI-review-test-file_1755421684626" job completely
+    // Jobs (the AI review test job has been fully removed)
     const jobs = [
       {
         id: 596,
-        name: "First Job",
+        name: "tms_2025-9-29_C2C_APP_STRING_1759167080345",
         dueDate: "2025-10-01 17:31",
-        project: "First Project",
+        project: "Binance APP",
         languageNeeded: "it-IT (Italian (Italy))",
         wordcount: 27,
         status: "available", // available | in_progress | submitted
@@ -981,9 +1026,9 @@ Network fee will be deducted from your total amount.
       },
       {
         id: 341,
-        name: "Second Job",
+        name: "tms_2025-9-24_Content-BE_1758702236048",
         dueDate: "2025-09-26 08:23",
-        project: "Second Project",
+        project: "Binance Website Translation",
         languageNeeded: "it-IT (Italian (Italy))",
         wordcount: 11,
         status: "available",
@@ -1030,6 +1075,11 @@ Network fee will be deducted from your total amount.
     const instructionModalBody = document.getElementById("instruction-modal-body");
     const instructionModalClose = document.getElementById("instruction-modal-close");
 
+    const contextModal = document.getElementById("context-modal");
+    const contextModalImage = document.getElementById("context-modal-image");
+    const contextModalCaption = document.getElementById("context-modal-caption");
+    const contextModalClose = document.getElementById("context-modal-close");
+
     const fontSelect = document.getElementById("font-select");
     const fontSizeSelect = document.getElementById("font-size-select");
 
@@ -1042,17 +1092,7 @@ Network fee will be deducted from your total amount.
       renderJobBoard();
     });
 
-    // Close developer popups
-    document.querySelectorAll(".dev-popup-close").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const id = btn.getAttribute("data-popup");
-        const popup = document.getElementById(id);
-        if (popup) popup.style.display = "none";
-      });
-    });
-
     function parseDate(str) {
-      // "2025-10-01 17:31" -> Date
       const normalized = str.replace(" ", "T") + ":00Z";
       return new Date(normalized);
     }
@@ -1400,7 +1440,7 @@ Network fee will be deducted from your total amount.
       jobDetailView.style.display = "block";
     });
 
-    // Editor row actions (AI Helper, History, Instructions, Save)
+    // Editor row actions (AI Helper, History, Context, Instructions, Save)
     function setupEditorRowActions() {
       document.querySelectorAll(".editor-row").forEach((row) => {
         const index = Number(row.getAttribute("data-row"));
@@ -1409,6 +1449,7 @@ Network fee will be deducted from your total amount.
         const btnHistory = row.querySelector(".btn-history");
         const btnSave = row.querySelector(".btn-save-work");
         const btnInstructions = row.querySelector(".btn-instructions");
+        const btnContext = row.querySelector(".btn-context");
 
         btnAI.addEventListener("click", () => {
           if (!textarea.value.trim()) {
@@ -1446,6 +1487,18 @@ Network fee will be deducted from your total amount.
             "Generic instruction text for this job. In production, this could include specific context or guidelines for the selected string.";
           instructionModal.style.display = "flex";
         });
+
+        btnContext.addEventListener("click", () => {
+          const ctxPath = row.getAttribute("data-context") || "";
+          // In real system, ctxPath should be used as the actual image path
+          contextModalImage.src =
+            "https://via.placeholder.com/520x260?text=Context+" +
+            encodeURIComponent("row " + index);
+          contextModalCaption.textContent = ctxPath
+            ? "Mock context image path for this string: " + ctxPath
+            : "No specific context path configured for this string.";
+          contextModal.style.display = "flex";
+        });
       });
     }
 
@@ -1456,6 +1509,16 @@ Network fee will be deducted from your total amount.
     instructionModal.addEventListener("click", (e) => {
       if (e.target === instructionModal) {
         instructionModal.style.display = "none";
+      }
+    });
+
+    contextModalClose.addEventListener("click", () => {
+      contextModal.style.display = "none";
+    });
+
+    contextModal.addEventListener("click", (e) => {
+      if (e.target === contextModal) {
+        contextModal.style.display = "none";
       }
     });
 
