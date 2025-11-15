@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Translation Platform – Job Board (Mock)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --yellow: #f3ba2f;
+      --yellow-soft: #ffe9a6;
+      --black: #111111;
+      --gray-bg: #f7f7f7;
+      --gray-border: #e2e2e2;
+      --gray-text: #777777;
+      --blue-status: #e6f4ff;
+      --blue-status-text: #1677ff;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background-color: #ffffff;
+      color: #1a1a1a;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* Top navbar */
+    .navbar {
+      height: 56px;
+      background-color: #111111;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      justify-content: space-between;
+    }
+
+    .navbar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: radial-gradient(circle at 30% 30%, #ffe38c, #f3ba2f);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 700;
+      color: #111111;
+      cursor: pointer;
+    }
+
+    .brand-text { font-weight: 600; font-size: 18px; }
+
+    .navbar-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 13px;
+    }
+
+    .navbar-link {
+      color: #dddddd;
+      cursor: pointer;
+    }
+    .navbar-link:hover { color: #ffffff; }
+
+    .navbar-user {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background-color: #444;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    /* Main layout */
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 16px 32px;
+    }
+
+    .page-title {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    /* Top tabs */
+    .top-tabs {
+      display: inline-flex;
+      border-bottom: 1px solid var(--gray-border);
+      margin-bottom: 16px;
+      gap: 24px;
+    }
+
+    .top-tab {
+      padding-bottom: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      color: var(--gray-text);
+      position: relative;
+    }
+
+    .top-tab.active {
+      color: #000000;
+      font-weight: 600;
+    }
+
+    .top-tab.active::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -1px;
+      height: 2px;
+      background-color: var(--yellow);
+    }
+
+    /* Sub-tabs */
+    .sub-tabs {
+      display: flex;
+      gap: 24px;
+      margin-top: 16px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--gray-border);
+    }
+
+    .sub-tab {
+      font-size: 14px;
+      padding: 8px 0;
+      cursor: pointer;
+      color: var(--gray-text);
+      position: relative;
+    }
+
+    .sub-tab.active {
+      color: #000;
+      font-weight: 600;
+    }
+
+    .sub-tab.active::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -1px;
+      height: 2px;
+      background-color: var(--yellow);
+    }
+
+    /* Developer popup */
+    .dev-popup {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      background-color: #fffbe6;
+      border-left: 3px solid var(--yellow);
+      padding: 8px 10px;
+      font-size: 12px;
+      color: #595959;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+
+    .dev-popup strong {
+      color: #262626;
+    }
+
+    .dev-popup-close {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      padding: 0 4px;
+      color: #8c8c8c;
+    }
+
+    .dev-popup-close:hover {
+      color: #262626;
+    }
+
+    /* Search / filter rows */
+    .search-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+      margin-top: 8px;
+      align-items: center;
+    }
+
+    .search-input,
+    .select-input {
+      flex: 1 1 160px;
+      max-width: 260px;
+      padding: 6px 10px;
+      border-radius: 4px;
+      border: 1px solid var(--gray-border);
+      font-size: 13px;
+      background-color: #fff;
+    }
+
+    .search-row label {
+      font-size: 12px;
+      color: var(--gray-text);
+    }
+
+    .btn {
+      border: none;
+      outline: none;
+      cursor: pointer;
+      border-radius: 4px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: background-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .btn-default {
+      background-color: #ffffff;
+      border: 1px solid var(--gray-border);
+      color: #333;
+    }
+    .btn-default:hover { background-color: #fafafa; }
+
+    .btn-primary {
+      background-color: --yellow;
+      background-color: var(--yellow);
+      color: #111;
+    }
+    .btn-primary:hover {
+      background-color: #f5c44a;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.04);
+    }
+
+    .btn-small { padding: 4px 10px; font-size: 12px; }
+
+    .btn-outline {
+      background-color: #ffffff;
+      border: 1px solid var(--yellow);
+      color: #111;
+    }
+    .btn-outline:hover { background-color: var(--yellow-soft); }
+
+    /* Table */
+    .table-wrapper {
+      border: 1px solid var(--gray-border);
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 800px;
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--gray-border);
+      background-color: #ffffff;
+    }
+
+    th {
+      background-color: var(--gray-bg);
+      font-weight: 600;
+      color: #555;
+      font-size: 12px;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    tr:hover td { background-color: #fafafa; }
+
+    .cell-id { width: 80px; }
+    .cell-actions { width: 140px; }
+    .cell-checkbox { width: 40px; }
+
+    .status-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 500;
+      background-color: var(--blue-status);
+      color: var(--blue-status-text);
+    }
+
+    .status-tag.waiting {
+      background-color: #fff7e6;
+      color: #ad6800;
+    }
+
+    /* Pagination (mock) */
+    .pagination {
+      margin-top: 12px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+      align-items: center;
+      font-size: 12px;
+    }
+
+    .page-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 4px;
+      border: 1px solid var(--gray-border);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      background-color: #ffffff;
+    }
+
+    .page-btn.active {
+      border-color: var(--yellow);
+      color: #111;
+      font-weight: 600;
+    }
+
+    .page-btn.disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    /* Bulk toolbar */
+    .bulk-toolbar {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 16px;
+      background-color: #111111;
+      color: #ffffff;
+      padding: 10px 16px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+      font-size: 13px;
+      z-index: 20;
+    }
+
+    .bulk-toolbar span {
+      white-space: nowrap;
+    }
+
+    /* Detail page */
+    .page-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .back-link {
+      font-size: 13px;
+      color: var(--gray-text);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .back-link:hover { color: #000; }
+
+    .job-title { font-size: 18px; font-weight: 600; }
+
+    .status-tabs {
+      display: flex;
+      gap: 24px;
+      border-bottom: 1px solid var(--gray-border);
+      margin-top: 18px;
+      margin-bottom: 18px;
+    }
+
+    .status-tab {
+      font-size: 14px;
+      padding: 8px 0;
+      cursor: default;
+      color: var(--gray-text);
+      position: relative;
+    }
+
+    .status-tab.active {
+      color: #000;
+      font-weight: 600;
+    }
+
+    .status-tab.active::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -1px;
+      height: 2px;
+      background-color: var(--yellow);
+    }
+
+    .badge-pill {
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      background-color: #fafafa;
+      border: 1px solid var(--gray-border);
+      margin-left: 6px;
+    }
+
+    .detail-table { min-width: 0; }
+
+    /* Editor compact page */
+    .translation-table-wrapper {
+      border-radius: 6px;
+      border: 1px solid var(--gray-border);
+      overflow-x: auto;
+      margin-top: 10px;
+    }
+
+    .translation-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 800px;
+      font-size: 13px;
+    }
+
+    .translation-table th,
+    .translation-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--gray-border);
+      vertical-align: top;
+      background-color: #ffffff;
+    }
+
+    .translation-table th {
+      background-color: var(--gray-bg);
+      font-weight: 600;
+      color: #555;
+      font-size: 12px;
+    }
+
+    .translation-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Base font sizes – enlarged */
+    .editor-original {
+      white-space: pre-wrap;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .editor-textarea {
+      width: 100%;
+      min-height: 70px;
+      padding: 6px 8px;
+      font-family: inherit;
+      font-size: 15px;
+      border-radius: 4px;
+      border: 1px solid var(--gray-border);
+      resize: vertical;
+    }
+
+    .editor-actions {
+      margin-top: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: flex-end;
+      font-size: 12px;
+    }
+
+    /* Tag styling for <highlight> */
+    .tag-code {
+      color: #1677ff;
+      font-weight: 600;
+      background-color: #e6f4ff;
+      padding: 1px 4px;
+      border-radius: 4px;
+      font-family: Consolas, "Courier New", monospace;
+      display: inline;
+    }
+
+    /* Font options for translation page – apply to original + translation */
+    .translation-font-mono .editor-original,
+    .translation-font-mono .editor-textarea {
+      font-family: Consolas, "Courier New", monospace;
+    }
+
+    .translation-font-sans .editor-original,
+    .translation-font-sans .editor-textarea {
+      font-family: var(--font);
+    }
+
+    .translation-font-serif .editor-original,
+    .translation-font-serif .editor-textarea {
+      font-family: "Georgia", "Times New Roman", serif;
+    }
+
+    .font-size-small .editor-original {
+      font-size: 13px;
+    }
+    .font-size-small .editor-textarea {
+      font-size: 14px;
+    }
+
+    .font-size-medium .editor-original {
+      font-size: 14px;
+    }
+    .font-size-medium .editor-textarea {
+      font-size: 15px;
+    }
+
+    .font-size-large .editor-original {
+      font-size: 15px;
+    }
+    .font-size-large .editor-textarea {
+      font-size: 16px;
+    }
+
+    /* Modal for Instructions */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0,0,0,0.4);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 30;
+    }
+
+    .modal {
+      background-color: #ffffff;
+      border-radius: 8px;
+      max-width: 420px;
+      width: 90%;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      padding: 16px 18px 14px;
+      font-size: 13px;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .modal-title {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .modal-close {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      color: #8c8c8c;
+    }
+
+    .modal-close:hover {
+      color: #262626;
+    }
+
+    @media (max-width: 768px) {
+      .navbar { padding: 0 12px; }
+      .page { padding: 16px 12px 24px; }
+      table { min-width: 700px; }
+      .translation-table { min-width: 700px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- NAVBAR -->
+  <div class="navbar">
+    <div class="navbar-left">
+      <div class="brand-logo" id="logo-link">TP</div>
+      <div class="brand-text">Translation Platform</div>
+    </div>
+    <div class="navbar-right">
+      <span class="navbar-link">Settings</span>
+      <span class="navbar-link">Log out</span>
+      <div class="navbar-user">
+        <div class="avatar">LU</div>
+        <span>lucamarseglia99@gmail.com</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- JOB BOARD -->
+  <div id="view-job-board" class="page">
+    <div class="page-title">Translation Job Board</div>
+
+    <div class="top-tabs">
+      <div class="top-tab active">Translation Job Board</div>
+      <div class="top-tab">String Board</div>
+    </div>
+
+    <!-- Developer note: bulk accept -->
+    <div class="dev-popup" id="dev-popup-bulk">
+      <div>
+        <strong>Developer note:</strong> This mock adds bulk job acceptance directly from the main job board. Translators
+        can select multiple jobs using the checkboxes in the first column and use the "Accept selected jobs" toolbar at
+        the bottom to assign all of them to the current user and move them into "My Jobs".
+      </div>
+      <button class="dev-popup-close" data-popup="dev-popup-bulk">×</button>
+    </div>
+
+    <!-- Developer note: sorting -->
+    <div class="dev-popup" id="dev-popup-sorting">
+      <div>
+        <strong>Developer note:</strong> Sorting controls have been added to the job board to sort by word count, due
+        date, or project name. This is intended to help translators prioritize higher-volume jobs or those with the
+        closest deadlines.
+      </div>
+      <button class="dev-popup-close" data-popup="dev-popup-sorting">×</button>
+    </div>
+
+    <div class="sub-tabs">
+      <div class="sub-tab active" data-subtab="available">Available to Claim</div>
+      <div class="sub-tab" data-subtab="my">My Jobs</div>
+      <div class="sub-tab" data-subtab="submitted">Submitted Jobs</div>
+    </div>
+
+    <div class="search-row">
+      <input
+        id="search-input"
+        type="text"
+        class="search-input"
+        placeholder="Search by Job Name"
+      />
+      <button class="btn btn-default" id="btn-clear">Clear</button>
+      <button class="btn btn-primary" id="btn-search">Search</button>
+    </div>
+
+    <!-- Sorting row -->
+    <div class="search-row">
+      <label for="sort-field">Sort by:</label>
+      <select id="sort-field" class="select-input">
+        <option value="">None</option>
+        <option value="wordcount">Word count</option>
+        <option value="dueDate">Due date</option>
+        <option value="project">Project</option>
+      </select>
+
+      <label for="sort-direction">Direction:</label>
+      <select id="sort-direction" class="select-input" style="max-width:140px;">
+        <option value="asc">Ascending</option>
+        <option value="desc">Descending</option>
+      </select>
+    </div>
+
+    <div class="table-wrapper">
+      <table id="jobs-table">
+        <thead>
+          <tr>
+            <th class="cell-checkbox"></th>
+            <th class="cell-id">Job ID</th>
+            <th>Job Name</th>
+            <th>Due Date (UTC)</th>
+            <th>Project</th>
+            <th>Language Needed</th>
+            <th>Wordcount</th>
+            <th class="cell-actions">Action</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      <div class="page-btn disabled">&lt;</div>
+      <div class="page-btn active">1</div>
+      <div class="page-btn disabled">&gt;</div>
+    </div>
+  </div>
+
+  <!-- BULK TOOLBAR -->
+  <div class="bulk-toolbar" id="bulk-toolbar" style="display:none;">
+    <span id="bulk-count-label">0 jobs selected</span>
+    <button class="btn btn-primary btn-small" id="bulk-accept-btn">
+      Accept selected jobs
+    </button>
+  </div>
+
+  <!-- JOB DETAIL -->
+  <div id="view-job-detail" class="page" style="display:none;">
+    <div class="page-header-row">
+      <div class="back-link" id="back-to-board">
+        &#x25C0; Back
+      </div>
+    </div>
+
+    <div class="job-title" id="detail-job-title"></div>
+
+    <div class="status-tabs">
+      <div class="status-tab" id="tab-unauthorized">UNAUTHORIZED</div>
+      <div class="status-tab active" id="tab-waiting">
+        WAITING <span class="badge-pill" id="badge-waiting">1</span>
+      </div>
+      <div class="status-tab" id="tab-inprogress">
+        IN_PROGRESS <span class="badge-pill" id="badge-inprogress">0</span>
+      </div>
+      <div class="status-tab" id="tab-published">
+        PUBLISHED <span class="badge-pill" id="badge-published">0</span>
+      </div>
+    </div>
+
+    <div class="search-row">
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Search by Language"
+        disabled
+      />
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Search by translator or reviewer email"
+        disabled
+      />
+      <button class="btn btn-default" disabled>Clear</button>
+      <button class="btn btn-primary" disabled>Search</button>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="detail-table">
+        <thead>
+          <tr>
+            <th>Language</th>
+            <th>Assigned to</th>
+            <th>Reviewer</th>
+            <th>Progress</th>
+            <th>Status</th>
+            <th class="cell-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="detail-table-body"></tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      <div class="page-btn disabled">&lt;</div>
+      <div class="page-btn active">1</div>
+      <div class="page-btn disabled">&gt;</div>
+    </div>
+  </div>
+
+  <!-- TRANSLATION WORK (COMPACT EDITOR) -->
+  <div id="view-translation-work" class="page translation-font-mono font-size-medium" style="display:none;">
+    <div class="page-header-row">
+      <div class="back-link" id="back-to-detail">
+        &#x25C0; Back
+      </div>
+    </div>
+
+    <div class="job-title" id="work-job-title"></div>
+
+    <!-- Developer notes for translation page -->
+    <div class="dev-popup" id="dev-popup-prefill">
+      <div>
+        <strong>Developer note:</strong> In this mock, all translation fields are pre-filled with example translations
+        when the job is opened. This simulates scenarios where translations come from MT or previous jobs and can be
+        edited before submission.
+      </div>
+      <button class="dev-popup-close" data-popup="dev-popup-prefill">×</button>
+    </div>
+
+    <div class="dev-popup" id="dev-popup-compact">
+      <div>
+        <strong>Developer note:</strong> The translation editor has been made more compact: all strings are displayed in
+        a single table, and the "Instruction" section is now accessible via an "Instructions" button per row that opens
+        a contextual popup.
+      </div>
+      <button class="dev-popup-close" data-popup="dev-popup-compact">×</button>
+    </div>
+
+    <div class="dev-popup" id="dev-popup-font">
+      <div>
+        <strong>Developer note:</strong> Font family and text size controls have been added to the translation page so
+        translators can choose between monospaced, sans-serif, or serif fonts and adjust the visual size of both source
+        and target strings for better readability.
+      </div>
+      <button class="dev-popup-close" data-popup="dev-popup-font">×</button>
+    </div>
+
+    <div class="dev-popup" id="dev-popup-clickable-tags">
+      <div>
+        <strong>Developer note:</strong> Consider making inline tags (e.g. <code>&lt;highlight&gt;</code>) clickable in
+        the source panel so that translators can insert them automatically into the translation content without typing
+        them manually. This mock only visualizes the tags but does not implement click-to-insert behavior yet.
+      </div>
+      <button class="dev-popup-close" data-popup="dev-popup-clickable-tags">×</button>
+    </div>
+
+    <!-- Font controls -->
+    <div class="search-row" style="margin-top:6px;">
+      <label for="font-select">Font:</label>
+      <select id="font-select" class="select-input" style="max-width:180px;">
+        <option value="mono" selected>Monospaced</option>
+        <option value="sans">Sans-serif</option>
+        <option value="serif">Serif</option>
+      </select>
+
+      <label for="font-size-select">Text size:</label>
+      <select id="font-size-select" class="select-input" style="max-width:160px;">
+        <option value="small">Small</option>
+        <option value="medium" selected>Medium</option>
+        <option value="large">Large</option>
+      </select>
+    </div>
+
+    <div class="translation-table-wrapper">
+      <table class="translation-table">
+        <thead>
+          <tr>
+            <th style="width:40px;">#</th>
+            <th style="width:45%;">Original Content</th>
+            <th>Translation Content</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Row 0 -->
+          <tr class="editor-row" data-row="0">
+            <td>0</td>
+            <td>
+              <div class="editor-original original-raw">
+Complete identity verification to start chatting. &lt;highlight&gt;Verify Now&lt;/highlight&gt;
+              </div>
+            </td>
+            <td>
+              <textarea
+                class="editor-textarea"
+                placeholder="Enter the translation here..."
+              >Completa la verifica dell’identità per iniziare a chattare. &lt;highlight&gt;Verifica ora&lt;/highlight&gt;</textarea>
+              <div class="editor-actions">
+                <button class="btn btn-default btn-small btn-ai-helper">
+                  AI Helper
+                </button>
+                <button class="btn btn-default btn-small btn-history">
+                  History
+                </button>
+                <button class="btn btn-default btn-small btn-instructions">
+                  Instructions
+                </button>
+                <button class="btn btn-primary btn-small btn-save-work">
+                  Save
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Row 1 -->
+          <tr class="editor-row" data-row="1">
+            <td>1</td>
+            <td>
+              <div class="editor-original original-raw">
+Pay Now
+              </div>
+            </td>
+            <td>
+              <textarea
+                class="editor-textarea"
+                placeholder="Enter the translation here..."
+              >Paga ora</textarea>
+              <div class="editor-actions">
+                <button class="btn btn-default btn-small btn-ai-helper">
+                  AI Helper
+                </button>
+                <button class="btn btn-default btn-small btn-history">
+                  History
+                </button>
+                <button class="btn btn-default btn-small btn-instructions">
+                  Instructions
+                </button>
+                <button class="btn btn-primary btn-small btn-save-work">
+                  Save
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Row 2 -->
+          <tr class="editor-row" data-row="2">
+            <td>2</td>
+            <td>
+              <div class="editor-original original-raw">
+Your available balance is {{amount}}.
+              </div>
+            </td>
+            <td>
+              <textarea
+                class="editor-textarea"
+                placeholder="Enter the translation here..."
+              >Il tuo saldo disponibile è {{amount}}.</textarea>
+              <div class="editor-actions">
+                <button class="btn btn-default btn-small btn-ai-helper">
+                  AI Helper
+                </button>
+                <button class="btn btn-default btn-small btn-history">
+                  History
+                </button>
+                <button class="btn btn-default btn-small btn-instructions">
+                  Instructions
+                </button>
+                <button class="btn btn-primary btn-small btn-save-work">
+                  Save
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Row 3 -->
+          <tr class="editor-row" data-row="3">
+            <td>3</td>
+            <td>
+              <div class="editor-original original-raw">
+&lt;highlight&gt;All&lt;/highlight&gt; balance will be used for this order.
+              </div>
+            </td>
+            <td>
+              <textarea
+                class="editor-textarea"
+                placeholder="Enter the translation here..."
+              >&lt;highlight&gt;Tutto&lt;/highlight&gt; il saldo verrà utilizzato per questo ordine.</textarea>
+              <div class="editor-actions">
+                <button class="btn btn-default btn-small btn-ai-helper">
+                  AI Helper
+                </button>
+                <button class="btn btn-default btn-small btn-history">
+                  History
+                </button>
+                <button class="btn btn-default btn-small btn-instructions">
+                  Instructions
+                </button>
+                <button class="btn btn-primary btn-small btn-save-work">
+                  Save
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Row 4 -->
+          <tr class="editor-row" data-row="4">
+            <td>4</td>
+            <td>
+              <div class="editor-original original-raw">
+This action cannot be undone.
+              </div>
+            </td>
+            <td>
+              <textarea
+                class="editor-textarea"
+                placeholder="Enter the translation here..."
+              >Questa azione non può essere annullata.</textarea>
+              <div class="editor-actions">
+                <button class="btn btn-default btn-small btn-ai-helper">
+                  AI Helper
+                </button>
+                <button class="btn btn-default btn-small btn-history">
+                  History
+                </button>
+                <button class="btn btn-default btn-small btn-instructions">
+                  Instructions
+                </button>
+                <button class="btn btn-primary btn-small btn-save-work">
+                  Save
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Row 5 -->
+          <tr class="editor-row" data-row="5">
+            <td>5</td>
+            <td>
+              <div class="editor-original original-raw">
+Network fee will be deducted from your total amount.
+              </div>
+            </td>
+            <td>
+              <textarea
+                class="editor-textarea"
+                placeholder="Enter the translation here..."
+              >La commissione di rete verrà detratta dall’importo totale.</textarea>
+              <div class="editor-actions">
+                <button class="btn btn-default btn-small btn-ai-helper">
+                  AI Helper
+                </button>
+                <button class="btn btn-default btn-small btn-history">
+                  History
+                </button>
+                <button class="btn btn-default btn-small btn-instructions">
+                  Instructions
+                </button>
+                <button class="btn btn-primary btn-small btn-save-work">
+                  Save
+                </button>
+              </div>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Instructions modal -->
+  <div class="modal-backdrop" id="instruction-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Instructions</div>
+        <button class="modal-close" id="instruction-modal-close">×</button>
+      </div>
+      <div class="modal-body" id="instruction-modal-body">
+        text
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CURRENT_USER = "lucamarseglia99@gmail.com";
+
+    // Removed the "2025-8-17_AI-review-test-file_1755421684626" job completely
+    const jobs = [
+      {
+        id: 596,
+        name: "First Job",
+        dueDate: "2025-10-01 17:31",
+        project: "First Project",
+        languageNeeded: "it-IT (Italian (Italy))",
+        wordcount: 27,
+        status: "available", // available | in_progress | submitted
+        assignedTo: null,
+        reviewer: null,
+        progress: 0
+      },
+      {
+        id: 341,
+        name: "Second Job",
+        dueDate: "2025-09-26 08:23",
+        project: "Second Project",
+        languageNeeded: "it-IT (Italian (Italy))",
+        wordcount: 11,
+        status: "available",
+        assignedTo: null,
+        reviewer: null,
+        progress: 0
+      }
+    ];
+
+    let currentSubtab = "available";
+    let searchText = "";
+    let selectedJobId = null;
+    let sortField = "";
+    let sortDirection = "asc";
+
+    const jobBoardView = document.getElementById("view-job-board");
+    const jobDetailView = document.getElementById("view-job-detail");
+    const translationWorkView = document.getElementById("view-translation-work");
+
+    const jobsTableBody = document.querySelector("#jobs-table tbody");
+    const searchInput = document.getElementById("search-input");
+    const btnSearch = document.getElementById("btn-search");
+    const btnClear = document.getElementById("btn-clear");
+
+    const sortFieldSelect = document.getElementById("sort-field");
+    const sortDirectionSelect = document.getElementById("sort-direction");
+
+    const detailJobTitle = document.getElementById("detail-job-title");
+    const detailTableBody = document.getElementById("detail-table-body");
+    const badgeWaiting = document.getElementById("badge-waiting");
+    const badgeInProgress = document.getElementById("badge-inprogress");
+    const badgePublished = document.getElementById("badge-published");
+
+    const backToBoard = document.getElementById("back-to-board");
+    const backToDetail = document.getElementById("back-to-detail");
+    const workJobTitle = document.getElementById("work-job-title");
+    const logoLink = document.getElementById("logo-link");
+
+    const bulkToolbar = document.getElementById("bulk-toolbar");
+    const bulkCountLabel = document.getElementById("bulk-count-label");
+    const bulkAcceptBtn = document.getElementById("bulk-accept-btn");
+
+    const instructionModal = document.getElementById("instruction-modal");
+    const instructionModalBody = document.getElementById("instruction-modal-body");
+    const instructionModalClose = document.getElementById("instruction-modal-close");
+
+    const fontSelect = document.getElementById("font-select");
+    const fontSizeSelect = document.getElementById("font-size-select");
+
+    // NAV: logo -> always go back to job board
+    logoLink.addEventListener("click", () => {
+      jobDetailView.style.display = "none";
+      translationWorkView.style.display = "none";
+      jobBoardView.style.display = "block";
+      selectedJobId = null;
+      renderJobBoard();
+    });
+
+    // Close developer popups
+    document.querySelectorAll(".dev-popup-close").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-popup");
+        const popup = document.getElementById(id);
+        if (popup) popup.style.display = "none";
+      });
+    });
+
+    function parseDate(str) {
+      // "2025-10-01 17:31" -> Date
+      const normalized = str.replace(" ", "T") + ":00Z";
+      return new Date(normalized);
+    }
+
+    function renderJobBoard() {
+      jobsTableBody.innerHTML = "";
+      let filtered = jobs.filter((job) => {
+        if (currentSubtab === "available" && job.status !== "available") return false;
+        if (currentSubtab === "my" && job.assignedTo !== CURRENT_USER) return false;
+        if (currentSubtab === "submitted" && job.status !== "submitted") return false;
+        if (searchText) {
+          return job.name.toLowerCase().includes(searchText.toLowerCase());
+        }
+        return true;
+      });
+
+      // Sorting
+      if (sortField) {
+        filtered = filtered.slice().sort((a, b) => {
+          let av, bv;
+          if (sortField === "wordcount") {
+            av = a.wordcount;
+            bv = b.wordcount;
+          } else if (sortField === "dueDate") {
+            av = parseDate(a.dueDate);
+            bv = parseDate(b.dueDate);
+          } else if (sortField === "project") {
+            av = a.project.toLowerCase();
+            bv = b.project.toLowerCase();
+          } else {
+            return 0;
+          }
+          if (av < bv) return sortDirection === "asc" ? -1 : 1;
+          if (av > bv) return sortDirection === "asc" ? 1 : -1;
+          return 0;
+        });
+      }
+
+      filtered.forEach((job) => {
+        const tr = document.createElement("tr");
+
+        let actionHtml = "";
+
+        if (job.status === "submitted") {
+          actionHtml = `
+            <button class="btn btn-default btn-small btn-open-job" data-job="${job.id}">
+              View
+            </button>
+          `;
+        } else if (currentSubtab === "my" && job.status === "in_progress") {
+          actionHtml = `
+            <button class="btn btn-default btn-small btn-open-job" data-job="${job.id}">
+              Open
+            </button>
+            <button class="btn btn-primary btn-small btn-edit-job" data-job="${job.id}">
+              Edit
+            </button>
+          `;
+        } else {
+          actionHtml = `
+            <button class="btn btn-outline btn-small btn-open-job" data-job="${job.id}">
+              Open
+            </button>
+          `;
+        }
+
+        tr.innerHTML = `
+          <td class="cell-checkbox">
+            <input type="checkbox" class="job-checkbox" data-job="${job.id}" ${
+              job.status === "available" && currentSubtab === "available" ? "" : "disabled"
+            }>
+          </td>
+          <td class="cell-id">${job.id}</td>
+          <td>${job.name}</td>
+          <td>${job.dueDate}</td>
+          <td>${job.project}</td>
+          <td>${job.languageNeeded}</td>
+          <td>${job.wordcount}</td>
+          <td class="cell-actions">
+            ${actionHtml}
+          </td>
+        `;
+
+        jobsTableBody.appendChild(tr);
+      });
+
+      // click on Open/View
+      jobsTableBody
+        .querySelectorAll(".btn-open-job")
+        .forEach((btn) =>
+          btn.addEventListener("click", () => openJob(+btn.dataset.job))
+        );
+
+      // click on Edit (My Jobs)
+      jobsTableBody
+        .querySelectorAll(".btn-edit-job")
+        .forEach((btn) =>
+          btn.addEventListener("click", () => openTranslationWork(+btn.dataset.job))
+        );
+
+      // checkbox selection
+      jobsTableBody
+        .querySelectorAll(".job-checkbox")
+        .forEach((cb) =>
+          cb.addEventListener("change", updateBulkSelection)
+        );
+
+      updateBulkSelection();
+    }
+
+    function updateBulkSelection() {
+      const checkboxes = document.querySelectorAll(".job-checkbox");
+      const selected = Array.from(checkboxes)
+        .filter(cb => cb.checked && !cb.disabled)
+        .map(cb => Number(cb.getAttribute("data-job")));
+
+      if (selected.length > 0) {
+        bulkToolbar.style.display = "flex";
+        bulkCountLabel.textContent =
+          selected.length === 1
+            ? "1 job selected"
+            : `${selected.length} jobs selected`;
+      } else {
+        bulkToolbar.style.display = "none";
+      }
+    }
+
+    bulkAcceptBtn.addEventListener("click", () => {
+      const checkboxes = document.querySelectorAll(".job-checkbox");
+      const selected = Array.from(checkboxes)
+        .filter(cb => cb.checked && !cb.disabled)
+        .map(cb => Number(cb.getAttribute("data-job")));
+
+      selected.forEach(id => {
+        const job = jobs.find(j => j.id === id);
+        if (job && job.status === "available") {
+          job.status = "in_progress";
+          job.assignedTo = CURRENT_USER;
+          job.progress = 0;
+        }
+      });
+
+      bulkToolbar.style.display = "none";
+      renderJobBoard();
+      alert("Mock: selected jobs have been accepted and moved to 'My Jobs'.");
+    });
+
+    function openJob(id) {
+      selectedJobId = id;
+      const job = jobs.find((j) => j.id === id);
+      if (!job) return;
+
+      badgeWaiting.textContent = job.status === "available" ? "1" : "0";
+      badgeInProgress.textContent = job.status === "in_progress" ? "1" : "0";
+      badgePublished.textContent = job.status === "submitted" ? "1" : "0";
+
+      setStatusTab(job);
+      detailJobTitle.textContent = job.name;
+      renderDetailRow(job);
+
+      jobBoardView.style.display = "none";
+      translationWorkView.style.display = "none";
+      jobDetailView.style.display = "block";
+    }
+
+    function setStatusTab(job) {
+      document
+        .querySelectorAll(".status-tab")
+        .forEach((el) => el.classList.remove("active"));
+
+      if (job.status === "available") {
+        document.getElementById("tab-waiting").classList.add("active");
+      } else if (job.status === "in_progress") {
+        document.getElementById("tab-inprogress").classList.add("active");
+      } else if (job.status === "submitted") {
+        document.getElementById("tab-published").classList.add("active");
+      }
+    }
+
+    function renderDetailRow(job) {
+      detailTableBody.innerHTML = "";
+      const tr = document.createElement("tr");
+
+      const isAvailable = job.status === "available";
+      const isInProgress = job.status === "in_progress";
+      const statusText = isAvailable
+        ? "WAITING_TRANSLATION"
+        : isInProgress
+        ? "TRANSLATING"
+        : "SUBMITTED";
+
+      const actionButtonLabel = isAvailable ? "Accept" : "Edit";
+
+      tr.innerHTML = `
+        <td>${job.languageNeeded}</td>
+        <td>${job.assignedTo ? job.assignedTo : "-"}</td>
+        <td>${job.reviewer ? job.reviewer : "-"}</td>
+        <td>${job.progress}%</td>
+        <td>
+          <span class="status-tag ${
+            isAvailable ? "waiting" : ""
+          }">${statusText}</span>
+        </td>
+        <td class="cell-actions">
+          <button class="btn ${
+            isAvailable ? "btn-primary" : "btn-default"
+          } btn-small" id="detail-main-action">
+            ${actionButtonLabel}
+          </button>
+        </td>
+      `;
+
+      detailTableBody.appendChild(tr);
+
+      document
+        .getElementById("detail-main-action")
+        .addEventListener("click", () => {
+          if (isAvailable) {
+            acceptJob(job.id);
+          } else {
+            openTranslationWork(job.id);
+          }
+        });
+    }
+
+    function acceptJob(id) {
+      const job = jobs.find((j) => j.id === id);
+      if (!job) return;
+      job.status = "in_progress";
+      job.assignedTo = CURRENT_USER;
+      job.progress = 0;
+
+      badgeWaiting.textContent = "0";
+      badgeInProgress.textContent = "1";
+      badgePublished.textContent = "0";
+
+      setStatusTab(job);
+      renderDetailRow(job);
+      renderJobBoard();
+    }
+
+    function openTranslationWork(id) {
+      const job = jobs.find((j) => j.id === id);
+      if (!job) return;
+
+      jobDetailView.style.display = "none";
+      jobBoardView.style.display = "none";
+      translationWorkView.style.display = "block";
+      workJobTitle.textContent = job.name;
+
+      // Highlight <highlight> tags as code while keeping them visible as text
+      document.querySelectorAll(".original-raw").forEach(el => {
+        let html = el.innerHTML;
+        html = html.replace(
+          /&lt;highlight&gt;/g,
+          '<span class="tag-code">&lt;highlight&gt;</span>'
+        );
+        html = html.replace(
+          /&lt;\/highlight&gt;/g,
+          '<span class="tag-code">&lt;\/highlight&gt;</span>'
+        );
+        el.innerHTML = html;
+      });
+    }
+
+    function goBackToBoard() {
+      jobDetailView.style.display = "none";
+      translationWorkView.style.display = "none";
+      jobBoardView.style.display = "block";
+      selectedJobId = null;
+      renderJobBoard();
+    }
+
+    // Font controls for translation page
+    function updateFontSettings() {
+      translationWorkView.classList.remove(
+        "translation-font-mono",
+        "translation-font-sans",
+        "translation-font-serif",
+        "font-size-small",
+        "font-size-medium",
+        "font-size-large"
+      );
+
+      const fontValue = fontSelect.value;
+      if (fontValue === "mono") {
+        translationWorkView.classList.add("translation-font-mono");
+      } else if (fontValue === "sans") {
+        translationWorkView.classList.add("translation-font-sans");
+      } else if (fontValue === "serif") {
+        translationWorkView.classList.add("translation-font-serif");
+      }
+
+      const sizeValue = fontSizeSelect.value;
+      if (sizeValue === "small") {
+        translationWorkView.classList.add("font-size-small");
+      } else if (sizeValue === "medium") {
+        translationWorkView.classList.add("font-size-medium");
+      } else if (sizeValue === "large") {
+        translationWorkView.classList.add("font-size-large");
+      }
+    }
+
+    fontSelect.addEventListener("change", updateFontSettings);
+    fontSizeSelect.addEventListener("change", updateFontSettings);
+
+    document
+      .querySelectorAll(".sub-tab")
+      .forEach((tab) =>
+        tab.addEventListener("click", () => {
+          document
+            .querySelectorAll(".sub-tab")
+            .forEach((t) => t.classList.remove("active"));
+          tab.classList.add("active");
+          currentSubtab = tab.dataset.subtab;
+          renderJobBoard();
+        })
+      );
+
+    btnSearch.addEventListener("click", () => {
+      searchText = searchInput.value.trim();
+      renderJobBoard();
+    });
+
+    btnClear.addEventListener("click", () => {
+      searchInput.value = "";
+      searchText = "";
+      renderJobBoard();
+    });
+
+    sortFieldSelect.addEventListener("change", () => {
+      sortField = sortFieldSelect.value;
+      renderJobBoard();
+    });
+
+    sortDirectionSelect.addEventListener("change", () => {
+      sortDirection = sortDirectionSelect.value;
+      renderJobBoard();
+    });
+
+    backToBoard.addEventListener("click", goBackToBoard);
+    backToDetail.addEventListener("click", () => {
+      translationWorkView.style.display = "none";
+      jobBoardView.style.display = "none";
+      jobDetailView.style.display = "block";
+    });
+
+    // Editor row actions (AI Helper, History, Instructions, Save)
+    function setupEditorRowActions() {
+      document.querySelectorAll(".editor-row").forEach((row) => {
+        const index = Number(row.getAttribute("data-row"));
+        const textarea = row.querySelector(".editor-textarea");
+        const btnAI = row.querySelector(".btn-ai-helper");
+        const btnHistory = row.querySelector(".btn-history");
+        const btnSave = row.querySelector(".btn-save-work");
+        const btnInstructions = row.querySelector(".btn-instructions");
+
+        btnAI.addEventListener("click", () => {
+          if (!textarea.value.trim()) {
+            if (index === 0) {
+              textarea.value =
+                "Completa la verifica dell’identità per iniziare a chattare. <highlight>Verifica ora</highlight>";
+            } else if (index === 1) {
+              textarea.value = "Paga ora";
+            } else if (index === 2) {
+              textarea.value = "Il tuo saldo disponibile è {{amount}}.";
+            } else if (index === 3) {
+              textarea.value =
+                "<highlight>Tutto</highlight> il saldo verrà utilizzato per questo ordine.";
+            } else if (index === 4) {
+              textarea.value =
+                "Questa azione non può essere annullata.";
+            } else if (index === 5) {
+              textarea.value =
+                "La commissione di rete verrà detratta dall’importo totale.";
+            }
+          }
+          alert("Mock AI Helper: example translation suggestion inserted for row " + index + ".");
+        });
+
+        btnHistory.addEventListener("click", () => {
+          alert("Mock History: no previous versions stored for row " + index + ".");
+        });
+
+        btnSave.addEventListener("click", () => {
+          alert("Mock Save: translation locally saved for row " + index + ".");
+        });
+
+        btnInstructions.addEventListener("click", () => {
+          instructionModalBody.textContent =
+            "Generic instruction text for this job. In production, this could include specific context or guidelines for the selected string.";
+          instructionModal.style.display = "flex";
+        });
+      });
+    }
+
+    instructionModalClose.addEventListener("click", () => {
+      instructionModal.style.display = "none";
+    });
+
+    instructionModal.addEventListener("click", (e) => {
+      if (e.target === instructionModal) {
+        instructionModal.style.display = "none";
+      }
+    });
+
+    // Initial render & setup
+    renderJobBoard();
+    setupEditorRowActions();
+    updateFontSettings();
+  </script>
+</body>
+</html>
