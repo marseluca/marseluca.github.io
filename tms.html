@@ -169,39 +169,6 @@
       background-color: var(--yellow);
     }
 
-    /* Developer popup */
-    .dev-popup {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 8px;
-      background-color: #fffbe6;
-      border-left: 3px solid var(--yellow);
-      padding: 8px 10px;
-      font-size: 12px;
-      color: #595959;
-      border-radius: 4px;
-      margin-bottom: 10px;
-    }
-
-    .dev-popup strong {
-      color: #262626;
-    }
-
-    .dev-popup-close {
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      font-size: 14px;
-      line-height: 1;
-      padding: 0 4px;
-      color: #8c8c8c;
-    }
-
-    .dev-popup-close:hover {
-      color: #262626;
-    }
-
     /* Search / filter rows */
     .search-row {
       display: flex;
@@ -630,26 +597,6 @@
       <div class="top-tab">String Board</div>
     </div>
 
-    <!-- Developer note: bulk accept -->
-    <div class="dev-popup" id="dev-popup-bulk">
-      <div>
-        <strong>Developer note:</strong> This mock adds bulk job acceptance directly from the main job board. Translators
-        can select multiple jobs using the checkboxes in the first column and use the "Accept selected jobs" toolbar at
-        the bottom to assign all of them to the current user and move them into "My Jobs".
-      </div>
-      <button class="dev-popup-close" data-popup="dev-popup-bulk">×</button>
-    </div>
-
-    <!-- Developer note: sorting -->
-    <div class="dev-popup" id="dev-popup-sorting">
-      <div>
-        <strong>Developer note:</strong> Sorting controls have been added to the job board to sort by word count, due
-        date, or project name. This is intended to help translators prioritize higher-volume jobs or those with the
-        closest deadlines.
-      </div>
-      <button class="dev-popup-close" data-popup="dev-popup-sorting">×</button>
-    </div>
-
     <div class="sub-tabs">
       <div class="sub-tab active" data-subtab="available">Available to Claim</div>
       <div class="sub-tab" data-subtab="my">My Jobs</div>
@@ -789,43 +736,6 @@
     </div>
 
     <div class="job-title" id="work-job-title"></div>
-
-    <!-- Developer notes for translation page -->
-    <div class="dev-popup" id="dev-popup-prefill">
-      <div>
-        <strong>Developer note:</strong> In this mock, all translation fields are pre-filled with example translations
-        when the job is opened. This simulates scenarios where translations come from MT or previous jobs and can be
-        edited before submission.
-      </div>
-      <button class="dev-popup-close" data-popup="dev-popup-prefill">×</button>
-    </div>
-
-    <div class="dev-popup" id="dev-popup-compact">
-      <div>
-        <strong>Developer note:</strong> The translation editor has been made more compact: all strings are displayed in
-        a single table, and the "Instruction" section is now accessible via an "Instructions" button per row that opens
-        a contextual popup.
-      </div>
-      <button class="dev-popup-close" data-popup="dev-popup-compact">×</button>
-    </div>
-
-    <div class="dev-popup" id="dev-popup-font">
-      <div>
-        <strong>Developer note:</strong> Font family and text size controls have been added to the translation page so
-        translators can choose between monospaced, sans-serif, or serif fonts and adjust the visual size of both source
-        and target strings for better readability.
-      </div>
-      <button class="dev-popup-close" data-popup="dev-popup-font">×</button>
-    </div>
-
-    <div class="dev-popup" id="dev-popup-clickable-tags">
-      <div>
-        <strong>Developer note:</strong> Consider making inline tags (e.g. <code>&lt;highlight&gt;</code>) clickable in
-        the source panel so that translators can insert them automatically into the translation content without typing
-        them manually. This mock only visualizes the tags but does not implement click-to-insert behavior yet.
-      </div>
-      <button class="dev-popup-close" data-popup="dev-popup-clickable-tags">×</button>
-    </div>
 
     <!-- Font controls -->
     <div class="search-row" style="margin-top:6px;">
