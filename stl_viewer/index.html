@@ -4,94 +4,15 @@
   <meta charset="UTF-8" />
   <title>Viewer STL con Three.js</title>
   <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: #111;
-    }
-    canvas {
-      display: block;
-    }
+    
   </style>
 </head>
 <body>
-  <!-- Tutto il codice è in un modulo ES -->
-  <script type="module">
-    import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
-    import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
-    import { STLLoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/STLLoader.js';
 
-    // Renderer
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    document.body.appendChild(renderer.domElement);
+    <model-viewer src="model.glb" auto-rotate camera-controls></model-viewer>
 
-    // Scena
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x111111);
 
-    // Camera
-    const camera = new THREE.PerspectiveCamera(
-      45,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000
-    );
-    camera.position.set(0, 50, 150);
 
-    // Controlli orbitali (NOTA: qui usiamo direttamente OrbitControls, NON THREE.OrbitControls)
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-
-    // Luci
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-    scene.add(ambientLight);
-
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight.position.set(50, 100, 50);
-    scene.add(dirLight);
-
-    // Caricatore STL
-    const loader = new STLLoader(); 
-    loader.load(
-      './stl_viewer/model.stl', // il tuo file STL nella stessa cartella
-      function (geometry) {
-        const material = new THREE.MeshPhongMaterial({ color: 0x2196f3 });
-        const mesh = new THREE.Mesh(geometry, material);
-
-        // Centra il modello
-        geometry.computeBoundingBox();
-        geometry.center();
-
-        // Eventuale scala
-        const scale = 1;
-        mesh.scale.set(scale, scale, scale);
-
-        scene.add(mesh);
-      },
-      undefined,
-      function (error) {
-        console.error('Errore nel caricamento STL:', error);
-      }
-    );
-
-    // Resize finestra
-    window.addEventListener('resize', () => {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-      renderer.setSize(width, height);
-    });
-
-    // Loop di animazione
-    function animate() {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    }
-    animate();
-  </script>
+    
 </body>
 </html>
