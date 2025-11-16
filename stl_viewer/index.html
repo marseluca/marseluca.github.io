@@ -15,13 +15,12 @@
   </style>
 </head>
 <body>
-  <!-- Il canvas viene creato dal renderer -->
+  <!-- Three.js + controlli + STLLoader da CDN (NO import) -->
+  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://unpkg.com/three@0.160.0/examples/js/loaders/STLLoader.js"></script>
 
-  <script type="module">
-    import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
-    import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
-    import { STLLoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/STLLoader.js';
-
+  <script>
     // Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -42,7 +41,7 @@
     camera.position.set(0, 50, 150);
 
     // Controlli orbitali
-    const controls = new OrbitControls(camera, renderer.domElement);
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
     // Luci
@@ -54,10 +53,10 @@
     scene.add(dirLight);
 
     // Caricatore STL
-    const loader = new STLLoader();
+    const loader = new THREE.STLLoader();
     loader.load(
-      './stl_viewer/model.stl',          // percorso del file
-      function (geometry) {   // callback onLoad
+      'modello.stl', // percorso del file STL nella stessa cartella
+      function (geometry) {
         const material = new THREE.MeshPhongMaterial({ color: 0x2196f3 });
         const mesh = new THREE.Mesh(geometry, material);
 
@@ -65,16 +64,14 @@
         geometry.computeBoundingBox();
         geometry.center();
 
-        // Scala il modello se necessario (facoltativo)
+        // Eventuale scala
         const scale = 1;
         mesh.scale.set(scale, scale, scale);
 
         scene.add(mesh);
       },
-      function (xhr) {        // onProgress (opzionale)
-        console.log((xhr.loaded / xhr.total * 100) + '% caricato');
-      },
-      function (error) {      // onError
+      undefined,
+      function (error) {
         console.error('Errore nel caricamento STL:', error);
       }
     );
