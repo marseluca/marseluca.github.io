@@ -69,24 +69,30 @@
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      border: 1px solid rgba(255,255,255,0.04);
 
-      /* Ombra rimossa */
+      /* Stile completamente piatto */
       box-shadow: none;
-      transition: transform .15s ease;
+
+      /* Bordi pastello */
+      border: 1px solid rgba(122, 212, 216, 0.20);
+
+      /* Niente animazioni hover */
+      transition: none;
     }
 
-    .model-card:hover {
-      transform: translateY(-2px); /* puoi rimuoverlo mettendo 0 */
-    }
-
-    /* Thumbnail */
+    /* IMMAGINE INTERA (no crop) */
     .model-img {
       width: 100%;
-      height: 150px;
-      object-fit: cover;
       background: #000;
-      opacity: 0.92;
+
+      /* niente crop */
+      object-fit: contain;
+
+      /* altezza auto → si vede tutta */
+      height: auto;
+
+      /* spazio intorno all’immagine */
+      padding: 0.5rem;
     }
 
     .content {
@@ -105,7 +111,7 @@
 
     .model-title { font-size: 1.1rem; margin: 0; }
 
-    .model-filename, .model-desc {
+    .model-desc {
       font-size: 0.85rem;
       color: var(--muted);
     }
@@ -126,15 +132,11 @@
       font-size: 0.85rem;
       text-decoration: none;
 
-      /* Ombra rimossa */
+      /* completamente piatto */
       box-shadow: none;
 
-      transition: background .12s, transform .12s;
-    }
-
-    .open-btn:hover {
-      background: var(--accent-hover);
-      transform: translateY(-1px); /* opzionale */
+      /* nessuna animazione */
+      transition: none;
     }
 
     footer {
