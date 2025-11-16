@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Translation Platform – Job Board (Mock)</title>
+  <title>Translation Platform Feedback</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
@@ -167,6 +167,39 @@
       bottom: -1px;
       height: 2px;
       background-color: var(--yellow);
+    }
+
+    /* Developer popup */
+    .dev-popup {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      background-color: #fffbe6;
+      border-left: 3px solid var(--yellow);
+      padding: 8px 10px;
+      font-size: 12px;
+      color: #595959;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+
+    .dev-popup strong {
+      color: #262626;
+    }
+
+    .dev-popup-close {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      padding: 0 4px;
+      color: #8c8c8c;
+    }
+
+    .dev-popup-close:hover {
+      color: #262626;
     }
 
 
@@ -582,7 +615,7 @@
   <div class="navbar">
     <div class="navbar-left">
       <div class="brand-logo" id="logo-link">TP</div>
-      <div class="brand-text">Translation Platform</div>
+      <div class="brand-text">Translation Platform Feedback</div>
     </div>
     <div class="navbar-right">
       <span class="navbar-link">Settings</span>
@@ -601,6 +634,28 @@
     <div class="top-tabs">
       <div class="top-tab active">Translation Job Board</div>
       <div class="top-tab">String Board</div>
+    </div>
+
+    <!-- Developer notes -->
+    <div class="dev-popup" id="dev-popup-bulk">
+      <div>
+        <strong>Feature #1: </strong>Bulk acceptance of jobs: select multiple jobs using the checkboxes and click "Accept selected jobs" in the toolbar that appears at the bottom of the screen.
+      </div>
+      <button class="dev-popup-close" data-popup="dev-popup-bulk">×</button>
+    </div>
+
+    <div class="dev-popup" id="dev-popup-bulk">
+      <div>
+        <strong>Feature #2: </strong>Jobs sorting by word count, due date, or project.
+      </div>
+      <button class="dev-popup-close" data-popup="dev-popup-bulk">×</button>
+    </div>
+
+    <div class="dev-popup" id="dev-popup-bulk">
+      <div>
+        <strong>Feature #3: </strong>Edit button outside the single job page (for accepted jobs).
+      </div>
+      <button class="dev-popup-close" data-popup="dev-popup-bulk">×</button>
     </div>
 
     <div class="sub-tabs">
@@ -743,12 +798,53 @@
 
     <div class="job-title" id="work-job-title"></div>
 
+    <!-- Developer note -->
+    <div class="dev-popup" id="dev-popup-bulk">
+      <div>
+        <strong>Feature #4: </strong>Translations pre-filled with AI.
+      </div>
+      <button class="dev-popup-close" data-popup="dev-popup-bulk">×</button>
+    </div>
+
+    <!-- Developer note -->
+    <div class="dev-popup" id="dev-popup-bulk">
+      <div>
+        <strong>Feature #5: </strong>A much more compact UI.
+      </div>
+      <button class="dev-popup-close" data-popup="dev-popup-bulk">×</button>
+    </div>
+
+    <!-- Developer note -->
+    <div class="dev-popup" id="dev-popup-bulk">
+      <div>
+        <strong>Feature #6: </strong>Tags should wrap the translation text, rather than
+deleting it (not implemented in this demo).
+      </div>
+      <button class="dev-popup-close" data-popup="dev-popup-bulk">×</button>
+    </div>
+
+     <!-- Developer note -->
+    <div class="dev-popup" id="dev-popup-bulk">
+      <div>
+        <strong>Feature #7: </strong>Context screenshots should be attached to the relevant strings.
+      </div>
+      <button class="dev-popup-close" data-popup="dev-popup-bulk">×</button>
+    </div>
+
+    <!-- Developer note -->
+    <div class="dev-popup" id="dev-popup-bulk">
+      <div>
+        <strong>Feature #8: </strong>Shortcuts.
+      </div>
+      <button class="dev-popup-close" data-popup="dev-popup-bulk">×</button>
+    </div>
+
     <!-- Font controls -->
     <div class="search-row" style="margin-top:6px;">
       <label for="font-select">Font:</label>
       <select id="font-select" class="select-input" style="max-width:180px;">
-        <option value="mono" selected>Monospaced</option>
-        <option value="sans">Sans-serif</option>
+        <option value="mono">Monospaced</option>
+        <option value="sans" selected>Sans-serif</option>
         <option value="serif">Serif</option>
       </select>
 
@@ -1092,6 +1188,15 @@ Network fee will be deducted from your total amount.
       renderJobBoard();
     });
 
+    // Close developer popups
+    document.querySelectorAll(".dev-popup-close").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-popup");
+        const popup = document.getElementById(id);
+        if (popup) popup.style.display = "none";
+      });
+    });
+
     function parseDate(str) {
       const normalized = str.replace(" ", "T") + ":00Z";
       return new Date(normalized);
@@ -1237,7 +1342,7 @@ Network fee will be deducted from your total amount.
 
       bulkToolbar.style.display = "none";
       renderJobBoard();
-      alert("Mock: selected jobs have been accepted and moved to 'My Jobs'.");
+      alert("Selected jobs have been accepted and moved to 'My Jobs' tab.");
     });
 
     function openJob(id) {
@@ -1471,20 +1576,20 @@ Network fee will be deducted from your total amount.
                 "La commissione di rete verrà detratta dall’importo totale.";
             }
           }
-          alert("Mock AI Helper: example translation suggestion inserted for row " + index + ".");
+          alert("Example of AI Helper");
         });
 
         btnHistory.addEventListener("click", () => {
-          alert("Mock History: no previous versions stored for row " + index + ".");
+          alert("Example of History");
         });
 
         btnSave.addEventListener("click", () => {
-          alert("Mock Save: translation locally saved for row " + index + ".");
+          alert("Example of Save");
         });
 
         btnInstructions.addEventListener("click", () => {
           instructionModalBody.textContent =
-            "Generic instruction text for this job. In production, this could include specific context or guidelines for the selected string.";
+            "Example of Instructions";
           instructionModal.style.display = "flex";
         });
 
@@ -1495,7 +1600,7 @@ Network fee will be deducted from your total amount.
             "https://via.placeholder.com/520x260?text=Context+" +
             encodeURIComponent("row " + index);
           contextModalCaption.textContent = ctxPath
-            ? "Mock context image path for this string: " + ctxPath
+            ? "Example of Context"
             : "No specific context path configured for this string.";
           contextModal.style.display = "flex";
         });
