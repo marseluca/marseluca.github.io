@@ -55,7 +55,7 @@
     // Caricatore STL
     const loader = new THREE.STLLoader();
     loader.load(
-      'modello.stl', // percorso del file STL nella stessa cartella
+      './stl_viewer/model.stl', // percorso del file STL nella stessa cartella
       function (geometry) {
         const material = new THREE.MeshPhongMaterial({ color: 0x2196f3 });
         const mesh = new THREE.Mesh(geometry, material);
