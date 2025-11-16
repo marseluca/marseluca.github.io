@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Model Viewer Example</title>
+
+  <!-- Responsività mobile -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.3.0/dist/model-viewer.min.js">
+  </script>
+
+  <style>
+    /* Reset base */
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    /* Il viewer occupa tutta la larghezza, 
+       altezza proporzionata e adattabile al mobile */
+    model-viewer {
+      width: 100%;
+      max-width: 600px;      /* opzionale: limite su desktop */
+      aspect-ratio: 1 / 1;   /* quadrato; puoi cambiare es. 16/9 */
+      height: auto;
+    }
+
+    /* Su schermi molto piccoli può riempire tutto */
+    @media (max-width: 480px) {
+      model-viewer {
+        max-width: 100%;
+        aspect-ratio: 1 / 1;
+      }
+    }
+  </style>
+  <script>
+    const viewer = document.querySelector('#viewer');
+
+    viewer.addEventListener('load', () => {
+        const materials = viewer.model.materials;
+
+        materials.forEach(mat => {
+        mat.pbrMetallicRoughness.setBaseColorFactor([1, 0, 0, 1]); 
+        // RGBA → [1,0,0,1] = rosso
+        });
+    });
+   </script>
+</head>
+
+<body>
+
+  <model-viewer id="viewer"
+    src="./razor.glb"
+    camera-controls
+    tone-mapping="neutral"
+    shadow-intensity="2"
+    shadow-softness="0.72"
+    auto-rotate>
+  </model-viewer>
+
+</body>
+</html>
