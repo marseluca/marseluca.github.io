@@ -15,12 +15,12 @@
   </style>
 </head>
 <body>
-  <!-- Three.js + controlli + STLLoader da CDN (NO import) -->
-  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
-  <script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://unpkg.com/three@0.160.0/examples/js/loaders/STLLoader.js"></script>
+  <!-- Tutto il codice è in un modulo ES -->
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+    import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+    import { STLLoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/STLLoader.js';
 
-  <script>
     // Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -40,8 +40,8 @@
     );
     camera.position.set(0, 50, 150);
 
-    // Controlli orbitali
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    // Controlli orbitali (NOTA: qui usiamo direttamente OrbitControls, NON THREE.OrbitControls)
+    const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
     // Luci
@@ -53,9 +53,9 @@
     scene.add(dirLight);
 
     // Caricatore STL
-    const loader = new THREE.STLLoader();
+    const loader = new STLLoader(); 
     loader.load(
-      './stl_viewer/model.stl', // percorso del file STL nella stessa cartella
+      './stl_viewer/model.stl', // il tuo file STL nella stessa cartella
       function (geometry) {
         const material = new THREE.MeshPhongMaterial({ color: 0x2196f3 });
         const mesh = new THREE.Mesh(geometry, material);
