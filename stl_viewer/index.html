@@ -7,22 +7,22 @@
 
   <style>
     :root {
-      --bg: #0b0c10;
-      --card-bg: #151821;
-      --accent: #3fa9f5;
-      --text: #f5f5f5;
-      --muted: #9aa0b5;
+      --bg: #0e1016;
+      --bg2: #171a22;
+      --card-bg: #1f2230;
+      --accent: #7ad4d8;
+      --accent-hover: #9ee3e6;
+      --text: #f4f4f4;
+      --muted: #b6b8c4;
       --radius: 16px;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: radial-gradient(circle at top, #1c2333, #05060a);
+      background: linear-gradient(160deg, var(--bg), var(--bg2));
       color: var(--text);
       min-height: 100vh;
       display: flex;
@@ -31,7 +31,7 @@
 
     header {
       padding: 1.2rem 1.5rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -39,14 +39,12 @@
     }
 
     header h1 {
-      font-size: 1.3rem;
+      font-size: 1.4rem;
       margin: 0;
+      font-weight: 600;
     }
 
-    header span {
-      font-size: 0.9rem;
-      color: var(--muted);
-    }
+    header span { color: var(--muted); }
 
     main {
       flex: 1;
@@ -57,160 +55,133 @@
     }
 
     .intro {
-      margin-bottom: 1.5rem;
-      font-size: 0.95rem;
       color: var(--muted);
+      margin-bottom: 1.2rem;
     }
 
+    /* GRID */
     .models-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.2rem;
     }
 
+    /* CARD */
     .model-card {
       background: var(--card-bg);
       border-radius: var(--radius);
+      padding: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.04);
+      transition: transform .15s ease, box-shadow .2s ease;
+    }
+
+    .model-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.45);
+    }
+
+    /* Thumbnail */
+    .model-img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      background: #000;
+      opacity: 0.92;
+    }
+
+    .content {
       padding: 1rem;
       display: flex;
       flex-direction: column;
-      gap: 0.6rem;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      gap: 0.5rem;
     }
 
     .model-tag {
       font-size: 0.75rem;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
       color: var(--accent);
+      font-weight: 600;
     }
 
-    .model-title {
-      font-size: 1.02rem;
-      margin: 0;
-    }
+    .model-title { font-size: 1.1rem; margin: 0; }
 
-    .model-filename {
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
-
-    .model-desc {
+    .model-filename, .model-desc {
       font-size: 0.85rem;
       color: var(--muted);
-      flex: 1;
     }
 
     .card-footer {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-top: 0.3rem;
+      margin-top: 0.4rem;
     }
 
     .open-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
       padding: 0.45rem 0.9rem;
-      font-size: 0.85rem;
       border-radius: 999px;
-      border: none;
       background: var(--accent);
-      color: #05060a;
-      text-decoration: none;
+      color: #0e1016;
       font-weight: 600;
-      cursor: pointer;
-      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
-      box-shadow: 0 6px 18px rgba(63, 169, 245, 0.4);
+      font-size: 0.85rem;
+      text-decoration: none;
+      box-shadow: 0 4px 12px rgba(122,212,216,0.4);
+      transition: .12s;
     }
 
     .open-btn:hover {
+      background: var(--accent-hover);
       transform: translateY(-1px);
-      box-shadow: 0 10px 24px rgba(63, 169, 245, 0.5);
-      background: #55b7ff;
-    }
-
-    .open-btn:active {
-      transform: translateY(0);
-      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
-    }
-
-    .meta {
-      font-size: 0.75rem;
-      color: var(--muted);
-      text-align: right;
+      box-shadow: 0 6px 18px rgba(122,212,216,0.5);
     }
 
     footer {
       padding: 0.8rem 1.5rem 1rem;
-      font-size: 0.75rem;
       color: var(--muted);
       text-align: center;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    @media (max-width: 600px) {
-      header {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-      main {
-        padding: 1rem;
-      }
+      font-size: 0.8rem;
+      border-top: 1px solid rgba(255,255,255,0.05);
     }
   </style>
 </head>
+
 <body>
 
-  <header>
-    <h1>Galleria STL</h1>
-    <span>Seleziona un modello per aprire il viewer 3D</span>
-  </header>
+<header>
+  <h1>Galleria STL</h1>
+  <span>Seleziona un modello da visualizzare</span>
+</header>
 
-  <main>
-    <p class="intro">
-      Qui trovi una lista di modelli STL. Clicca su <strong>Apri modello</strong> per andare
-      alla relativa pagina con il visualizzatore 3D basato su <code>&lt;model-viewer&gt;</code>.
-    </p>
+<main>
+  <p class="intro">
+    Ogni modello ha una pagina dedicata con viewer 3D. Tocca una card per aprirlo.
+  </p>
 
-    <section class="models-grid">
+  <section class="models-grid">
 
-      <!-- CARD 1 -->
-      <article class="model-card">
+    <!-- CARD 1 -->
+    <article class="model-card">
+      <img class="model-img" src="img/razor.jpg" alt="Anteprima Razor">
+      <div class="content">5
         <div class="model-tag">Modello 1</div>
-        <h2 class="model-title">Pettine del rasoio</h2>
-        <p class="model-desc">
-          Pettine per il rasoio personalizzato a 1.7 mm.
-        </p>
+        <h2 class="model-title">Pettine per il rasoio</h2>
+        <p class="model-desc">Pettine per il rasoio personalizzato a 1.7mm.</p>
         <div class="card-footer">
-          <span class="meta">Viewer: <code>razor.html</code></span>
-          <!-- Cambia href con il nome della tua pagina con model-viewer -->
-          <a class="open-btn" href="./razor.html">Apri modello</a>
+          <a class="open-btn" href="./razor.html">Apri</a>
         </div>
-      </article>
+      </div>
+    </article>
 
-      <!-- Aggiungi altre card copiando questo blocco -->
-      <!--
-      <article class="model-card">
-        <div class="model-tag">Modello N</div>
-        <h2 class="model-title">Nome modello</h2>
-        <div class="model-filename">File: <code>nomefile.stl</code></div>
-        <p class="model-desc">Breve descrizione del modello.</p>
-        <div class="card-footer">
-          <span class="meta">Viewer: <code>pagina_viewer.html</code></span>
-          <a class="open-btn" href="pagina_viewer.html">Apri modello</a>
-        </div>
-      </article>
-      -->
+  </section>
+</main>
 
-    </section>
-  </main>
-
-  <footer>
-    Homepage STL &mdash; adattata per desktop e mobile.
-  </footer>
+<footer>
+  Homepage STL — Dark Mode Pastello + Thumbnail per modelli 3D
+</footer>
 
 </body>
 </html>
