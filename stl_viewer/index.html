@@ -54,11 +54,6 @@
       margin: 0 auto;
     }
 
-    .intro {
-      color: var(--muted);
-      margin-bottom: 1.2rem;
-    }
-
     /* GRID */
     .models-grid {
       display: grid;
@@ -74,14 +69,15 @@
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.35);
       border: 1px solid rgba(255,255,255,0.04);
-      transition: transform .15s ease, box-shadow .2s ease;
+
+      /* Ombra rimossa */
+      box-shadow: none;
+      transition: transform .15s ease;
     }
 
     .model-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 28px rgba(0,0,0,0.45);
+      transform: translateY(-2px); /* puoi rimuoverlo mettendo 0 */
     }
 
     /* Thumbnail */
@@ -116,7 +112,7 @@
 
     .card-footer {
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-end;
       align-items: center;
       margin-top: 0.4rem;
     }
@@ -129,14 +125,16 @@
       font-weight: 600;
       font-size: 0.85rem;
       text-decoration: none;
-      box-shadow: 0 4px 12px rgba(122,212,216,0.4);
-      transition: .12s;
+
+      /* Ombra rimossa */
+      box-shadow: none;
+
+      transition: background .12s, transform .12s;
     }
 
     .open-btn:hover {
       background: var(--accent-hover);
-      transform: translateY(-1px);
-      box-shadow: 0 6px 18px rgba(122,212,216,0.5);
+      transform: translateY(-1px); /* opzionale */
     }
 
     footer {
@@ -157,16 +155,13 @@
 </header>
 
 <main>
-  <p class="intro">
-    Ogni modello ha una pagina dedicata con viewer 3D. Tocca una card per aprirlo.
-  </p>
 
   <section class="models-grid">
 
     <!-- CARD 1 -->
     <article class="model-card">
       <img class="model-img" src="img/razor.jpg" alt="Anteprima Razor">
-      <div class="content">5
+      <div class="content">
         <div class="model-tag">Modello 1</div>
         <h2 class="model-title">Pettine per il rasoio</h2>
         <p class="model-desc">Pettine per il rasoio personalizzato a 1.7mm.</p>
@@ -180,7 +175,7 @@
 </main>
 
 <footer>
-  Homepage STL — Dark Mode Pastello + Thumbnail per modelli 3D
+  Luca Marseglia
 </footer>
 
 </body>
