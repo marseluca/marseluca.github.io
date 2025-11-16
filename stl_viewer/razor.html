@@ -44,18 +44,6 @@
       }
     }
   </style>
-  <script>
-    const viewer = document.querySelector('#viewer');
-
-    viewer.addEventListener('load', () => {
-        const materials = viewer.model.materials;
-
-        materials.forEach(mat => {
-        mat.pbrMetallicRoughness.setBaseColorFactor([1, 0, 0, 1]); 
-        // RGBA → [1,0,0,1] = rosso
-        });
-    });
-   </script>
 </head>
 
 <body>
@@ -63,7 +51,6 @@
   <model-viewer id="viewer"
     src="./razor.glb"
     camera-controls
-    tone-mapping="neutral"
     shadow-intensity="2"
     shadow-softness="0.72"
     auto-rotate>
