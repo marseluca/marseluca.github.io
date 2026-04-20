@@ -369,6 +369,8 @@ h1 { font-family:'Playfair Display',serif; font-size:1.7rem; font-weight:700; le
         <div id="importFeedback" style="font-size:13px;margin-top:8px;min-height:18px"></div>
       </div>
     </div>
+  </div>
+</div>
 
 <!-- OTTIMIZZATORE ZAINO -->
 <div class="screen" id="ksScreen">
@@ -881,75 +883,85 @@ document.getElementById('btnKsRun').addEventListener('click',()=>{
   }
 
   // Candidati: articoli con prezzo > 0 e priorità > 0
-  const candidates = items.filter(i=>i.price>0&&i.prio>0);
-  if(candidates.length===0){
+  const source = items.filter(i=>i.price>0&&i.prio>0);
+  if(source.length===0){
     ksResults.innerHTML=`<div class="ks-empty">Nessun articolo con prezzo e priorità assegnata.<br>Imposta prezzo e priorità negli articoli dell'inventario.</div>`;
     btnKsUse.classList.remove('on'); return;
   }
 
-  // Knapsack 0/1 con DP — lavoriamo in centesimi per evitare floating point
+  // Espandiamo gli articoli tenendo conto delle quantità (bounded knapsack → 0/1)
+  // Ogni unità di un articolo è un item separato nel DP
+  const units = []; // {id, nome, brand, price, prio, unitIndex, totalQty}
+  source.forEach(it=>{
+    const q = Math.max(1, it.qty||1);
+    for(let u=0;u<q;u++){
+      units.push({id:it.id, nome:it.nome, brand:it.brand, price:it.price, prio:it.prio, unitIndex:u, totalQty:q});
+    }
+  });
+
   const scale = 100;
   const W = Math.floor(budget * scale);
-  const n = candidates.length;
-  // dp[i][w] = max score usando i primi i articoli con capacità w
-  // Per memoria usiamo solo due righe
-  const prev = new Int32Array(W+1);
-  const curr = new Int32Array(W+1);
+  const n = units.length;
 
+  // DP 0/1 con backtrack — costruiamo la matrice completa (n piccolo in pratica)
+  // Usiamo Uint16Array per velocità (score max ~3 * n, mai > 65535)
+  const dp = new Array(n+1);
+  dp[0] = new Uint16Array(W+1);
   for(let i=0;i<n;i++){
-    const w = Math.round(candidates[i].price * scale);
-    const v = candidates[i].prio;
-    for(let c=0;c<=W;c++){
-      curr[c] = w<=c ? Math.max(prev[c], prev[c-w]+v) : prev[c];
+    const w = Math.min(W, Math.round(units[i].price * scale));
+    const v = units[i].prio;
+    dp[i+1] = new Uint16Array(dp[i]);
+    for(let c=w;c<=W;c++){
+      const candidate = dp[i][c-w] + v;
+      if(candidate > dp[i+1][c]) dp[i+1][c] = candidate;
     }
-    prev.set(curr);
   }
 
-  // Backtrack per trovare quali articoli sono stati scelti
-  const chosen=[];
-  let remW=W;
-  // Ricostruiamo il DP completo (matrice) per backtrack — n è piccolo (<500)
-  const dp=[];
-  const empty=new Int32Array(W+1);
-  dp.push(empty);
-  for(let i=0;i<n;i++){
-    const row=new Int32Array(dp[i]);
-    const w=Math.round(candidates[i].price*scale), v=candidates[i].prio;
-    for(let c=w;c<=W;c++) row[c]=Math.max(row[c],dp[i][c-w]+v);
-    dp.push(row);
-  }
+  // Backtrack
+  const chosenUnits = []; // indici in units[]
+  let remW = W;
   for(let i=n;i>0;i--){
-    if(dp[i][remW]!==dp[i-1][remW]){
-      chosen.push(candidates[i-1]);
-      remW-=Math.round(candidates[i-1].price*scale);
+    if(dp[i][remW] !== dp[i-1][remW]){
+      chosenUnits.push(i-1);
+      remW -= Math.round(units[i-1].price * scale);
     }
   }
 
-  if(chosen.length===0){
+  if(chosenUnits.length===0){
     ksResults.innerHTML=`<div class="ks-empty">Nessun articolo rientra nel budget specificato.</div>`;
     btnKsUse.classList.remove('on'); return;
   }
 
-  const totalScore=chosen.reduce((s,i)=>s+i.prio,0);
-  const totalCost=chosen.reduce((s,i)=>s+i.price,0);
-  const maxScore=n*3;
-  const prioLabels=['','Superfluo','Utile','Fondamentale'];
+  // Raggruppa le unità scelte per articolo originale
+  const chosenMap = {}; // id → {item, chosenQty}
+  chosenUnits.forEach(ui=>{
+    const u = units[ui];
+    if(!chosenMap[u.id]) chosenMap[u.id] = {item: source.find(i=>i.id===u.id), chosenQty:0};
+    chosenMap[u.id].chosenQty++;
+  });
 
-  ksSelected=chosen.map(i=>i.id);
+  const chosen = Object.values(chosenMap);
+  const totalScore = chosen.reduce((s,e)=>s+e.item.prio*e.chosenQty, 0);
+  const totalCost  = chosen.reduce((s,e)=>s+e.item.price*e.chosenQty, 0);
+  const prioLabels = ['','Superfluo','Utile','Fondamentale'];
+
+  // ksSelected: mappa id→quantità scelta
+  ksSelected = chosenMap;
 
   let html=`<div class="ks-result-summary">
-    <div class="ks-result-row"><span class="ks-result-label">Articoli selezionati</span><span class="ks-result-val">${chosen.length} / ${candidates.length}</span></div>
-    <div class="ks-result-row"><span class="ks-result-label">Punteggio totale</span><span class="ks-result-val">${totalScore} / ${chosen.length*3}</span></div>
+    <div class="ks-result-row"><span class="ks-result-label">Articoli selezionati</span><span class="ks-result-val">${chosen.length} tipologie (${chosenUnits.length} unità)</span></div>
+    <div class="ks-result-row"><span class="ks-result-label">Punteggio totale</span><span class="ks-result-val">${totalScore} pt</span></div>
     <div class="ks-result-row"><span class="ks-result-label">Costo totale</span><span class="ks-result-val">${totalCost.toFixed(2)} € / ${budget.toFixed(2)} €</span></div>
   </div>`;
 
-  // Ordina per priorità decrescente
-  chosen.sort((a,b)=>b.prio-a.prio).forEach(it=>{
-    const pClass=['','tag-p1','tag-p2','tag-p3'][it.prio];
+  chosen.sort((a,b)=>b.item.prio-a.item.prio).forEach(({item,chosenQty})=>{
+    const partial = chosenQty < item.qty;
+    const pClass=['','tag-p1','tag-p2','tag-p3'][item.prio];
     html+=`<div class="ks-item">
-      <div class="ks-item-info">${escH(it.nome)}${it.brand?` <span style="color:var(--muted);font-size:12px">· ${escH(it.brand)}</span>`:''}</div>
-      <span class="tag ${pClass}" style="margin-right:6px">${prioLabels[it.prio]}</span>
-      <span class="ks-item-price">${it.price.toFixed(2)} €</span>
+      <div class="ks-item-info">${escH(item.nome)}${item.brand?` <span style="color:var(--muted);font-size:12px">· ${escH(item.brand)}</span>`:''}</div>
+      <span class="tag ${pClass}" style="margin-right:4px">${prioLabels[item.prio]}</span>
+      ${partial?`<span class="tag tag-qty" style="margin-right:4px">×${chosenQty}/${item.qty}</span>`:(chosenQty>1?`<span class="tag tag-qty" style="margin-right:4px">×${chosenQty}</span>`:'')}
+      <span class="ks-item-price">${(item.price*chosenQty).toFixed(2)} €</span>
     </div>`;
   });
 
@@ -958,9 +970,17 @@ document.getElementById('btnKsRun').addEventListener('click',()=>{
 });
 
 btnKsUse.addEventListener('click',()=>{
-  ksSelected.forEach(id=>{
-    const it=items.find(i=>i.id===id);
-    if(it) it.status='da_acquistare';
+  // Sposta in Da acquistare con la quantità ottimale
+  Object.values(ksSelected).forEach(({item,chosenQty})=>{
+    const it=items.find(i=>i.id===item.id);
+    if(!it)return;
+    if(chosenQty===it.qty){
+      it.status='da_acquistare';
+    } else {
+      // Articolo parziale: aggiunge nuovo articolo con qty scelta, lascia il resto in inventario
+      it.qty = it.qty - chosenQty;
+      items.unshift({...it, id:Date.now()+Math.random(), qty:chosenQty, status:'da_acquistare'});
+    }
   });
   saveItems();
   activeFilter='da_acquistare';
