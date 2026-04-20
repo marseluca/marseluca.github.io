@@ -510,9 +510,14 @@ function saveArticle(){
     const it=items.find(i=>i.id===editingId);
     if(it){it.nome=nome;it.qty=qty;it.cat=selCat.value;it.shop=selShop.value;it.brand=selBrand.value;it.peso=peso;it.price=price;it.priceKg=priceKg;it.exp=expVal||null;}
   } else {
-    items.unshift({id:Date.now(),nome,qty,cat:selCat.value,shop:selShop.value,brand:selBrand.value,peso,price,priceKg,exp:expVal||null,status:'da_acquistare'});
+    items.unshift({id:Date.now(),nome,qty,cat:selCat.value,shop:selShop.value,brand:selBrand.value,peso,price,priceKg,exp:expVal||null,status:'inventario'});
   }
-  saveItems(); render(); closeArticle();
+  saveItems();
+  if(editingId===null){
+    activeFilter='inventario';
+    document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active',c.dataset.filter==='inventario'));
+  }
+  render(); closeArticle();
 }
 function deleteArticle(id){items=items.filter(i=>i.id!==id);saveItems();render();closeArticle();}
 
@@ -636,7 +641,15 @@ document.getElementById('miniConfirm').addEventListener('click',()=>{
     else { const c=cats.find(c=>c.id===id); if(c){c.name=name;c.emoji=emoji;c.color=miniColor;} }
     saveCats();
   } else if(type==='shop'){
-    if(isNew) shops.push({id:uid(),name}); else { const s=shops.find(s=>s.id===id); if(s)s.name=name; }
+    if(isNew) shops.push({id:uid(),name}); 
+    else { 
+      const s=shops.find(s=>s.id===id); 
+      if(s){ 
+        const oldName=s.name; 
+        s.name=name; 
+        if(oldName!==name){ items.forEach(it=>{if(it.shop===oldName)it.shop=name;}); saveItems(); }
+      } 
+    }
     saveShops();
   } else {
     if(isNew) brands.push({id:uid(),name}); else { const b=brands.find(b=>b.id===id); if(b)b.name=name; }
