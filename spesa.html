@@ -70,6 +70,37 @@ h1 { font-family:'Playfair Display',serif; font-size:1.7rem; font-weight:700; le
 .tag-qty   { background:var(--surface2); color:var(--muted); }
 .tag-exp   { background:var(--warn-l); color:var(--warn); }
 .tag-exp.scad { background:var(--danger-l); color:var(--danger); font-weight:500; }
+.tag-p1 { background:#F1EFE8; color:#5F5E5A; }
+.tag-p2 { background:var(--cart-l); color:var(--cart); }
+.tag-p3 { background:#FAEEDA; color:#854F0B; font-weight:500; }
+
+/* Segmented priority control */
+.priority-group { display:flex; gap:0; border:1px solid var(--borderS); border-radius:10px; overflow:hidden; height:42px; }
+.priority-opt { flex:1; border:none; background:transparent; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--muted); cursor:pointer; transition:all .15s; }
+.priority-opt + .priority-opt { border-left:1px solid var(--borderS); }
+.priority-opt.sel-1 { background:#EDE8DC; color:#5F5E5A; }
+.priority-opt.sel-2 { background:var(--cart-l); color:var(--cart); }
+.priority-opt.sel-3 { background:#FAEEDA; color:#854F0B; }
+
+/* Knapsack screen */
+.ks-budget-wrap { display:flex; align-items:center; border:1px solid var(--borderS); border-radius:12px; background:var(--surface); overflow:hidden; height:52px; margin-bottom:1rem; }
+.ks-budget-wrap input { flex:1; height:100%; border:none; background:transparent; padding:0 0 0 16px; font-family:'DM Sans',sans-serif; font-size:22px; font-weight:500; color:var(--text); outline:none; }
+.ks-budget-wrap input::placeholder { color:var(--muted); font-size:18px; font-weight:400; }
+.ks-budget-wrap .unit-badge { font-size:16px; }
+.btn-ks-run { width:100%; height:48px; border-radius:12px; background:var(--accent); border:none; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:16px; font-weight:500; color:#fff; margin-bottom:1.25rem; transition:background .2s; }
+.btn-ks-run:active { background:#2d5309; }
+.ks-result-summary { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:14px 16px; margin-bottom:1rem; }
+.ks-result-row { display:flex; justify-content:space-between; align-items:center; font-size:14px; margin-bottom:6px; }
+.ks-result-row:last-child { margin-bottom:0; }
+.ks-result-label { color:var(--muted); }
+.ks-result-val { font-weight:500; }
+.ks-item { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:10px 12px; margin-bottom:6px; display:flex; align-items:center; gap:10px; }
+.ks-item-info { flex:1; min-width:0; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ks-item-price { font-size:13px; font-weight:500; color:var(--accent); flex-shrink:0; }
+.ks-empty { text-align:center; padding:2rem 1rem; color:var(--muted); font-size:14px; }
+.btn-ks-use { width:100%; height:44px; border-radius:12px; background:var(--cart); border:none; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:500; color:#fff; margin-top:.5rem; transition:background .2s; display:none; }
+.btn-ks-use.on { display:block; }
+.btn-ks-use:active { background:#0C447C; }
 
 .btn-edit { width:32px; height:32px; border-radius:9px; border:1px solid var(--borderS); background:var(--surface2); color:var(--muted); cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .15s; }
 .btn-edit:active { background:var(--accent-l); color:var(--accent); }
@@ -185,12 +216,17 @@ h1 { font-family:'Playfair Display',serif; font-size:1.7rem; font-weight:700; le
 <header>
   <div class="header-top">
     <h1>🛒 Spesa</h1>
-    <button class="btn-gear" id="btnGear" aria-label="Impostazioni">
+    <div style="display:flex;gap:8px">
+      <button class="btn-gear" id="btnKnapsack" aria-label="Ottimizza lista" title="Ottimizza lista per budget">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      </button>
+      <button class="btn-gear" id="btnGear" aria-label="Impostazioni">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="3"/>
         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
       </svg>
     </button>
+    </div>
   </div>
   <div class="shop-tabs" id="shopTabs"></div>
   <div class="progress-bar-wrap">
@@ -266,6 +302,14 @@ h1 { font-family:'Playfair Display',serif; font-size:1.7rem; font-weight:700; le
         <div class="field-label">Data di scadenza</div>
         <input class="input-date" type="text" id="inputExp" placeholder="Data di scadenza">
       </div>
+      <div>
+        <div class="field-label">Priorità</div>
+        <div class="priority-group" id="priorityGroup">
+          <button class="priority-opt" data-prio="1">Superfluo</button>
+          <button class="priority-opt" data-prio="2">Utile</button>
+          <button class="priority-opt" data-prio="3">Fondamentale</button>
+        </div>
+      </div>
     </div>
   </div>
   <div class="screen-footer">
@@ -325,6 +369,25 @@ h1 { font-family:'Playfair Display',serif; font-size:1.7rem; font-weight:700; le
         <div id="importFeedback" style="font-size:13px;margin-top:8px;min-height:18px"></div>
       </div>
     </div>
+
+<!-- OTTIMIZZATORE ZAINO -->
+<div class="screen" id="ksScreen">
+  <div class="screen-hdr">
+    <h2>Ottimizza lista</h2>
+    <button class="btn-x" id="btnCloseKs"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div class="screen-body">
+    <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:1rem">Inserisci il budget disponibile. L'algoritmo seleziona gli articoli dall'inventario con prezzo e priorità assegnata, massimizzando il punteggio totale senza superare il budget.</p>
+    <div class="field-label">Budget</div>
+    <div class="ks-budget-wrap" style="margin-top:4px">
+      <input type="number" id="ksBudget" placeholder="0.00" min="0" step="0.01">
+      <span class="unit-badge">€</span>
+    </div>
+    <button class="btn-ks-run" id="btnKsRun">Calcola lista ottimale</button>
+    <div id="ksResults"></div>
+    <button class="btn-ks-use" id="btnKsUse">Sposta selezione in Da acquistare</button>
+  </div>
+</div>
 
 <!-- MINI EDITOR -->
 <div class="mini-overlay" id="miniOv"></div>
@@ -446,6 +509,23 @@ function updatePkg(){
 inputPeso.addEventListener('input',updatePkg);
 inputPrice.addEventListener('input',updatePkg);
 
+// ─── PRIORITY ────────────────────────────────────────────────────────────────
+let selectedPrio = 0; // 0=none, 1,2,3
+
+function setPrio(val){
+  selectedPrio=val;
+  document.querySelectorAll('#priorityGroup .priority-opt').forEach(b=>{
+    const p=parseInt(b.dataset.prio);
+    b.className='priority-opt'+(p===val?' sel-'+val:'');
+  });
+}
+
+document.getElementById('priorityGroup').addEventListener('click',e=>{
+  const btn=e.target.closest('[data-prio]'); if(!btn)return;
+  const p=parseInt(btn.dataset.prio);
+  setPrio(selectedPrio===p?0:p); // toggle off if same
+});
+
 // ─── SELECTS ─────────────────────────────────────────────────────────────────
 const sortAlpha = arr => [...arr].sort((a,b)=>a.name.localeCompare(b.name,'it'));
 
@@ -496,6 +576,7 @@ function openArticle(id=null){
     inputPeso.value=it.peso||''; inputPrice.value=it.price!==null?it.price:'';
     if(it.exp){inputExp.type='date';inputExp.value=it.exp;inputExp.style.color='var(--text)';}
     else{inputExp.type='text';inputExp.value='';inputExp.style.color='';}
+    setPrio(it.prio||0);
     updatePkg();
   } else {
     articleTitle.textContent='Nuovo articolo'; btnSaveArticle.textContent='Aggiungi';
@@ -504,6 +585,7 @@ function openArticle(id=null){
     inputExp.value=''; inputExp.type='text'; inputExp.style.color='';
     selCat.value=''; selShop.value=activeShop||''; selBrand.value='';
     qty=1; qtyVal.textContent=1; pkgRow.textContent='';
+    setPrio(0);
   }
   articleScreen.classList.add('on'); fab.classList.add('open');
 }
@@ -520,9 +602,9 @@ function saveArticle(){
   const expVal=inputExp.type==='date'?inputExp.value:null;
   if(editingId!==null){
     const it=items.find(i=>i.id===editingId);
-    if(it){it.nome=nome;it.qty=qty;it.cat=selCat.value;it.shop=selShop.value;it.brand=selBrand.value;it.peso=peso;it.price=price;it.priceKg=priceKg;it.exp=expVal||null;}
+    if(it){it.nome=nome;it.qty=qty;it.cat=selCat.value;it.shop=selShop.value;it.brand=selBrand.value;it.peso=peso;it.price=price;it.priceKg=priceKg;it.exp=expVal||null;it.prio=selectedPrio||0;}
   } else {
-    items.unshift({id:Date.now(),nome,qty,cat:selCat.value,shop:selShop.value,brand:selBrand.value,peso,price,priceKg,exp:expVal||null,status:'inventario'});
+    items.unshift({id:Date.now(),nome,qty,cat:selCat.value,shop:selShop.value,brand:selBrand.value,peso,price,priceKg,exp:expVal||null,prio:selectedPrio||0,status:'inventario'});
   }
   saveItems();
   if(editingId===null){
@@ -674,13 +756,16 @@ document.getElementById('miniConfirm').addEventListener('click',()=>{
 function buildItemHtml(it){
   const expired=isExp(it.exp);
   const tags=[];
-  // Ordine: Marca, peso, prezzo, prezzo/kg, quantità, scadenza
+  // Ordine: Marca, peso, prezzo, prezzo/kg, quantità, scadenza, priorità
   if(it.brand)        tags.push(`<span class="tag tag-brand">${escH(it.brand)}</span>`);
   if(it.peso)         tags.push(`<span class="tag tag-peso">${fmtPeso(it.peso)}</span>`);
   if(it.price!==null) tags.push(`<span class="tag tag-price">${it.price.toFixed(2)} €</span>`);
   if(it.priceKg)      tags.push(`<span class="tag tag-pkg">${it.priceKg.toFixed(2)} €/kg</span>`);
   if(it.qty>1)        tags.push(`<span class="tag tag-qty">×${it.qty}</span>`);
   if(it.exp)          tags.push(`<span class="tag tag-exp${expired?' scad':''}">Scad. ${fmtDate(it.exp)}${expired?' ⚠':''}</span>`);
+  if(it.prio===1)     tags.push(`<span class="tag tag-p1">Superfluo</span>`);
+  if(it.prio===2)     tags.push(`<span class="tag tag-p2">Utile</span>`);
+  if(it.prio===3)     tags.push(`<span class="tag tag-p3">Fondamentale</span>`);
   return `
     <div class="item-card" data-popup="${it.id}">
       <div class="item-info">
@@ -775,6 +860,114 @@ document.getElementById('filtersBar').addEventListener('click',e=>{
 
 renderShopTabs();
 render();
+
+// ─── KNAPSACK SCREEN ──────────────────────────────────────────────────────────
+const ksScreen  = document.getElementById('ksScreen');
+const ksResults = document.getElementById('ksResults');
+const btnKsUse  = document.getElementById('btnKsUse');
+let ksSelected  = []; // ids of selected items from last run
+
+document.getElementById('btnKnapsack').addEventListener('click',()=>{
+  ksResults.innerHTML=''; btnKsUse.classList.remove('on'); ksSelected=[];
+  ksScreen.classList.add('on');
+});
+document.getElementById('btnCloseKs').addEventListener('click',()=>ksScreen.classList.remove('on'));
+
+document.getElementById('btnKsRun').addEventListener('click',()=>{
+  const budget = parseFloat(document.getElementById('ksBudget').value);
+  if(isNaN(budget)||budget<=0){
+    ksResults.innerHTML=`<div class="ks-empty">Inserisci un budget valido.</div>`;
+    btnKsUse.classList.remove('on'); return;
+  }
+
+  // Candidati: articoli con prezzo > 0 e priorità > 0
+  const candidates = items.filter(i=>i.price>0&&i.prio>0);
+  if(candidates.length===0){
+    ksResults.innerHTML=`<div class="ks-empty">Nessun articolo con prezzo e priorità assegnata.<br>Imposta prezzo e priorità negli articoli dell'inventario.</div>`;
+    btnKsUse.classList.remove('on'); return;
+  }
+
+  // Knapsack 0/1 con DP — lavoriamo in centesimi per evitare floating point
+  const scale = 100;
+  const W = Math.floor(budget * scale);
+  const n = candidates.length;
+  // dp[i][w] = max score usando i primi i articoli con capacità w
+  // Per memoria usiamo solo due righe
+  const prev = new Int32Array(W+1);
+  const curr = new Int32Array(W+1);
+
+  for(let i=0;i<n;i++){
+    const w = Math.round(candidates[i].price * scale);
+    const v = candidates[i].prio;
+    for(let c=0;c<=W;c++){
+      curr[c] = w<=c ? Math.max(prev[c], prev[c-w]+v) : prev[c];
+    }
+    prev.set(curr);
+  }
+
+  // Backtrack per trovare quali articoli sono stati scelti
+  const chosen=[];
+  let remW=W;
+  // Ricostruiamo il DP completo (matrice) per backtrack — n è piccolo (<500)
+  const dp=[];
+  const empty=new Int32Array(W+1);
+  dp.push(empty);
+  for(let i=0;i<n;i++){
+    const row=new Int32Array(dp[i]);
+    const w=Math.round(candidates[i].price*scale), v=candidates[i].prio;
+    for(let c=w;c<=W;c++) row[c]=Math.max(row[c],dp[i][c-w]+v);
+    dp.push(row);
+  }
+  for(let i=n;i>0;i--){
+    if(dp[i][remW]!==dp[i-1][remW]){
+      chosen.push(candidates[i-1]);
+      remW-=Math.round(candidates[i-1].price*scale);
+    }
+  }
+
+  if(chosen.length===0){
+    ksResults.innerHTML=`<div class="ks-empty">Nessun articolo rientra nel budget specificato.</div>`;
+    btnKsUse.classList.remove('on'); return;
+  }
+
+  const totalScore=chosen.reduce((s,i)=>s+i.prio,0);
+  const totalCost=chosen.reduce((s,i)=>s+i.price,0);
+  const maxScore=n*3;
+  const prioLabels=['','Superfluo','Utile','Fondamentale'];
+
+  ksSelected=chosen.map(i=>i.id);
+
+  let html=`<div class="ks-result-summary">
+    <div class="ks-result-row"><span class="ks-result-label">Articoli selezionati</span><span class="ks-result-val">${chosen.length} / ${candidates.length}</span></div>
+    <div class="ks-result-row"><span class="ks-result-label">Punteggio totale</span><span class="ks-result-val">${totalScore} / ${chosen.length*3}</span></div>
+    <div class="ks-result-row"><span class="ks-result-label">Costo totale</span><span class="ks-result-val">${totalCost.toFixed(2)} € / ${budget.toFixed(2)} €</span></div>
+  </div>`;
+
+  // Ordina per priorità decrescente
+  chosen.sort((a,b)=>b.prio-a.prio).forEach(it=>{
+    const pClass=['','tag-p1','tag-p2','tag-p3'][it.prio];
+    html+=`<div class="ks-item">
+      <div class="ks-item-info">${escH(it.nome)}${it.brand?` <span style="color:var(--muted);font-size:12px">· ${escH(it.brand)}</span>`:''}</div>
+      <span class="tag ${pClass}" style="margin-right:6px">${prioLabels[it.prio]}</span>
+      <span class="ks-item-price">${it.price.toFixed(2)} €</span>
+    </div>`;
+  });
+
+  ksResults.innerHTML=html;
+  btnKsUse.classList.add('on');
+});
+
+btnKsUse.addEventListener('click',()=>{
+  ksSelected.forEach(id=>{
+    const it=items.find(i=>i.id===id);
+    if(it) it.status='da_acquistare';
+  });
+  saveItems();
+  activeFilter='da_acquistare';
+  document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active',c.dataset.filter==='da_acquistare'));
+  render();
+  ksScreen.classList.remove('on');
+});
 
 // ─── CSV EXPORT ───────────────────────────────────────────────────────────────
 const CSV_COLS = ['nome','cat','brand','shop','peso','price','priceKg','qty','exp','status'];
