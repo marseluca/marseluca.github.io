@@ -143,7 +143,13 @@ h1 { font-family:'Playfair Display',serif; font-size:1.7rem; font-weight:700; le
 
 /* IMPOSTAZIONI */
 .settings-section { margin-bottom:1.5rem; }
-.settings-section-title { font-family:'Playfair Display',serif; font-size:1rem; font-weight:700; margin-bottom:.75rem; }
+.settings-section-hdr { display:flex; align-items:center; justify-content:space-between; cursor:pointer; user-select:none; margin-bottom:.75rem; padding:2px 0; }
+.settings-section-hdr:active { opacity:.7; }
+.settings-section-title { font-family:'Playfair Display',serif; font-size:1rem; font-weight:700; }
+.settings-chevron { transition:transform .22s ease; color:var(--muted); flex-shrink:0; }
+.settings-section.collapsed .settings-chevron { transform:rotate(-90deg); }
+.settings-body { overflow:hidden; transition:max-height .25s ease, opacity .2s ease; }
+.settings-section.collapsed .settings-body { max-height:0 !important; opacity:0; }
 .settings-item { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 14px; display:flex; align-items:center; gap:10px; margin-bottom:6px; }
 .settings-item-label { flex:1; font-size:14px; }
 .btn-s { width:28px; height:28px; border:none; background:none; cursor:pointer; display:flex; align-items:center; justify-content:center; border-radius:8px; color:var(--muted); transition:all .15s; flex-shrink:0; }
@@ -275,20 +281,35 @@ h1 { font-family:'Playfair Display',serif; font-size:1.7rem; font-weight:700; le
     <button class="btn-x" id="btnCloseSettings"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
   </div>
   <div class="screen-body">
-    <div class="settings-section">
-      <div class="settings-section-title">Categorie</div>
-      <div id="catList"></div>
-      <button class="btn-add-setting" id="btnAddCat">+ Aggiungi categoria</button>
+    <div class="settings-section collapsed" id="secCat">
+      <div class="settings-section-hdr" data-toggle-sec="secCat">
+        <span class="settings-section-title">Categorie</span>
+        <svg class="settings-chevron" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+      <div class="settings-body">
+        <div id="catList"></div>
+        <button class="btn-add-setting" id="btnAddCat">+ Aggiungi categoria</button>
+      </div>
     </div>
-    <div class="settings-section">
-      <div class="settings-section-title">Negozi</div>
-      <div id="shopList"></div>
-      <button class="btn-add-setting" id="btnAddShop">+ Aggiungi negozio</button>
+    <div class="settings-section collapsed" id="secShop">
+      <div class="settings-section-hdr" data-toggle-sec="secShop">
+        <span class="settings-section-title">Negozi</span>
+        <svg class="settings-chevron" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+      <div class="settings-body">
+        <div id="shopList"></div>
+        <button class="btn-add-setting" id="btnAddShop">+ Aggiungi negozio</button>
+      </div>
     </div>
-    <div class="settings-section">
-      <div class="settings-section-title">Marche</div>
-      <div id="brandList"></div>
-      <button class="btn-add-setting" id="btnAddBrand">+ Aggiungi marca</button>
+    <div class="settings-section collapsed" id="secBrand">
+      <div class="settings-section-hdr" data-toggle-sec="secBrand">
+        <span class="settings-section-title">Marche</span>
+        <svg class="settings-chevron" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+      <div class="settings-body">
+        <div id="brandList"></div>
+        <button class="btn-add-setting" id="btnAddBrand">+ Aggiungi marca</button>
+      </div>
     </div>
   </div>
 </div>
@@ -332,7 +353,7 @@ let items = JSON.parse(localStorage.getItem('spesa_items') || '[]').map(it => {
   return it;
 });
 
-let collapsedCats = JSON.parse(localStorage.getItem('spesa_collapsed') || '{}');
+let collapsedCats = {};
 let activeFilter  = 'da_acquistare';
 let activeShop    = ''; // '' = tutti i negozi
 let editingId     = null;
@@ -342,7 +363,7 @@ const saveItems    = () => localStorage.setItem('spesa_items',     JSON.stringif
 const saveCats     = () => localStorage.setItem('spesa_cats',      JSON.stringify(cats));
 const saveShops    = () => localStorage.setItem('spesa_shops',     JSON.stringify(shops));
 const saveBrands   = () => localStorage.setItem('spesa_brands',    JSON.stringify(brands));
-const saveCollapsed= () => localStorage.setItem('spesa_collapsed', JSON.stringify(collapsedCats));
+const saveCollapsed= () => {};
 
 const escH   = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const uid    = () => Date.now().toString(36)+Math.random().toString(36).slice(2,5);
@@ -414,9 +435,12 @@ inputPeso.addEventListener('input',updatePkg);
 inputPrice.addEventListener('input',updatePkg);
 
 // ─── SELECTS ─────────────────────────────────────────────────────────────────
+const sortAlpha = arr => [...arr].sort((a,b)=>a.name.localeCompare(b.name,'it'));
+
 function populateSelects(){
   const fill=(el,arr,val='')=>{
-    el.innerHTML='<option value=""></option>'+arr.map(i=>`<option value="${escH(i.name)}"${i.name===val?' selected':''}>${escH(i.emoji?i.emoji+' '+i.name:i.name)}</option>`).join('');
+    const sorted=sortAlpha(arr);
+    el.innerHTML='<option value=""></option>'+sorted.map(i=>`<option value="${escH(i.name)}"${i.name===val?' selected':''}>${escH(i.emoji?i.emoji+' '+i.name:i.name)}</option>`).join('');
   };
   fill(selCat,  cats,  selCat.value);
   fill(selShop, shops, selShop.value);
@@ -519,11 +543,31 @@ function renderSettings(){
   renderSettingsList('catList',  cats,  'cat');
   renderSettingsList('shopList', shops, 'shop');
   renderSettingsList('brandList',brands,'brand');
+  // set initial max-heights for open sections
+  document.querySelectorAll('#settingsScreen .settings-body').forEach(el=>{
+    const sec=el.closest('.settings-section');
+    if(!sec.classList.contains('collapsed')) el.style.maxHeight=el.scrollHeight+'px';
+  });
 }
+
+document.getElementById('settingsScreen').addEventListener('click',e=>{
+  const hdr=e.target.closest('[data-toggle-sec]');
+  if(!hdr)return;
+  const sec=document.getElementById(hdr.dataset.toggleSec);
+  const body=sec.querySelector('.settings-body');
+  if(sec.classList.contains('collapsed')){
+    sec.classList.remove('collapsed');
+    body.style.maxHeight=body.scrollHeight+'px';
+  } else {
+    sec.classList.add('collapsed');
+    body.style.maxHeight='0';
+  }
+});
 
 function renderSettingsList(containerId,arr,type){
   const el=document.getElementById(containerId);
-  el.innerHTML=arr.map(item=>`
+  const sorted=sortAlpha(arr);
+  el.innerHTML=sorted.map(item=>`
     <div class="settings-item">
       ${type==='cat'?`<span style="font-size:18px">${escH(item.emoji||'')}</span>`:''}
       <span class="settings-item-label" style="${type==='cat'?'color:'+item.color:''}">${escH(item.name)}</span>
@@ -630,11 +674,14 @@ function cartTotal(){
 }
 
 function toggleCat(key){
-  collapsedCats[key]=!collapsedCats[key]; saveCollapsed();
+  // undefined/true = collapsed, false = expanded
+  const isCollapsed = collapsedCats[key] !== false;
+  collapsedCats[key] = isCollapsed ? false : true;
+  saveCollapsed();
   const sec=listWrap.querySelector(`.cat-section[data-cat="${key.replace(/\\/g,'\\\\').replace(/"/g,'\\"')}"]`);
   if(sec){
     const ci=sec.querySelector('.cat-items');
-    if(collapsedCats[key]){sec.classList.add('collapsed');ci.style.maxHeight='0';}
+    if(collapsedCats[key]!==false){sec.classList.add('collapsed');ci.style.maxHeight='0';}
     else{sec.classList.remove('collapsed');ci.style.maxHeight=ci.scrollHeight+'px';}
   }
 }
@@ -665,7 +712,7 @@ function render(){
     if(!groups[cat])return;
     const info=catInfo(cat);
     const label=cat||'Senza categoria';
-    const collapsed=!!collapsedCats[cat];
+    const collapsed = collapsedCats[cat] !== false;
     const chevron=`<svg class="cat-chevron" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>`;
     html+=`<div class="cat-section${collapsed?' collapsed':''}" data-cat="${escH(cat)}">
       <div class="cat-label" data-toggle-cat="${escH(cat)}">
