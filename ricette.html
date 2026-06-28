@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Luca — Ricette</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .eyebrow { color: var(--c-ricette); }
+    .toolbar { margin-bottom: 1.5rem; }
+    .recipe { margin-bottom: 0.9rem; }
+    .recipe summary {
+      cursor: pointer; list-style: none;
+      display: flex; align-items: baseline; justify-content: space-between;
+      gap: 1rem; font-family: var(--display); font-weight: 600; font-size: 1.1rem;
+    }
+    .recipe summary::-webkit-details-marker { display: none; }
+    .recipe summary .time { font-size: 0.8rem; color: var(--muted); font-family: var(--body); font-weight: 500; white-space: nowrap; }
+    .recipe[open] summary { margin-bottom: 0.9rem; }
+    .tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.6rem 0 0; }
+    .tag { background: #f3ece7; color: var(--c-ricette); }
+    .recipe h4 { font-family: var(--display); font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 1rem 0 0.4rem; }
+    .recipe ul, .recipe ol { margin: 0; padding-left: 1.2rem; }
+    .recipe li { margin: 0.15rem 0; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="index.html">Luca</a>
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="ricette.html" aria-current="page">Ricette</a></li>
+      <li><a href="bitcoin.html">Bitcoin</a></li>
+      <li><a href="allenamenti.html">Allenamenti</a></li>
+      <li><a href="libri.html">Libri</a></li>
+    </ul>
+  </nav>
+
+  <main class="wrap">
+    <header class="page-head">
+      <p class="eyebrow">Ricettario</p>
+      <h1 class="title">Ricette</h1>
+      <p class="lead">Cose semplici, veloci e con tante proteine.</p>
+    </header>
+
+    <div class="toolbar field">
+      <input id="search" type="search" placeholder="Cerca per nome, ingrediente o tag…" aria-label="Cerca ricetta" />
+    </div>
+
+    <div id="list"></div>
+    <div id="empty" class="empty" hidden>Nessuna ricetta trovata.</div>
+
+    <p class="note">Per aggiungere una ricetta, modifica l'array <code>recipes</code> all'inizio dello script qui sotto.</p>
+  </main>
+
+  <footer class="site">&copy; <span id="y"></span> Luca</footer>
+
+  <script>
+    // ====== Le tue ricette: aggiungi qui nuove voci ======
+    const recipes = [
+      {
+        name: "Overnight oats proteici",
+        time: "5 min + riposo",
+        tags: ["colazione", "proteico", "no cottura"],
+        ingredients: [
+          "60 g fiocchi d'avena",
+          "200 ml latte (o bevanda vegetale)",
+          "1 misurino proteine in polvere",
+          "1 cucchiaio semi di chia",
+          "frutta a piacere"
+        ],
+        steps: [
+          "Mescola tutto in un barattolo.",
+          "Lascia in frigo tutta la notte.",
+          "Al mattino aggiungi frutta fresca e via."
+        ]
+      },
+      {
+        name: "Pollo e riso veloce",
+        time: "20 min",
+        tags: ["pranzo", "proteico", "meal prep"],
+        ingredients: [
+          "150 g petto di pollo",
+          "70 g riso (peso a crudo)",
+          "verdure miste",
+          "olio EVO, sale, spezie a piacere"
+        ],
+        steps: [
+          "Cuoci il riso.",
+          "Scotta il pollo a cubetti in padella con poco olio e spezie.",
+          "Salta le verdure, unisci tutto e condisci."
+        ]
+      },
+      {
+        name: "Frittata di albumi e spinaci",
+        time: "10 min",
+        tags: ["cena", "proteico", "veloce"],
+        ingredients: [
+          "4 albumi (+ 1 uovo intero)",
+          "una manciata di spinaci",
+          "sale, pepe",
+          "un filo d'olio"
+        ],
+        steps: [
+          "Sbatti gli albumi con sale e pepe.",
+          "Appassisci gli spinaci in padella.",
+          "Versa gli albumi e cuoci a fiamma media fino a rapprendere."
+        ]
+      }
+    ];
+    // =====================================================
+
+    const list = document.getElementById("list");
+    const empty = document.getElementById("empty");
+    const search = document.getElementById("search");
+
+    function render(filter = "") {
+      const q = filter.trim().toLowerCase();
+      const shown = recipes.filter(r => {
+        if (!q) return true;
+        const hay = (r.name + " " + r.tags.join(" ") + " " + r.ingredients.join(" ")).toLowerCase();
+        return hay.includes(q);
+      });
+
+      list.innerHTML = shown.map(r => `
+        <details class="card recipe">
+          <summary>
+            <span>${esc(r.name)}</span>
+            <span class="time">${esc(r.time)}</span>
+          </summary>
+          <div class="tags">${r.tags.map(t => `<span class="badge tag">${esc(t)}</span>`).join("")}</div>
+          <h4>Ingredienti</h4>
+          <ul>${r.ingredients.map(i => `<li>${esc(i)}</li>`).join("")}</ul>
+          <h4>Procedimento</h4>
+          <ol>${r.steps.map(s => `<li>${esc(s)}</li>`).join("")}</ol>
+        </details>
+      `).join("");
+
+      empty.hidden = shown.length > 0;
+    }
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+    }
+
+    search.addEventListener("input", e => render(e.target.value));
+    render();
+    document.getElementById("y").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

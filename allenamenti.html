@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Luca — Allenamenti</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .eyebrow { color: var(--c-allenamenti); }
+    .form-card { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; margin-bottom: 2rem; }
+    .form-card .full { grid-column: 1 / -1; }
+    .stat .n { color: var(--c-allenamenti); }
+    .badge.type { background: #e7f3ee; color: var(--c-allenamenti); }
+    @media (max-width: 560px) { .form-card { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="index.html">Luca</a>
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="ricette.html">Ricette</a></li>
+      <li><a href="bitcoin.html">Bitcoin</a></li>
+      <li><a href="allenamenti.html" aria-current="page">Allenamenti</a></li>
+      <li><a href="libri.html">Libri</a></li>
+    </ul>
+  </nav>
+
+  <main class="wrap">
+    <header class="page-head">
+      <p class="eyebrow">Diario</p>
+      <h1 class="title">Allenamenti</h1>
+      <p class="lead">Registra le sessioni e tieni d'occhio la costanza.</p>
+    </header>
+
+    <div class="stats">
+      <div class="stat"><div class="n" id="s-total">0</div><div class="l">Sessioni totali</div></div>
+      <div class="stat"><div class="n" id="s-week">0</div><div class="l">Questa settimana</div></div>
+      <div class="stat"><div class="n" id="s-last">—</div><div class="l">Ultima sessione</div></div>
+    </div>
+
+    <div class="card form-card">
+      <div class="field">
+        <label for="date">Data</label>
+        <input type="date" id="date" />
+      </div>
+      <div class="field">
+        <label for="type">Tipo</label>
+        <select id="type">
+          <option>Forza</option>
+          <option>Addominali</option>
+          <option>Cardio</option>
+          <option>Altro</option>
+        </select>
+      </div>
+      <div class="field full">
+        <label for="notes">Note (esercizi, serie, sensazioni…)</label>
+        <textarea id="notes" placeholder="Es. 4x circuito addominali + 20' camminata"></textarea>
+      </div>
+      <div class="full">
+        <button class="btn btn-accent" id="add" style="background: var(--c-allenamenti); border-color: var(--c-allenamenti)">Aggiungi sessione</button>
+      </div>
+    </div>
+
+    <div id="list"></div>
+    <div id="empty" class="empty">Nessuna sessione registrata. Aggiungi la prima qui sopra.</div>
+  </main>
+
+  <footer class="site">&copy; <span id="y"></span> Luca</footer>
+
+  <script>
+    const KEY = "luca_allenamenti";
+
+    // Storage con fallback in memoria (così funziona anche dove localStorage è bloccato)
+    const store = {
+      mem: [],
+      load() {
+        try { return JSON.parse(localStorage.getItem(KEY)) || []; }
+        catch { return this.mem; }
+      },
+      save(data) {
+        this.mem = data;
+        try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {}
+      }
+    };
+
+    let items = store.load();
+
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+    const fmtDate = iso => {
+      const d = new Date(iso);
+      return isNaN(d) ? iso : d.toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" });
+    };
+
+    function startOfWeek(d) {
+      const x = new Date(d); const day = (x.getDay() + 6) % 7; // lun=0
+      x.setHours(0,0,0,0); x.setDate(x.getDate() - day); return x;
+    }
+
+    function updateStats() {
+      document.getElementById("s-total").textContent = items.length;
+      const sow = startOfWeek(new Date());
+      const week = items.filter(i => new Date(i.date) >= sow).length;
+      document.getElementById("s-week").textContent = week;
+      if (items.length) {
+        const latest = items.map(i => new Date(i.date)).sort((a,b) => b - a)[0];
+        const days = Math.round((Date.now() - latest) / 86400000);
+        document.getElementById("s-last").textContent = days <= 0 ? "oggi" : days === 1 ? "ieri" : days + " gg fa";
+      } else {
+        document.getElementById("s-last").textContent = "—";
+      }
+    }
+
+    function render() {
+      const sorted = items.slice().sort((a,b) => new Date(b.date) - new Date(a.date));
+      document.getElementById("empty").hidden = items.length > 0;
+      document.getElementById("list").innerHTML = sorted.map(i => `
+        <div class="row">
+          <div>
+            <span class="badge type">${esc(i.type)}</span>
+            <span class="meta"> · ${esc(fmtDate(i.date))}</span>
+            ${i.notes ? `<div style="margin-top:0.5rem">${esc(i.notes)}</div>` : ""}
+          </div>
+          <button class="btn-ghost" data-id="${i.id}">elimina</button>
+        </div>
+      `).join("");
+      updateStats();
+    }
+
+    document.getElementById("add").addEventListener("click", () => {
+      const date = document.getElementById("date").value;
+      const type = document.getElementById("type").value;
+      const notes = document.getElementById("notes").value.trim();
+      if (!date) { document.getElementById("date").focus(); return; }
+      items.push({ id: Date.now().toString(36), date, type, notes });
+      store.save(items);
+      document.getElementById("notes").value = "";
+      render();
+    });
+
+    document.getElementById("list").addEventListener("click", e => {
+      const btn = e.target.closest("[data-id]");
+      if (!btn) return;
+      items = items.filter(i => i.id !== btn.dataset.id);
+      store.save(items);
+      render();
+    });
+
+    // default: data di oggi
+    document.getElementById("date").value = new Date().toISOString().slice(0,10);
+    document.getElementById("y").textContent = new Date().getFullYear();
+    render();
+  </script>
+</body>
+</html>

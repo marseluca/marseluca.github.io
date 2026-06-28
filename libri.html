@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Luca — Libri</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .eyebrow { color: var(--c-libri); }
+    .form-card { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; margin-bottom: 1.5rem; }
+    .form-card .full { grid-column: 1 / -1; }
+    .filters { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.5rem; }
+    .chip {
+      border: 1px solid var(--line); background: var(--surface); color: var(--muted);
+      border-radius: 999px; padding: 0.35rem 0.8rem; font-size: 0.85rem; font-weight: 500; cursor: pointer;
+    }
+    .chip[aria-pressed="true"] { background: var(--c-libri); border-color: var(--c-libri); color: #fff; }
+    .badge.st-leggere { background: #eef0f8; color: var(--c-libri); }
+    .badge.st-lettura { background: #fff3e0; color: var(--c-bitcoin); }
+    .badge.st-letto   { background: #e7f3ee; color: var(--c-allenamenti); }
+    .stars { color: var(--c-bitcoin); letter-spacing: 1px; }
+    .book-title { font-family: var(--display); font-weight: 600; }
+    @media (max-width: 560px) { .form-card { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="index.html">Luca</a>
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="ricette.html">Ricette</a></li>
+      <li><a href="bitcoin.html">Bitcoin</a></li>
+      <li><a href="allenamenti.html">Allenamenti</a></li>
+      <li><a href="libri.html" aria-current="page">Libri</a></li>
+    </ul>
+  </nav>
+
+  <main class="wrap">
+    <header class="page-head">
+      <p class="eyebrow">Libreria</p>
+      <h1 class="title">Libri</h1>
+      <p class="lead">Cosa sto leggendo, cosa ho finito e cosa mi aspetta.</p>
+    </header>
+
+    <div class="card form-card">
+      <div class="field">
+        <label for="title">Titolo</label>
+        <input id="title" type="text" placeholder="Titolo del libro" />
+      </div>
+      <div class="field">
+        <label for="author">Autore</label>
+        <input id="author" type="text" placeholder="Autore" />
+      </div>
+      <div class="field">
+        <label for="status">Stato</label>
+        <select id="status">
+          <option value="leggere">Da leggere</option>
+          <option value="lettura">In lettura</option>
+          <option value="letto">Letto</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="rating">Voto (0–5)</label>
+        <select id="rating">
+          <option value="0">—</option>
+          <option value="1">★</option>
+          <option value="2">★★</option>
+          <option value="3">★★★</option>
+          <option value="4">★★★★</option>
+          <option value="5">★★★★★</option>
+        </select>
+      </div>
+      <div class="full">
+        <button class="btn btn-accent" id="add" style="background: var(--c-libri); border-color: var(--c-libri)">Aggiungi libro</button>
+      </div>
+    </div>
+
+    <div class="filters" id="filters">
+      <button class="chip" data-f="all" aria-pressed="true">Tutti</button>
+      <button class="chip" data-f="leggere" aria-pressed="false">Da leggere</button>
+      <button class="chip" data-f="lettura" aria-pressed="false">In lettura</button>
+      <button class="chip" data-f="letto" aria-pressed="false">Letti</button>
+    </div>
+
+    <div id="list"></div>
+    <div id="empty" class="empty">Ancora nessun libro. Aggiungi il primo qui sopra.</div>
+  </main>
+
+  <footer class="site">&copy; <span id="y"></span> Luca</footer>
+
+  <script>
+    const KEY = "luca_libri";
+    const store = {
+      mem: [],
+      load() { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return this.mem; } },
+      save(d) { this.mem = d; try { localStorage.setItem(KEY, JSON.stringify(d)); } catch {} }
+    };
+
+    let items = store.load();
+    let filter = "all";
+
+    const LABEL = { leggere: "Da leggere", lettura: "In lettura", letto: "Letto" };
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+    const stars = n => n > 0 ? "★".repeat(n) + "☆".repeat(5 - n) : "";
+
+    function render() {
+      const shown = items.filter(b => filter === "all" || b.status === filter);
+      document.getElementById("empty").hidden = items.length > 0;
+      document.getElementById("list").innerHTML = shown.map(b => `
+        <div class="row">
+          <div>
+            <span class="book-title">${esc(b.title)}</span>
+            ${b.author ? `<span class="meta"> · ${esc(b.author)}</span>` : ""}
+            <div style="margin-top:0.5rem; display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap">
+              <span class="badge st-${b.status}">${LABEL[b.status]}</span>
+              ${b.rating > 0 ? `<span class="stars">${stars(b.rating)}</span>` : ""}
+            </div>
+          </div>
+          <button class="btn-ghost" data-id="${b.id}">elimina</button>
+        </div>
+      `).join("");
+      if (shown.length === 0 && items.length > 0) {
+        document.getElementById("list").innerHTML = `<div class="empty">Nessun libro in questa categoria.</div>`;
+      }
+    }
+
+    document.getElementById("add").addEventListener("click", () => {
+      const title = document.getElementById("title").value.trim();
+      if (!title) { document.getElementById("title").focus(); return; }
+      items.push({
+        id: Date.now().toString(36),
+        title,
+        author: document.getElementById("author").value.trim(),
+        status: document.getElementById("status").value,
+        rating: parseInt(document.getElementById("rating").value, 10)
+      });
+      store.save(items);
+      document.getElementById("title").value = "";
+      document.getElementById("author").value = "";
+      document.getElementById("rating").value = "0";
+      render();
+    });
+
+    document.getElementById("list").addEventListener("click", e => {
+      const btn = e.target.closest("[data-id]");
+      if (!btn) return;
+      items = items.filter(b => b.id !== btn.dataset.id);
+      store.save(items);
+      render();
+    });
+
+    document.getElementById("filters").addEventListener("click", e => {
+      const chip = e.target.closest(".chip");
+      if (!chip) return;
+      filter = chip.dataset.f;
+      [...document.querySelectorAll(".chip")].forEach(c => c.setAttribute("aria-pressed", c === chip));
+      render();
+    });
+
+    document.getElementById("y").textContent = new Date().getFullYear();
+    render();
+  </script>
+</body>
+</html>

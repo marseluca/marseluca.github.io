@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Luca — Bitcoin</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .eyebrow { color: var(--c-bitcoin); }
+    .price {
+      display: flex; align-items: baseline; gap: 0.6rem;
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 1rem 1.25rem; margin-bottom: 2.25rem;
+    }
+    .price .sym {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--c-bitcoin); color: #fff;
+      display: grid; place-items: center; font-weight: 700; font-family: var(--display);
+      align-self: center;
+    }
+    .price .val { font-family: var(--display); font-weight: 700; font-size: 1.5rem; }
+    .price .lbl { color: var(--muted); font-size: 0.85rem; }
+    .post { margin-bottom: 0.9rem; }
+    .post .date { font-size: 0.8rem; color: var(--muted); }
+    .post h3 { font-family: var(--display); font-size: 1.15rem; margin: 0.2rem 0 0.5rem; }
+    .post p { margin: 0; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="index.html">Luca</a>
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="ricette.html">Ricette</a></li>
+      <li><a href="bitcoin.html" aria-current="page">Bitcoin</a></li>
+      <li><a href="allenamenti.html">Allenamenti</a></li>
+      <li><a href="libri.html">Libri</a></li>
+    </ul>
+  </nav>
+
+  <main class="wrap">
+    <header class="page-head">
+      <p class="eyebrow">Appunti</p>
+      <h1 class="title">Bitcoin</h1>
+      <p class="lead">Pensieri e note mentre imparo. Niente consigli finanziari, solo curiosità.</p>
+    </header>
+
+    <div class="price">
+      <span class="sym">₿</span>
+      <div>
+        <div class="val" id="btc-price">—</div>
+        <div class="lbl" id="btc-label">Prezzo BTC/EUR</div>
+      </div>
+    </div>
+
+    <div id="posts"></div>
+
+    <p class="note">Per aggiungere un appunto, modifica l'array <code>posts</code> nello script qui sotto.</p>
+  </main>
+
+  <footer class="site">&copy; <span id="y"></span> Luca</footer>
+
+  <script>
+    // ====== I tuoi appunti: aggiungi qui nuove voci ======
+    const posts = [
+      {
+        date: "2026-01-15",
+        title: "Perché mi interessa la self-custody",
+        body: "Tenere le chiavi significa non dipendere da un terzo. Più responsabilità, ma anche più controllo: vale la pena capire bene come funziona prima di muoversi."
+      },
+      {
+        date: "2026-01-10",
+        title: "MiCA e gli exchange in UE",
+        body: "Il quadro normativo europeo sta ridisegnando chi può operare e come. Tenere d'occhio le autorizzazioni degli exchange è diventato parte del gioco."
+      }
+    ];
+    // =====================================================
+
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+    const fmtDate = iso => {
+      const d = new Date(iso);
+      return isNaN(d) ? iso : d.toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" });
+    };
+
+    document.getElementById("posts").innerHTML = posts
+      .slice()
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .map(p => `
+        <article class="card post">
+          <div class="date">${esc(fmtDate(p.date))}</div>
+          <h3>${esc(p.title)}</h3>
+          <p>${esc(p.body)}</p>
+        </article>
+      `).join("");
+
+    // Prezzo live (CoinGecko, nessuna chiave). Degrada in modo pulito se non raggiungibile.
+    (async () => {
+      try {
+        const r = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=eur");
+        if (!r.ok) throw new Error("rete");
+        const data = await r.json();
+        const eur = data.bitcoin.eur;
+        document.getElementById("btc-price").textContent =
+          eur.toLocaleString("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+        document.getElementById("btc-label").textContent = "Prezzo BTC/EUR · aggiornato ora";
+      } catch (e) {
+        document.getElementById("btc-price").textContent = "non disponibile";
+        document.getElementById("btc-label").textContent = "Prezzo BTC/EUR (richiede connessione)";
+      }
+    })();
+
+    document.getElementById("y").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
