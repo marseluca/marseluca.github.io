@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Luca — Home</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .hero { display: flex; align-items: center; gap: 1.5rem; margin: 2rem 0 2.5rem; }
+    .hero img {
+      width: clamp(80px, 22vw, 110px); height: clamp(80px, 22vw, 110px);
+      border-radius: 50%; object-fit: cover; background: var(--line);
+      box-shadow: 0 0 0 4px var(--surface), 0 0 0 5px var(--line);
+    }
+    .hero h1 {
+      font-family: var(--display); font-weight: 700;
+      font-size: clamp(1.8rem, 7vw, 2.5rem); letter-spacing: -0.02em;
+      line-height: 1.05; margin: 0 0 0.35rem;
+    }
+    .hero p { margin: 0; color: var(--muted); }
+    @media (max-width: 560px) {
+      .hero { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="index.html">Luca</a>
+    <ul>
+      <li><a href="index.html" aria-current="page">Home</a></li>
+      <li><a href="ricette.html">Ricette</a></li>
+      <li><a href="bitcoin.html">Bitcoin</a></li>
+      <li><a href="allenamenti.html">Allenamenti</a></li>
+      <li><a href="libri.html">Libri</a></li>
+    </ul>
+  </nav>
+
+  <main class="wrap">
+    <header class="hero">
+      <img src="profile.jpg" alt="Foto di Luca" />
+      <div>
+        <h1>Ciao, sono Luca</h1>
+        <p>Il mio angolo di internet: ricette, appunti su Bitcoin, allenamenti e letture.</p>
+      </div>
+    </header>
+
+    <div class="grid">
+      <a class="hub-card" href="ricette.html" style="border-left-color: var(--c-ricette)">
+        <p class="k" style="color: var(--c-ricette)">Ricettario</p>
+        <h2>Ricette</h2>
+        <p>Le mie ricette: semplici, veloci e con tante proteine.</p>
+      </a>
+
+      <a class="hub-card" href="bitcoin.html" style="border-left-color: var(--c-bitcoin)">
+        <p class="k" style="color: var(--c-bitcoin)">Appunti</p>
+        <h2>Bitcoin</h2>
+        <p>Pensieri, note e cose che imparo strada facendo.</p>
+      </a>
+
+      <a class="hub-card" href="allenamenti.html" style="border-left-color: var(--c-allenamenti)">
+        <p class="k" style="color: var(--c-allenamenti)">Diario</p>
+        <h2>Allenamenti</h2>
+        <p>Registro le sessioni e tengo d'occhio la costanza.</p>
+      </a>
+
+      <a class="hub-card" href="libri.html" style="border-left-color: var(--c-libri)">
+        <p class="k" style="color: var(--c-libri)">Libreria</p>
+        <h2>Libri</h2>
+        <p>Cosa sto leggendo, cosa ho finito e cosa mi aspetta.</p>
+      </a>
+    </div>
+  </main>
+
+  <footer class="site">&copy; <span id="y"></span> Luca &middot; fatto con calma</footer>
+  <script>document.getElementById("y").textContent = new Date().getFullYear();</script>
+</body>
+</html>
