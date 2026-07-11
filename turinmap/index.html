@@ -189,6 +189,32 @@ main{flex:1;display:flex;min-height:0}
   background:none;border:1px solid var(--bordo);border-radius:6px;padding:5px 0;
   cursor:pointer;color:var(--grigio);display:none;
 }
+.btn-menu{
+  background:none;border:0;cursor:pointer;color:var(--carta);
+  font-size:1.25rem;line-height:1;padding:2px 6px;margin-right:2px;
+  border-radius:6px;
+}
+.btn-menu:hover{background:rgba(255,255,255,.12)}
+.btn-menu:focus-visible{outline:2px solid var(--giallo)}
+#lista.chiuso{display:none}
+.btn-gps{
+  position:absolute;right:12px;bottom:24px;z-index:1000;
+  width:44px;height:44px;border-radius:50%;border:0;cursor:pointer;
+  background:#fff;color:var(--blu);font-size:1.15rem;
+  box-shadow:0 2px 10px rgba(13,36,64,.25);
+}
+.btn-gps.attivo{background:var(--blu);color:var(--giallo)}
+.punto-gps{
+  width:16px!important;height:16px!important;border-radius:50%;
+  background:#2a6fdb;border:3px solid #fff;box-shadow:0 0 0 2px rgba(42,111,219,.4),0 1px 4px rgba(13,36,64,.4);
+}
+.toast{
+  position:absolute;left:50%;transform:translateX(-50%);
+  bottom:calc(24px + env(safe-area-inset-bottom));z-index:1200;
+  background:var(--blu-scuro);color:var(--carta);font-family:'Archivo',sans-serif;
+  font-size:.78rem;padding:9px 14px;border-radius:8px;box-shadow:0 3px 12px rgba(13,36,64,.35);
+  max-width:86%;text-align:center;display:none;
+}
 .etichetta-luogo{
   background:none;border:none;box-shadow:none;
   font-family:'Archivo',sans-serif;font-weight:700;font-size:.7rem;
@@ -233,6 +259,10 @@ main{flex:1;display:flex;min-height:0}
     left:auto;right:10px;bottom:calc(12px + env(safe-area-inset-bottom));
     padding:11px 14px;font-size:.8rem;
   }
+  .btn-gps{
+    right:10px;bottom:calc(64px + env(safe-area-inset-bottom));
+  }
+  .pannello-rotta{bottom:calc(64px + env(safe-area-inset-bottom))}
 
   /* pannelli a tutta larghezza, scorrevoli */
   .pannello-luogo,.pannello-rotta{
@@ -255,11 +285,12 @@ main{flex:1;display:flex;min-height:0}
 </head>
 <body>
 <header>
+  <button class="btn-menu" id="btnMenu" type="button" aria-label="Apri o chiudi l'elenco dei quartieri" aria-expanded="false">&#9776;</button>
   <h1>Quartieri di Torino</h1>
   <span class="sub">23 quartieri storici · dati aperTO Comune di Torino</span>
 </header>
 <main>
-  <nav id="lista" aria-label="Elenco quartieri">
+  <nav id="lista" class="chiuso" aria-label="Elenco quartieri">
     <div class="toolbar">
       <button id="btnTutti" type="button">Mostra tutti</button>
       <button id="btnNessuno" type="button">Nascondi tutti</button>
@@ -269,6 +300,8 @@ main{flex:1;display:flex;min-height:0}
     <div class="pannello-info" id="info"><h2></h2><p>Clic sulla mappa per esplorare</p></div>
     <button class="btn-luogo" id="btnLuogo" type="button">+ Aggiungi luogo</button>
     <button class="btn-distanza" id="btnDistanza" type="button">&#8646; Distanza tra luoghi</button>
+    <button class="btn-gps" id="btnGps" type="button" title="La mia posizione" aria-label="Mostra la mia posizione">&#9678;</button>
+    <div class="toast" id="toast"></div>
     <div class="pannello-rotta" id="pannelloRotta">
       <h3>Percorso più breve su strada</h3>
       <select id="selDa"></select>
@@ -587,6 +620,63 @@ btnCalcola.onclick=async()=>{
   }
   btnCalcola.disabled=false;
 };
+
+// ---- menu quartieri apribile/chiudibile ----
+const btnMenu=document.getElementById('btnMenu');
+const listaEl=document.getElementById('lista');
+btnMenu.onclick=()=>{
+  const aperto=listaEl.classList.toggle('chiuso')===false;
+  btnMenu.setAttribute('aria-expanded',aperto);
+  setTimeout(()=>mappa.invalidateSize(),60); // Leaflet ricalcola le dimensioni
+};
+
+// ---- toast messaggi brevi ----
+const toast=document.getElementById('toast');
+let toastTimer=null;
+function mostraToast(msg){
+  toast.textContent=msg;toast.style.display='block';
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>toast.style.display='none',4000);
+}
+
+// ---- posizione attuale ----
+const btnGps=document.getElementById('btnGps');
+let gpsAttivo=false, gpsMarker=null, gpsCerchio=null;
+
+function rimuoviGps(){
+  if(gpsMarker){mappa.removeLayer(gpsMarker);gpsMarker=null;}
+  if(gpsCerchio){mappa.removeLayer(gpsCerchio);gpsCerchio=null;}
+  gpsAttivo=false;btnGps.classList.remove('attivo');
+}
+
+btnGps.onclick=()=>{
+  if(gpsAttivo){ rimuoviGps(); return; }
+  if(!('geolocation' in navigator)){
+    mostraToast('Geolocalizzazione non disponibile in questo browser.');
+    return;
+  }
+  mostraToast('Rilevo la posizione\u2026');
+  mappa.locate({setView:false,enableHighAccuracy:true,timeout:12000});
+};
+
+mappa.on('locationfound',e=>{
+  rimuoviGps();
+  gpsAttivo=true;btnGps.classList.add('attivo');
+  gpsCerchio=L.circle(e.latlng,{radius:e.accuracy/2,color:'#2a6fdb',weight:1,fillColor:'#2a6fdb',fillOpacity:.12,interactive:false}).addTo(mappa);
+  gpsMarker=L.marker(e.latlng,{icon:L.divIcon({className:'punto-gps',iconSize:[16,16],iconAnchor:[8,8]}),interactive:true})
+    .addTo(mappa)
+    .bindTooltip('La tua posizione',{direction:'top'});
+  mappa.flyTo(e.latlng,Math.max(mappa.getZoom(),15),{duration:.6});
+  toast.style.display='none';
+});
+
+mappa.on('locationerror',e=>{
+  gpsAttivo=false;btnGps.classList.remove('attivo');
+  const msg = e.code===1
+    ? 'Permesso negato: consenti l\u2019accesso alla posizione nelle impostazioni del browser.'
+    : 'Posizione non rilevata. Nota: serve HTTPS o localhost (su file locale Chrome la blocca).';
+  mostraToast(msg);
+});
 
 const info=document.getElementById('info');
 function seleziona(id,zoom){
