@@ -189,6 +189,15 @@ main{flex:1;display:flex;min-height:0}
   background:none;border:1px solid var(--bordo);border-radius:6px;padding:5px 0;
   cursor:pointer;color:var(--grigio);display:none;
 }
+header.nascosto{display:none}
+.btn-menu-fl{
+  position:absolute;left:10px;top:10px;z-index:1000;
+  width:42px;height:42px;border-radius:10px;border:0;cursor:pointer;
+  background:var(--blu);color:var(--carta);font-size:1.15rem;
+  box-shadow:0 2px 10px rgba(13,36,64,.3);
+}
+.btn-menu-fl:focus-visible{outline:2px solid var(--giallo)}
+.leaflet-top .leaflet-control-zoom{margin-top:60px;margin-left:10px}
 .btn-menu{
   background:none;border:0;cursor:pointer;color:var(--carta);
   font-size:1.25rem;line-height:1;padding:2px 6px;margin-right:2px;
@@ -197,6 +206,13 @@ main{flex:1;display:flex;min-height:0}
 .btn-menu:hover{background:rgba(255,255,255,.12)}
 .btn-menu:focus-visible{outline:2px solid var(--giallo)}
 #lista.chiuso{display:none}
+.btn-toret{
+  position:absolute;left:12px;bottom:120px;z-index:1000;
+  font-family:'Archivo',sans-serif;font-weight:600;font-size:.82rem;
+  background:#fff;color:#1b5e20;border:1px solid #a5c9a8;border-radius:22px;
+  padding:10px 16px;cursor:pointer;box-shadow:0 2px 10px rgba(13,36,64,.25);
+}
+.btn-toret.attivo{background:#2e7d32;color:#fff;border-color:#2e7d32}
 .btn-gps{
   position:absolute;right:12px;bottom:24px;z-index:1000;
   width:44px;height:44px;border-radius:50%;border:0;cursor:pointer;
@@ -262,6 +278,10 @@ main{flex:1;display:flex;min-height:0}
   .btn-gps{
     right:10px;bottom:calc(64px + env(safe-area-inset-bottom));
   }
+  .btn-toret{
+    left:10px;bottom:calc(64px + env(safe-area-inset-bottom));
+    padding:11px 14px;font-size:.8rem;
+  }
   .pannello-rotta{bottom:calc(64px + env(safe-area-inset-bottom))}
 
   /* pannelli a tutta larghezza, scorrevoli */
@@ -284,8 +304,7 @@ main{flex:1;display:flex;min-height:0}
 </style>
 </head>
 <body>
-<header>
-  <button class="btn-menu" id="btnMenu" type="button" aria-label="Apri o chiudi l'elenco dei quartieri" aria-expanded="false">&#9776;</button>
+<header class="nascosto">
   <h1>Quartieri di Torino</h1>
   <span class="sub">23 quartieri storici · dati aperTO Comune di Torino</span>
 </header>
@@ -297,10 +316,12 @@ main{flex:1;display:flex;min-height:0}
     </div>
   </nav>
   <div id="mappa" style="position:relative">
+    <button class="btn-menu-fl" id="btnMenu" type="button" aria-label="Apri o chiudi il menu" aria-expanded="false">&#9776;</button>
     <div class="pannello-info" id="info"><h2></h2><p>Clic sulla mappa per esplorare</p></div>
     <button class="btn-luogo" id="btnLuogo" type="button">+ Aggiungi luogo</button>
     <button class="btn-distanza" id="btnDistanza" type="button">&#8646; Distanza tra luoghi</button>
     <button class="btn-gps" id="btnGps" type="button" title="La mia posizione" aria-label="Mostra la mia posizione">&#9678;</button>
+    <button class="btn-toret" id="btnToret" type="button">&#128688; Tor&egrave;t</button>
     <div class="toast" id="toast"></div>
     <div class="pannello-rotta" id="pannelloRotta">
       <h3>Percorso più breve su strada</h3>
@@ -426,6 +447,9 @@ function impostaVisibile(id,on){
 }
 document.getElementById('btnTutti').onclick=()=>DATI.features.forEach(f=>impostaVisibile(f.properties.id,true));
 document.getElementById('btnNessuno').onclick=()=>DATI.features.forEach(f=>impostaVisibile(f.properties.id,false));
+
+// all'avvio i quartieri partono tutti nascosti
+DATI.features.forEach(f=>impostaVisibile(f.properties.id,false));
 
 // ---- luoghi di riferimento ----
 const CHIAVE='torino_quartieri_luoghi';
@@ -560,16 +584,17 @@ document.getElementById('btnDistanza').onclick=()=>{
   if(!pannelloRotta.classList.contains('aperto')) return;
   // popola i menu con i luoghi salvati
   [selDa,selA].forEach(s=>{s.innerHTML='';});
-  if(luoghi.length<2){
-    esitoRotta.innerHTML='Servono almeno due luoghi salvati: aggiungine con \u201c+ Aggiungi luogo\u201d.';
+  if(luoghi.length<1){
+    esitoRotta.innerHTML='Serve almeno un luogo salvato: aggiungine con \u201c+ Aggiungi luogo\u201d.';
     btnCalcola.disabled=true;
     return;
   }
   btnCalcola.disabled=false;
   esitoRotta.innerHTML='';
-  luoghi.forEach((l,i)=>{
-    const o1=new Option(l.nome,l.id), o2=new Option(l.nome,l.id);
-    selDa.add(o1); selA.add(o2);
+  [selDa,selA].forEach(s=>s.add(new Option('\u25CE Posizione attuale','gps')));
+  luoghi.forEach(l=>{
+    selDa.add(new Option(l.nome,l.id));
+    selA.add(new Option(l.nome,l.id));
   });
   selA.selectedIndex=1;
 };
@@ -588,11 +613,37 @@ function pulisciRotta(){
 }
 btnPulisci.onclick=()=>{ pulisciRotta(); esitoRotta.innerHTML=''; };
 
+// risolve un'opzione del menu in coordinate (luogo salvato o GPS)
+function risolviPunto(val){
+  if(val!=='gps'){
+    const l=luoghi.find(x=>String(x.id)===val);
+    return Promise.resolve(l);
+  }
+  if(gpsMarker){
+    const p=gpsMarker.getLatLng();
+    return Promise.resolve({id:'gps',nome:'Posizione attuale',lat:p.lat,lng:p.lng});
+  }
+  return new Promise((ok,ko)=>{
+    if(!('geolocation' in navigator)) return ko(new Error('no-geo'));
+    navigator.geolocation.getCurrentPosition(
+      p=>ok({id:'gps',nome:'Posizione attuale',lat:p.coords.latitude,lng:p.coords.longitude}),
+      ()=>ko(new Error('geo-fail')),
+      {enableHighAccuracy:true,timeout:12000}
+    );
+  });
+}
+
 btnCalcola.onclick=async()=>{
-  const da=luoghi.find(l=>String(l.id)===selDa.value);
-  const a =luoghi.find(l=>String(l.id)===selA.value);
+  if(selDa.value===selA.value){ esitoRotta.innerHTML='Scegli due punti diversi.'; return; }
+  let da,a;
+  try{
+    esitoRotta.innerHTML='Rilevo i punti\u2026';
+    [da,a]=await Promise.all([risolviPunto(selDa.value),risolviPunto(selA.value)]);
+  }catch(e){
+    esitoRotta.innerHTML='Posizione non disponibile: consenti l\u2019accesso alla posizione (serve HTTPS o localhost).';
+    return;
+  }
   if(!da||!a) return;
-  if(da.id===a.id){ esitoRotta.innerHTML='Scegli due luoghi diversi.'; return; }
   btnCalcola.disabled=true;
   esitoRotta.innerHTML='Calcolo in corso\u2026';
   const server={foot:'routed-foot',bike:'routed-bike',driving:'routed-car'}[profilo];
@@ -624,8 +675,10 @@ btnCalcola.onclick=async()=>{
 // ---- menu quartieri apribile/chiudibile ----
 const btnMenu=document.getElementById('btnMenu');
 const listaEl=document.getElementById('lista');
+const headerEl=document.querySelector('header');
 btnMenu.onclick=()=>{
-  const aperto=listaEl.classList.toggle('chiuso')===false;
+  const aperto=headerEl.classList.toggle('nascosto')===false;
+  listaEl.classList.toggle('chiuso',!aperto);
   btnMenu.setAttribute('aria-expanded',aperto);
   setTimeout(()=>mappa.invalidateSize(),60); // Leaflet ricalcola le dimensioni
 };
@@ -677,6 +730,59 @@ mappa.on('locationerror',e=>{
     : 'Posizione non rilevata. Nota: serve HTTPS o localhost (su file locale Chrome la blocca).';
   mostraToast(msg);
 });
+
+// ---- torèt e fontanelle (OpenStreetMap via Overpass) ----
+const btnToret=document.getElementById('btnToret');
+let toretLayer=null, toretVisibile=false;
+
+btnToret.onclick=async()=>{
+  if(toretVisibile){
+    mappa.removeLayer(toretLayer);
+    toretVisibile=false;btnToret.classList.remove('attivo');
+    return;
+  }
+  if(!toretLayer){
+    // cache locale di 30 giorni per non interrogare Overpass a ogni apertura
+    let dati=null;
+    try{
+      const c=JSON.parse(localStorage.getItem('toret_osm')||'null');
+      if(c && Date.now()-c.t < 30*24*3600*1000) dati=c.d;
+    }catch(e){}
+    if(!dati){
+      mostraToast('Scarico i tor\u00e8t da OpenStreetMap\u2026');
+      btnToret.disabled=true;
+      try{
+        const q='[out:json][timeout:25];node["amenity"="drinking_water"](44.99,7.52,45.15,7.79);out qt;';
+        const r=await fetch('https://overpass-api.de/api/interpreter',{
+          method:'POST',
+          headers:{'Content-Type':'application/x-www-form-urlencoded'},
+          body:'data='+encodeURIComponent(q)
+        });
+        const j=await r.json();
+        dati=j.elements.map(e=>[
+          +e.lat.toFixed(6), +e.lon.toFixed(6),
+          (e.tags && (e.tags.fountain==='toret'||e.tags['drinking_water:type']==='toret'))?1:0
+        ]);
+        try{localStorage.setItem('toret_osm',JSON.stringify({t:Date.now(),d:dati}));}catch(e){}
+      }catch(e){
+        btnToret.disabled=false;
+        mostraToast('Download non riuscito: controlla la connessione e riprova.');
+        return;
+      }
+      btnToret.disabled=false;
+    }
+    const rend=L.canvas({padding:.3});
+    toretLayer=L.layerGroup(dati.map(p=>
+      L.circleMarker([p[0],p[1]],{
+        renderer:rend,radius:4,color:'#1b5e20',weight:1.5,
+        fillColor:p[2]?'#2e7d32':'#66bb6a',fillOpacity:.9
+      }).bindTooltip(p[2]?'Tor\u00e8t':'Fontanella')
+    ));
+    mostraToast(dati.length+' punti acqua caricati (verde scuro: tor\u00e8t censiti)');
+  }
+  toretLayer.addTo(mappa);
+  toretVisibile=true;btnToret.classList.add('attivo');
+};
 
 const info=document.getElementById('info');
 function seleziona(id,zoom){
