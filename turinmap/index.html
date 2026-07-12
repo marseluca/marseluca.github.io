@@ -240,25 +240,54 @@ body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
       <div id="lista"></div>
     </div>
     <div class="sezione">
-      <div class="titolo-sez">Livelli</div>
+      <div class="titolo-sez">Luoghi e verde</div>
       <label class="riga-toret">
         <input type="checkbox" id="chkToret">
-        <span>Tor&egrave;t e fontanelle
-          <span class="desc">dati OpenStreetMap, area di Torino</span>
-        </span>
+        <span>Tor&egrave;t e fontanelle</span>
       </label>
       <label class="riga-toret">
         <input type="checkbox" id="chkPiazze">
-        <span>Piazze
-          <span class="desc">piazze con nome, da OpenStreetMap</span>
-        </span>
+        <span>Piazze</span>
       </label>
       <label class="riga-toret">
         <input type="checkbox" id="chkParchi">
-        <span>Parchi e giardini
-          <span class="desc">aree verdi con nome, da OpenStreetMap</span>
-        </span>
+        <span>Parchi e giardini</span>
       </label>
+    </div>
+    <div class="sezione">
+      <div class="titolo-sez">Cibo e locali</div>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkRistoranti">
+        <span>Ristoranti</span>
+      </label>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkBar">
+        <span>Bar e caff&egrave;</span>
+      </label>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkGelaterie">
+        <span>Gelaterie</span>
+      </label>
+    </div>
+    <div class="sezione">
+      <div class="titolo-sez">Trasporti</div>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkBus">
+        <span>Fermate bus</span>
+      </label>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkTram">
+        <span>Fermate tram</span>
+      </label>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkTreno">
+        <span>Stazioni ferroviarie</span>
+      </label>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkCiclabili">
+        <span>Piste ciclabili</span>
+      </label>
+      <div class="titolo-sez" style="padding-top:2px;font-weight:400;text-transform:none;letter-spacing:0">dati OpenStreetMap, area di Torino</div>
     </div>
   </div>
 
@@ -361,6 +390,20 @@ DATI.features.forEach(f=>{
 // ---------- menu opzioni ----------
 const btnMenu=document.getElementById('btnMenu');
 const menu=document.getElementById('menu');
+
+// i pannelli sono sovrapposti alla mappa: senza questo, rotella e trascinamento
+// arrivano a Leaflet (zoom/pan della mappa) invece di scorrere il pannello
+['menu','pannelloLuogo','pannelloRotta','info','btnMenu','btnGps','btnLuogo','btnDistanza','toast']
+  .forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    L.DomEvent.disableClickPropagation(el);
+    L.DomEvent.disableScrollPropagation(el);
+  });
+document.querySelectorAll('.pila-sx').forEach(el=>{
+  L.DomEvent.disableClickPropagation(el);
+});
+
 btnMenu.onclick=()=>{
   const aperto=menu.classList.toggle('aperto');
   btnMenu.setAttribute('aria-expanded',aperto);
@@ -641,6 +684,18 @@ livelloOsm({
   toast:n=>n+' punti acqua caricati (verde scuro: tor\u00e8t censiti)'
 });
 
+// estrattore comune: punti (o centri di aree) con nome opzionale
+function estraiPunti(fallback){
+  return el=>el.map(x=>{
+    const c=coordCentro(x);
+    return c?[c[0],c[1],(x.tags&&x.tags.name)||fallback]:null;
+  }).filter(Boolean);
+}
+function markerPunto(opt){
+  return p=>L.circleMarker([p[0],p[1]],Object.assign({renderer:rendOsm,weight:1.5,fillOpacity:.9},opt))
+    .bindTooltip(p[2]);
+}
+
 // piazze con nome
 livelloOsm({
   chk:'chkPiazze',cache:'piazze_osm',
@@ -671,6 +726,80 @@ livelloOsm({
     fillColor:'#7cb342',fillOpacity:.9
   }).bindTooltip(p[2]),
   toast:n=>n+' parchi e giardini caricati'
+});
+
+// ristoranti
+livelloOsm({
+  chk:'chkRistoranti',cache:'ristoranti_osm',
+  caricamento:'Scarico i ristoranti da OpenStreetMap\u2026',
+  query:'[out:json][timeout:40];nwr["amenity"="restaurant"]'+BBOX+';out center qt;',
+  estrai:estraiPunti('Ristorante'),
+  marker:markerPunto({radius:4.5,color:'#8a2f2f',fillColor:'#d35f5f'}),
+  toast:n=>n+' ristoranti caricati'
+});
+
+// bar e caffè (in OSM il bar all'italiana è quasi sempre amenity=cafe)
+livelloOsm({
+  chk:'chkBar',cache:'bar_osm',
+  caricamento:'Scarico bar e caff\u00e8 da OpenStreetMap\u2026',
+  query:'[out:json][timeout:40];nwr["amenity"~"^(bar|cafe)$"]'+BBOX+';out center qt;',
+  estrai:estraiPunti('Bar'),
+  marker:markerPunto({radius:4.5,color:'#5d4037',fillColor:'#a1887f'}),
+  toast:n=>n+' bar e caff\u00e8 caricati'
+});
+
+// gelaterie
+livelloOsm({
+  chk:'chkGelaterie',cache:'gelaterie_osm',
+  caricamento:'Scarico le gelaterie da OpenStreetMap\u2026',
+  query:'[out:json][timeout:30];nwr["amenity"="ice_cream"]'+BBOX+';out center qt;',
+  estrai:estraiPunti('Gelateria'),
+  marker:markerPunto({radius:4.5,color:'#ad1457',fillColor:'#f48fb1'}),
+  toast:n=>n+' gelaterie caricate'
+});
+
+// fermate bus
+livelloOsm({
+  chk:'chkBus',cache:'bus_osm',
+  caricamento:'Scarico le fermate bus da OpenStreetMap\u2026',
+  query:'[out:json][timeout:40];node["highway"="bus_stop"]'+BBOX+';out qt;',
+  estrai:estraiPunti('Fermata bus'),
+  marker:markerPunto({radius:3.5,color:'#1565c0',fillColor:'#64b5f6'}),
+  toast:n=>n+' fermate bus caricate'
+});
+
+// fermate tram
+livelloOsm({
+  chk:'chkTram',cache:'tram_osm',
+  caricamento:'Scarico le fermate tram da OpenStreetMap\u2026',
+  query:'[out:json][timeout:30];node["railway"="tram_stop"]'+BBOX+';out qt;',
+  estrai:estraiPunti('Fermata tram'),
+  marker:markerPunto({radius:4,color:'#e65100',fillColor:'#ffb74d'}),
+  toast:n=>n+' fermate tram caricate'
+});
+
+// stazioni ferroviarie (esclusa la metro)
+livelloOsm({
+  chk:'chkTreno',cache:'treno_osm',
+  caricamento:'Scarico le stazioni da OpenStreetMap\u2026',
+  query:'[out:json][timeout:30];nwr["railway"~"^(station|halt)$"]["station"!="subway"]'+BBOX+';out center qt;',
+  estrai:estraiPunti('Stazione'),
+  marker:markerPunto({radius:6,color:'#1c313a',fillColor:'#546e7a'}),
+  toast:n=>n+' stazioni caricate'
+});
+
+// piste ciclabili (linee, non punti)
+livelloOsm({
+  chk:'chkCiclabili',cache:'ciclabili_osm',
+  caricamento:'Scarico le piste ciclabili da OpenStreetMap\u2026',
+  query:'[out:json][timeout:60];way["highway"="cycleway"]'+BBOX+';out geom qt;',
+  estrai:el=>el
+    .filter(x=>x.type==='way'&&x.geometry&&x.geometry.length>1)
+    .map(x=>x.geometry.map(g=>[+g.lat.toFixed(5),+g.lon.toFixed(5)])),
+  marker:pts=>L.polyline(pts,{
+    renderer:rendOsm,color:'#00897b',weight:3,opacity:.8,lineCap:'round'
+  }).bindTooltip('Pista ciclabile',{sticky:true}),
+  toast:n=>n+' tratti di pista ciclabile caricati'
 });
 
 // ---------- distanza su strada ----------
