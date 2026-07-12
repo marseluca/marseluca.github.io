@@ -432,24 +432,26 @@ body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
       </button>
       <div id="corpoTrasporti" class="corpo-sez chiuso">
       <label class="riga-toret">
-        <input type="checkbox" id="chkBus">
-        <span>Fermate bus</span>
+        <input type="checkbox" id="chkLineeBus">
+        <span>Linee bus
+          <span class="desc">rete delle strade percorse dai bus (download pesante)</span>
+        </span>
       </label>
       <label class="riga-toret">
-        <input type="checkbox" id="chkTram">
-        <span>Fermate tram</span>
+        <input type="checkbox" id="chkLineeTram">
+        <span>Linee tram</span>
       </label>
       <label class="riga-toret">
-        <input type="checkbox" id="chkTreno">
-        <span>Stazioni ferroviarie</span>
+        <input type="checkbox" id="chkLineaMetro">
+        <span>Linea metro</span>
+      </label>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkLineeTreno">
+        <span>Linee ferroviarie</span>
       </label>
       <label class="riga-toret">
         <input type="checkbox" id="chkCiclabili">
         <span>Piste ciclabili</span>
-      </label>
-      <label class="riga-toret">
-        <input type="checkbox" id="chkMetro">
-        <span>Stazioni metro</span>
       </label>
       <label class="riga-toret">
         <input type="checkbox" id="chkBikeSharing">
@@ -1016,6 +1018,17 @@ function markerPunto(opt){
     .bindTooltip(p[2]);
 }
 
+// estrattore per livelli lineari (way con geometria completa)
+function estraiLinee(el){
+  return el
+    .filter(x=>x.type==='way'&&x.geometry&&x.geometry.length>1)
+    .map(x=>x.geometry.map(g=>[+g.lat.toFixed(5),+g.lon.toFixed(5)]));
+}
+function markerLinea(opt,nome){
+  return pts=>L.polyline(pts,Object.assign({renderer:rendOsm,lineCap:'round'},opt))
+    .bindTooltip(nome,{sticky:true});
+}
+
 // piazze con nome
 livelloOsm({
   chk:'chkPiazze',cache:'piazze_osm',
@@ -1078,34 +1091,46 @@ livelloOsm({
   toast:n=>n+' gelaterie caricate'
 });
 
-// fermate bus
+// linee bus: tutte le strade percorse da relazioni route=bus
+// (le singole linee GTT come relazioni complete sarebbero decine di MB;
+// la rete delle way membre e il compromesso sostenibile lato client)
 livelloOsm({
-  chk:'chkBus',cache:'bus_osm',
-  caricamento:'Scarico le fermate bus da OpenStreetMap\u2026',
-  query:'[out:json][timeout:40];node["highway"="bus_stop"]'+BBOX+';out qt;',
-  estrai:estraiPunti('Fermata bus'),
-  marker:markerPunto({radius:3.5,color:'#1565c0',fillColor:'#64b5f6'}),
-  toast:n=>n+' fermate bus caricate'
+  chk:'chkLineeBus',cache:'lineebus_osm',
+  caricamento:'Scarico la rete bus da OpenStreetMap\u2026 (richiede un po\u2019)',
+  query:'[out:json][timeout:90];relation["route"="bus"]'+BBOX+';way(r)'+BBOX+';out geom qt;',
+  estrai:estraiLinee,
+  marker:markerLinea({color:'#1565c0',weight:2,opacity:.55},'Rete bus'),
+  toast:n=>n+' tratti della rete bus caricati'
 });
 
-// fermate tram
+// linee tram (binari)
 livelloOsm({
-  chk:'chkTram',cache:'tram_osm',
-  caricamento:'Scarico le fermate tram da OpenStreetMap\u2026',
-  query:'[out:json][timeout:30];node["railway"="tram_stop"]'+BBOX+';out qt;',
-  estrai:estraiPunti('Fermata tram'),
-  marker:markerPunto({radius:4,color:'#e65100',fillColor:'#ffb74d'}),
-  toast:n=>n+' fermate tram caricate'
+  chk:'chkLineeTram',cache:'lineetram_osm',
+  caricamento:'Scarico le linee tram da OpenStreetMap\u2026',
+  query:'[out:json][timeout:40];way["railway"="tram"]'+BBOX+';out geom qt;',
+  estrai:estraiLinee,
+  marker:markerLinea({color:'#e65100',weight:2.5,opacity:.8},'Linea tram'),
+  toast:n=>n+' tratti di linea tram caricati'
 });
 
-// stazioni ferroviarie (esclusa la metro)
+// linea metro
 livelloOsm({
-  chk:'chkTreno',cache:'treno_osm',
-  caricamento:'Scarico le stazioni da OpenStreetMap\u2026',
-  query:'[out:json][timeout:30];nwr["railway"~"^(station|halt)$"]["station"!="subway"]'+BBOX+';out center qt;',
-  estrai:estraiPunti('Stazione'),
-  marker:markerPunto({radius:6,color:'#1c313a',fillColor:'#546e7a'}),
-  toast:n=>n+' stazioni caricate'
+  chk:'chkLineaMetro',cache:'lineametro_osm',
+  caricamento:'Scarico la linea metro da OpenStreetMap\u2026',
+  query:'[out:json][timeout:30];way["railway"="subway"]'+BBOX+';out geom qt;',
+  estrai:estraiLinee,
+  marker:markerLinea({color:'#b03a2e',weight:4,opacity:.85},'Metro'),
+  toast:n=>n+' tratti di metropolitana caricati'
+});
+
+// linee ferroviarie (esclusi binari di servizio, scali e raccordi)
+livelloOsm({
+  chk:'chkLineeTreno',cache:'lineetreno_osm',
+  caricamento:'Scarico le linee ferroviarie da OpenStreetMap\u2026',
+  query:'[out:json][timeout:40];way["railway"="rail"]["service"!~"."]'+BBOX+';out geom qt;',
+  estrai:estraiLinee,
+  marker:markerLinea({color:'#37474f',weight:2.5,opacity:.8},'Ferrovia'),
+  toast:n=>n+' tratti ferroviari caricati'
 });
 
 // piste ciclabili (linee, non punti)
@@ -1206,7 +1231,6 @@ livelloOsm({
  {chk:'chkPanorami',   cache:'panorami_osm',   nome:'punti panoramici',    q:'nwr["tourism"="viewpoint"]',                          r:5,  b:'#0b5345',f:'#48c9b0',fb:'Punto panoramico'},
  {chk:'chkCulto',      cache:'culto_osm',      nome:'luoghi di culto',     q:'nwr["amenity"="place_of_worship"]',                   r:4.5,b:'#5b2c6f',f:'#a569bd',fb:'Luogo di culto'},
  // Trasporti
- {chk:'chkMetro',      cache:'metro_osm',      nome:'stazioni metro',      q:'nwr["railway"="station"]["station"="subway"]',        r:6,  b:'#b03a2e',f:'#e74c3c',fb:'Stazione metro'},
  {chk:'chkBikeSharing',cache:'bikeshare_osm',  nome:'postazioni bike sharing',q:'nwr["amenity"="bicycle_rental"]',                  r:4,  b:'#117864',f:'#52be80',fb:'Bike sharing'},
  {chk:'chkRicarica',   cache:'ricarica_osm',   nome:'colonnine di ricarica',q:'nwr["amenity"="charging_station"]',                  r:4,  b:'#1a5276',f:'#5dade2',fb:'Colonnina di ricarica'}
 ].forEach(d=>livelloOsm({
