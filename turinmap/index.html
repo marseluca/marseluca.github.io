@@ -196,6 +196,8 @@ body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
   color:var(--blu-scuro);text-shadow:0 1px 2px rgba(246,244,238,.9),0 -1px 2px rgba(246,244,238,.9);
   pointer-events:none;text-align:center;white-space:nowrap;
 }
+/* heatmap semitrasparente: multiply lascia leggere strade e nomi sottostanti */
+.leaflet-heatmap-layer{opacity:.6;mix-blend-mode:multiply}
 .etichetta-luogo{
   background:none;border:none;box-shadow:none;
   font-family:'Archivo',sans-serif;font-weight:700;font-size:.7rem;
@@ -317,6 +319,12 @@ body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
       <label class="riga-toret">
         <input type="checkbox" id="chkPub">
         <span>Pub e birrerie</span>
+      </label>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkMovida">
+        <span>Zone della movida
+          <span class="desc">stima: densit&agrave; di bar, pub e locali notturni OSM</span>
+        </span>
       </label>
       </div>
     </div>
@@ -995,6 +1003,27 @@ livelloOsm({
   toast:n=>n+' tratti di pista ciclabile caricati'
 });
 
+// costruttore condiviso per le heatmap: raggio e sfocatura sono in pixel
+// e vanno riscalati con lo zoom, altrimenti la mappa satura da lontano
+// e si sgrana da vicino
+function creaHeatmap(gradiente){
+  return dati=>{
+    const raggio=z=>Math.max(12,Math.min(48,(z-8)*5));
+    const z0=mappa.getZoom()||13;
+    const h=L.heatLayer(dati,{
+      radius:raggio(z0),blur:raggio(z0)*.9,
+      maxZoom:17,     // normalizzazione dell'intensita
+      minOpacity:0,   // le zone a bassa densita restano trasparenti
+      gradient:gradiente
+    });
+    h._quanti=dati.length;
+    mappa.on('zoomend',()=>{
+      if(h._map) h.setOptions({radius:raggio(mappa.getZoom()),blur:raggio(mappa.getZoom())*.9});
+    });
+    return h;
+  };
+}
+
 // heatmap delle zone turistiche: OSM non registra i flussi di visita,
 // quindi si usa come proxy la densita di luoghi d'interesse (attrazioni,
 // musei, monumenti, hotel, punti panoramici...)
@@ -1013,12 +1042,26 @@ livelloOsm({
     const w=(t==='attraction'||t==='museum')?1:(x.tags&&x.tags.historic)?.7:.5;
     return [c[0],c[1],w];
   }).filter(Boolean),
-  costruisci:dati=>{
-    const h=L.heatLayer(dati,{radius:32,blur:24,maxZoom:16,minOpacity:.25});
-    h._quanti=dati.length;
-    return h;
-  },
+  costruisci:creaHeatmap({ .3:'#7fb3d5', .5:'#7dcea0', .7:'#f7dc6f', .85:'#eb984e', 1:'#cb4335' }),
   toast:n=>'Heatmap su '+n+' luoghi d\u2019interesse'
+});
+
+// heatmap della movida: densita di bar, pub, birrerie e locali notturni,
+// come proxy delle zone frequentate la sera dai giovani
+livelloOsm({
+  chk:'chkMovida',cache:'movida_osm',
+  caricamento:'Calcolo le zone della movida da OpenStreetMap\u2026',
+  query:'[out:json][timeout:40];nwr["amenity"~"^(bar|pub|nightclub|biergarten)$"]'+BBOX+';out center qt;',
+  estrai:el=>el.map(x=>{
+    const c=coordCentro(x);
+    if(!c) return null;
+    const a=x.tags&&x.tags.amenity;
+    // i locali notturni pesano di piu; le birrerie all'aperto un po' meno
+    const w=a==='nightclub'?1:a==='biergarten'?.7:.9;
+    return [c[0],c[1],w];
+  }).filter(Boolean),
+  costruisci:creaHeatmap({ .3:'#aeb6e8', .5:'#9b7ec9', .7:'#c058a8', .85:'#d6336c', 1:'#7d1935' }),
+  toast:n=>'Heatmap movida su '+n+' locali'
 });
 
 // livelli puntuali aggiuntivi, registrati in forma tabellare
