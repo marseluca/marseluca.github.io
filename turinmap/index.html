@@ -18,198 +18,224 @@
 <style>
 :root{
   --blu:#16365c;--blu-scuro:#0d2440;--giallo:#f0b429;
-  --carta:#f6f4ee;--inchiostro:#1c2430;--grigio:#7a8494;--bordo:#dcd7cb;
-  --verde:#2e7d32;
+  --carta:#f6f4ee;--bianco:#ffffff;--inchiostro:#1c2430;
+  --grigio:#7a8494;--bordo:#e2ddd2;--verde:#2e7d32;
+  --ombra:0 2px 12px rgba(13,36,64,.14);
+  --barra-h:58px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%}
-body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
-#mappa{height:100%;width:100%;position:relative}
+body{
+  height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro);
+  display:flex;flex-direction:column;overflow:hidden;background:var(--carta);
+}
+#mappa{flex:1;min-height:0;position:relative;z-index:1}
 .leaflet-container{background:#e8e4da;font-family:'Archivo',sans-serif}
-
-/* ---------- pulsanti flottanti ---------- */
-.fbtn{
-  font-family:'Archivo',sans-serif;font-weight:600;font-size:.82rem;
-  border:0;border-radius:22px;padding:10px 16px;cursor:pointer;
-  box-shadow:0 2px 10px rgba(13,36,64,.25);
-}
-.fbtn:focus-visible{outline:2px solid var(--giallo)}
-.btn-menu{
-  position:absolute;right:12px;top:12px;z-index:1000;
-  width:44px;height:44px;border-radius:10px;padding:0;font-size:1.2rem;
-  background:var(--blu);color:var(--carta);
-}
-.pila-sx{
-  position:absolute;left:12px;bottom:calc(16px + env(safe-area-inset-bottom));
-  z-index:1000;display:flex;flex-direction:column;gap:8px;align-items:flex-start;
-}
-.btn-luogo{background:var(--giallo);color:var(--blu-scuro)}
-.btn-luogo.attivo{background:var(--blu);color:var(--carta);outline:2px solid var(--giallo)}
-.btn-distanza{background:var(--blu);color:var(--carta)}
-.btn-gps{
-  position:absolute;right:12px;bottom:calc(16px + env(safe-area-inset-bottom));
-  z-index:1000;width:46px;height:46px;border-radius:50%;padding:0;
-  background:#fff;color:var(--blu);font-size:1.2rem;
-}
-.btn-gps.attivo{background:var(--blu);color:var(--giallo)}
 .mappa-crosshair .leaflet-container{cursor:crosshair}
 
-/* ---------- menu opzioni ---------- */
-.menu{
-  position:absolute;right:12px;top:64px;z-index:1001;display:none;
-  width:288px;max-height:calc(100% - 84px);overflow-y:auto;
-  background:var(--carta);border:1px solid var(--bordo);border-radius:10px;
-  box-shadow:0 6px 22px rgba(13,36,64,.28);
+/* ---------- barra inferiore ---------- */
+.barra{
+  flex:none;height:calc(var(--barra-h) + env(safe-area-inset-bottom));
+  padding-bottom:env(safe-area-inset-bottom);
+  background:var(--bianco);border-top:1px solid var(--bordo);
+  display:flex;z-index:1200;
 }
-.menu.aperto{display:block}
-.menu h2{
-  font-family:'Fraunces',serif;font-size:.95rem;color:var(--blu);
-  padding:12px 14px 8px;
+.barra button{
+  flex:1;border:0;background:none;cursor:pointer;
+  font-family:'Archivo',sans-serif;font-size:.62rem;font-weight:600;
+  color:var(--grigio);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:3px;
+  transition:color .15s;
 }
-.menu .sezione{border-top:1px solid var(--bordo);padding-bottom:6px}
-.menu .sezione:first-child{border-top:0}
-.menu .titolo-sez{
+.barra button svg{width:21px;height:21px}
+.barra button.sel,.barra button:hover{color:var(--blu)}
+.barra button.sel{position:relative}
+.barra button.sel::before{
+  content:'';position:absolute;top:0;left:20%;right:20%;height:3px;
+  background:var(--giallo);border-radius:0 0 3px 3px;
+}
+.barra #btnGps.attivo{color:var(--giallo)}
+.barra button:focus-visible{outline:2px solid var(--blu);outline-offset:-2px}
+
+/* ---------- scheda (bottom sheet / pannello laterale) ---------- */
+.scheda{
+  position:absolute;z-index:1100;background:var(--carta);
+  display:flex;flex-direction:column;
+  left:0;right:0;bottom:calc(var(--barra-h) + env(safe-area-inset-bottom));
+  max-height:64dvh;border-radius:16px 16px 0 0;
+  box-shadow:0 -4px 22px rgba(13,36,64,.18);
+  transform:translateY(110%);transition:transform .28s cubic-bezier(.32,.72,.28,1);
+  visibility:hidden;
+}
+.scheda.aperto{transform:translateY(0);visibility:visible}
+.scheda-testa{
+  flex:none;display:flex;align-items:center;gap:10px;
+  padding:10px 16px 8px;border-bottom:1px solid var(--bordo);
+}
+.maniglia{
+  position:absolute;top:6px;left:50%;transform:translateX(-50%);
+  width:36px;height:4px;border-radius:2px;background:var(--bordo);
+}
+.scheda-testa h2{
+  font-family:'Fraunces',serif;font-size:1.02rem;color:var(--blu);
+  flex:1;padding-top:4px;
+}
+.chiudi-scheda{
+  border:0;background:none;cursor:pointer;color:var(--grigio);
+  font-size:1.3rem;line-height:1;padding:4px 6px;border-radius:6px;
+}
+.chiudi-scheda:hover{color:var(--blu)}
+.scheda-corpo{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.vista{display:none;padding-bottom:12px}
+.vista.aperto{display:block}
+
+/* ---------- sezioni richiudibili ---------- */
+.sezione{border-bottom:1px solid var(--bordo)}
+.titolo-sez{
   font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
-  color:var(--grigio);padding:10px 14px 4px;
+  color:var(--grigio);padding:10px 16px 4px;
 }
-.menu .titolo-sez.collass{
+.titolo-sez.collass{
   display:flex;width:100%;justify-content:space-between;align-items:center;
   background:none;border:0;cursor:pointer;
-  font-family:'Archivo',sans-serif;
-  font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
-  color:var(--grigio);padding:10px 14px 4px;
+  font-family:'Archivo',sans-serif;padding:12px 16px;
+  transition:color .15s,background .15s;
 }
-.menu .titolo-sez.collass:hover{color:var(--blu)}
-.menu .titolo-sez.collass .freccia{
-  font-size:.85rem;transition:transform .15s;
-}
-.menu .titolo-sez.collass[aria-expanded="true"] .freccia{transform:rotate(90deg)}
+.titolo-sez.collass:hover{color:var(--blu);background:#efece3}
+.titolo-sez.collass .freccia{font-size:.85rem;transition:transform .18s}
+.titolo-sez.collass[aria-expanded="true"] .freccia{transform:rotate(90deg)}
+.corpo-sez{padding-bottom:6px}
 .corpo-sez.chiuso{display:none}
-.menu .azioni{display:flex;gap:6px;padding:4px 14px 8px}
-.menu .azioni button{
+.azioni{display:flex;gap:6px;padding:6px 16px 8px;flex-wrap:wrap}
+.azioni button{
   font-family:'Archivo',sans-serif;font-size:.72rem;font-weight:600;
-  padding:5px 10px;border:1px solid var(--bordo);border-radius:14px;
-  background:#fff;color:var(--inchiostro);cursor:pointer;
+  padding:6px 12px;border:1px solid var(--bordo);border-radius:16px;
+  background:var(--bianco);color:var(--inchiostro);cursor:pointer;
+  transition:border-color .15s,color .15s;
 }
-.menu .azioni button:hover{border-color:var(--blu);color:var(--blu)}
+.azioni button:hover{border-color:var(--blu);color:var(--blu)}
+
+/* ---------- righe: quartieri, livelli, liste ---------- */
 .voce{
   display:flex;align-items:center;gap:10px;width:100%;text-align:left;
-  padding:7px 14px;border:0;background:none;cursor:pointer;
-  font-family:'Archivo',sans-serif;font-size:.85rem;color:var(--inchiostro);
+  padding:9px 16px;border:0;background:none;cursor:pointer;
+  font-family:'Archivo',sans-serif;font-size:.86rem;color:var(--inchiostro);
 }
-.voce:hover{background:#eeeadf}
+.voce:hover{background:#efece3}
 .voce:focus-visible{outline:2px solid var(--blu);outline-offset:-2px}
 .voce.attiva{background:var(--blu);color:var(--carta)}
 .voce.spento{opacity:.5}
-.voce .swatch{width:12px;height:12px;border-radius:3px;flex:none;border:1px solid rgba(0,0,0,.18)}
-.voce .occhio{margin-left:auto;flex:none;width:17px;height:17px;cursor:pointer;accent-color:var(--blu)}
+.swatch{width:12px;height:12px;border-radius:3px;flex:none;border:1px solid rgba(0,0,0,.18)}
+.voce .occhio{margin-left:auto;flex:none;width:18px;height:18px;cursor:pointer;accent-color:var(--blu)}
 .riga-toret{
-  display:flex;align-items:center;gap:10px;padding:8px 14px;
-  font-size:.85rem;
+  display:flex;align-items:center;gap:10px;padding:9px 16px;
+  font-size:.86rem;cursor:pointer;
 }
-.riga-toret input{width:17px;height:17px;accent-color:var(--verde);cursor:pointer}
+.riga-toret:hover{background:#efece3}
+.riga-toret input{width:18px;height:18px;accent-color:var(--blu);cursor:pointer;flex:none}
 .riga-toret .desc{font-size:.7rem;color:var(--grigio);display:block}
 
-/* ---------- pannelli ---------- */
-.pannello{
-  position:absolute;left:12px;bottom:calc(118px + env(safe-area-inset-bottom));
-  z-index:1002;display:none;width:280px;
-  background:var(--carta);border:1px solid var(--bordo);
-  border-radius:8px;box-shadow:0 4px 16px rgba(13,36,64,.22);
-  padding:12px 14px;font-family:'Archivo',sans-serif;
-  max-height:60vh;overflow-y:auto;
-}
-.pannello.aperto{display:block}
-.pannello h3{font-size:.82rem;color:var(--blu);margin-bottom:8px}
-.pannello .chiudi{
-  position:absolute;right:8px;top:6px;border:0;background:none;cursor:pointer;
-  font-size:1rem;color:var(--grigio);line-height:1;
-}
-.pannello-luogo{border-left:4px solid var(--giallo)}
-.pannello-rotta{border-left:4px solid var(--blu)}
+/* ---------- controlli nei pannelli ---------- */
+.blocco{padding:10px 16px 4px}
 .opzione-mappa{
-  width:100%;text-align:left;font-family:'Archivo',sans-serif;font-size:.8rem;font-weight:600;
-  background:#fff;border:1px solid var(--bordo);border-radius:6px;
-  padding:8px 10px;cursor:pointer;margin-bottom:10px;color:var(--inchiostro);
+  width:100%;text-align:left;font-family:'Archivo',sans-serif;font-size:.82rem;font-weight:600;
+  background:var(--bianco);border:1px solid var(--bordo);border-radius:8px;
+  padding:10px 12px;cursor:pointer;margin-bottom:10px;color:var(--inchiostro);
+  transition:border-color .15s,color .15s;
 }
 .opzione-mappa:hover{border-color:var(--blu);color:var(--blu)}
-.riga-indirizzo{display:flex;gap:6px}
-.pannello input[type=text]{
+.riga-indirizzo{display:flex;gap:6px;margin-bottom:6px}
+input[type=text]{
   flex:1;min-width:0;font-family:'Archivo',sans-serif;font-size:16px;
-  padding:7px 9px;border:1px solid var(--bordo);border-radius:6px;
+  padding:8px 10px;border:1px solid var(--bordo);border-radius:8px;background:var(--bianco);
+}
+select{
+  width:100%;font-family:'Archivo',sans-serif;font-size:16px;
+  padding:8px 10px;border:1px solid var(--bordo);border-radius:8px;
+  background:var(--bianco);margin-bottom:6px;
 }
 .cerca{
   font-family:'Archivo',sans-serif;font-size:.78rem;font-weight:600;
-  background:var(--blu);color:#fff;border:0;border-radius:6px;padding:0 12px;cursor:pointer;
+  background:var(--blu);color:#fff;border:0;border-radius:8px;padding:0 14px;cursor:pointer;
 }
 .cerca:disabled{opacity:.5;cursor:wait}
-.risultati{margin-top:8px;max-height:170px;overflow-y:auto}
+.risultati{max-height:170px;overflow-y:auto}
 .risultati .ris{
   display:block;width:100%;text-align:left;background:none;border:0;cursor:pointer;
   font-family:'Archivo',sans-serif;font-size:.76rem;color:var(--inchiostro);
-  padding:7px 8px;border-radius:5px;line-height:1.35;
+  padding:7px 8px;border-radius:6px;line-height:1.35;
 }
-.risultati .ris:hover{background:#eeeadf}
+.risultati .ris:hover{background:#efece3}
 .risultati .vuoto{font-size:.75rem;color:var(--grigio);padding:6px 4px}
 .separatore{
-  display:flex;align-items:center;gap:8px;margin:2px 0 10px;
+  display:flex;align-items:center;gap:8px;margin:10px 16px;
   font-size:.68rem;color:var(--grigio);text-transform:uppercase;letter-spacing:.06em;
 }
 .separatore::before,.separatore::after{content:'';flex:1;height:1px;background:var(--bordo)}
-.pannello select{
-  width:100%;font-family:'Archivo',sans-serif;font-size:16px;
-  padding:6px 8px;border:1px solid var(--bordo);border-radius:6px;
-  background:#fff;margin-bottom:6px;
-}
 .riga-tappa{display:flex;gap:6px;align-items:center;margin-bottom:6px}
 .riga-tappa select{flex:1;margin-bottom:0}
 .riga-tappa .togli{
-  flex:none;width:26px;height:26px;border:1px solid var(--bordo);border-radius:6px;
-  background:none;cursor:pointer;color:var(--grigio);font-size:.9rem;line-height:1;
+  flex:none;width:30px;height:30px;border:1px solid var(--bordo);border-radius:8px;
+  background:var(--bianco);cursor:pointer;color:var(--grigio);font-size:.95rem;line-height:1;
 }
 .riga-tappa .togli:hover{color:#8a3a3a;border-color:#c9a0a0}
-.profili{display:flex;gap:4px;margin:4px 0 10px}
+.profili{display:flex;gap:4px;margin:6px 0 10px}
 .profili button{
-  flex:1;font-family:'Archivo',sans-serif;font-size:.72rem;font-weight:600;
-  padding:5px 0;border:1px solid var(--bordo);border-radius:6px;background:#fff;
-  cursor:pointer;color:var(--inchiostro);
+  flex:1;font-family:'Archivo',sans-serif;font-size:.74rem;font-weight:600;
+  padding:7px 0;border:1px solid var(--bordo);border-radius:8px;background:var(--bianco);
+  cursor:pointer;color:var(--inchiostro);transition:background .15s,color .15s;
 }
 .profili button.sel{background:var(--blu);color:#fff;border-color:var(--blu)}
 .calcola{
-  width:100%;font-family:'Archivo',sans-serif;font-size:.8rem;font-weight:600;
-  background:var(--giallo);color:var(--blu-scuro);border:0;border-radius:6px;
-  padding:8px 0;cursor:pointer;
+  width:100%;font-family:'Archivo',sans-serif;font-size:.82rem;font-weight:600;
+  background:var(--giallo);color:var(--blu-scuro);border:0;border-radius:8px;
+  padding:10px 0;cursor:pointer;margin-bottom:4px;
 }
 .calcola:disabled{opacity:.5;cursor:wait}
-.esito{margin-top:8px;font-size:.82rem;line-height:1.45}
+.esito{margin-top:6px;font-size:.82rem;line-height:1.5}
 .esito strong{color:var(--blu);font-variant-numeric:tabular-nums}
 .pulisci{
   margin-top:6px;width:100%;font-family:'Archivo',sans-serif;font-size:.72rem;font-weight:600;
-  background:none;border:1px solid var(--bordo);border-radius:6px;padding:5px 0;
+  background:none;border:1px solid var(--bordo);border-radius:8px;padding:6px 0;
   cursor:pointer;color:var(--grigio);display:none;
 }
 
-/* ---------- info, etichette, pin, toast ---------- */
+/* ---------- overlay sulla mappa ---------- */
 .pannello-info{
   position:absolute;left:12px;top:12px;z-index:1000;
   background:var(--carta);border:1px solid var(--bordo);border-left:4px solid var(--giallo);
-  padding:9px 13px;border-radius:6px;box-shadow:0 2px 10px rgba(13,36,64,.15);
+  padding:9px 13px;border-radius:8px;box-shadow:var(--ombra);
   max-width:230px;display:none;
 }
 .pannello-info h2{font-family:'Fraunces',serif;font-size:1rem;color:var(--blu);margin-bottom:2px}
 .pannello-info p{font-size:.72rem;color:var(--grigio)}
+.carta-meteo{
+  position:absolute;left:50%;transform:translateX(-50%);top:12px;z-index:1000;
+  background:var(--carta);border:1px solid var(--bordo);border-left:4px solid #5dade2;
+  border-radius:8px;box-shadow:var(--ombra);
+  padding:8px 14px;font-size:.8rem;line-height:1.5;display:none;max-width:74vw;
+}
+.carta-meteo strong{color:var(--blu);font-variant-numeric:tabular-nums}
+.pill-annulla{
+  position:absolute;left:50%;transform:translateX(-50%);top:12px;z-index:1250;
+  background:var(--blu);color:var(--carta);border:0;border-radius:20px;cursor:pointer;
+  font-family:'Archivo',sans-serif;font-size:.78rem;font-weight:600;
+  padding:9px 16px;box-shadow:var(--ombra);display:none;
+}
+.toast{
+  position:absolute;left:50%;transform:translateX(-50%);
+  bottom:14px;z-index:1300;
+  background:var(--blu-scuro);color:var(--carta);
+  font-size:.78rem;padding:9px 14px;border-radius:8px;
+  box-shadow:0 3px 12px rgba(13,36,64,.35);
+  max-width:86%;text-align:center;display:none;
+}
 .etichetta{
   background:none;border:none;box-shadow:none;
   font-family:'Archivo',sans-serif;font-weight:600;font-size:.68rem;
   color:var(--blu-scuro);text-shadow:0 1px 2px rgba(246,244,238,.9),0 -1px 2px rgba(246,244,238,.9);
   pointer-events:none;text-align:center;white-space:nowrap;
 }
-/* su basemap scure: etichette chiare e heatmap in blend screen */
-.base-scura .etichetta{color:#f5f2e8;text-shadow:0 1px 3px rgba(13,20,30,.95),0 -1px 3px rgba(13,20,30,.95)}
-.base-scura .etichetta-luogo{color:#f5f2e8;text-shadow:0 1px 3px rgba(13,20,30,.95),0 -1px 3px rgba(13,20,30,.95)}
-.base-scura .leaflet-heatmap-layer{mix-blend-mode:screen;opacity:.7}
-/* heatmap semitrasparente: multiply lascia leggere strade e nomi sottostanti */
-.leaflet-heatmap-layer{opacity:.78;mix-blend-mode:multiply;filter:saturate(1.25)}
 .etichetta-luogo{
   background:none;border:none;box-shadow:none;
   font-family:'Archivo',sans-serif;font-weight:700;font-size:.7rem;
@@ -235,50 +261,64 @@ body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
 }
 .popup-luogo .salva{background:var(--blu);color:#fff}
 .popup-luogo .elimina{background:#f3e2e2;color:#8a3a3a}
-.carta-meteo{
-  position:absolute;left:50%;transform:translateX(-50%);top:12px;z-index:1000;
-  background:var(--carta);border:1px solid var(--bordo);border-left:4px solid #5dade2;
-  border-radius:8px;box-shadow:0 2px 10px rgba(13,36,64,.2);
-  padding:8px 14px;font-size:.8rem;line-height:1.5;display:none;max-width:70vw;
-}
-.carta-meteo strong{color:var(--blu);font-variant-numeric:tabular-nums}
-.toast{
-  position:absolute;left:50%;transform:translateX(-50%);
-  bottom:calc(76px + env(safe-area-inset-bottom));z-index:1200;
-  background:var(--blu-scuro);color:var(--carta);
-  font-size:.78rem;padding:9px 14px;border-radius:8px;
-  box-shadow:0 3px 12px rgba(13,36,64,.35);
-  max-width:86%;text-align:center;display:none;
-}
 
-/* ---------- mobile ---------- */
+/* su basemap scure: etichette chiare e heatmap in blend screen */
+.base-scura .etichetta{color:#f5f2e8;text-shadow:0 1px 3px rgba(13,20,30,.95),0 -1px 3px rgba(13,20,30,.95)}
+.base-scura .etichetta-luogo{color:#f5f2e8;text-shadow:0 1px 3px rgba(13,20,30,.95),0 -1px 3px rgba(13,20,30,.95)}
+.base-scura .leaflet-heatmap-layer{mix-blend-mode:screen;opacity:.7}
+.leaflet-heatmap-layer{opacity:.78;mix-blend-mode:multiply;filter:saturate(1.25)}
+
+/* ---------- desktop: scheda laterale, barra a pillola ---------- */
+@media (min-width:681px){
+  .scheda{
+    left:auto;right:0;top:0;bottom:0;width:352px;max-height:none;
+    border-radius:0;border-left:1px solid var(--bordo);
+    transform:translateX(105%);
+  }
+  .scheda.aperto{transform:translateX(0)}
+  .maniglia{display:none}
+  .barra{
+    position:absolute;left:50%;transform:translateX(-50%);
+    bottom:18px;height:56px;width:auto;min-width:320px;
+    border:1px solid var(--bordo);border-radius:30px;box-shadow:var(--ombra);
+    padding:0 8px;z-index:1200;
+  }
+  body{display:block}
+  #mappa{height:100dvh}
+  .barra button{padding:0 20px}
+  .toast{bottom:88px}
+}
 @media (max-width:680px){
-  .menu{left:10px;right:10px;width:auto;max-height:calc(70dvh)}
-  .pannello{left:10px;right:76px;width:auto}
-  .pannello-info{max-width:50vw;padding:7px 10px}
-  .pannello-info h2{font-size:.88rem}
-  .fbtn{padding:11px 14px;font-size:.8rem}
+  .barra{position:relative}
 }
-@media (max-width:680px) and (orientation:landscape){
-  .menu{left:auto;width:300px;max-height:calc(100% - 84px)}
-  .pannello{right:auto;width:300px}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important}
 }
-@media (prefers-reduced-motion:reduce){ *{transition:none!important} }
 </style>
 </head>
 <body>
-<div id="mappa" class="">
-  <button class="btn-menu fbtn" id="btnMenu" type="button" aria-label="Apri o chiudi i filtri" aria-expanded="false">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <polygon points="3 4 21 4 14 12.5 14 19 10 21 10 12.5 3 4"></polygon>
-    </svg>
-  </button>
+<div id="mappa">
+  <div class="pannello-info" id="info"><h2></h2><p></p></div>
+  <div class="carta-meteo" id="cartaMeteo"></div>
+  <button class="pill-annulla" id="pillAnnulla" type="button">Tocca la mappa per il luogo &middot; Annulla</button>
+  <div class="toast" id="toast"></div>
+</div>
 
-  <div class="menu" id="menu">
-    <h2>Filtri</h2>
-    <div class="azioni" style="padding-top:0">
-      <button id="btnResetFiltri" type="button">Rimuovi tutti i filtri</button>
-    </div>
+<div class="scheda" id="menu">
+  <div class="maniglia"></div>
+  <div class="scheda-testa">
+    <h2 id="titoloScheda">Filtri</h2>
+    <button class="chiudi-scheda" id="chiudiPannello" type="button" aria-label="Chiudi">&times;</button>
+  </div>
+  <div class="scheda-corpo">
+    <div class="vista" id="vistaLivelli">
+
+      <div class="azioni" style="padding-top:10px">
+        <button id="btnResetFiltri" type="button">Rimuovi tutti i filtri</button>
+      </div>
+      <div class="blocco" style="padding-top:0">
+        <input type="text" id="cercaFiltri" placeholder="Cerca un filtro&hellip;">
+      </div>
     <div class="sezione">
       <button class="titolo-sez collass" type="button" data-corpo="corpoQuartieri" aria-expanded="false">
         <span>Quartieri</span><span class="freccia">&#9656;</span>
@@ -299,33 +339,13 @@ body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
       <label class="riga-toret">
         <input type="checkbox" id="chkZoneTuristiche">
         <span>Zone pi&ugrave; visitate
-          <span class="desc">stima: densit&agrave; di luoghi d&rsquo;interesse OSM</span>
-        </span>
+          <span class="desc">stima: densit&agrave; di luoghi d&rsquo;interesse OSM</span></span>
       </label>
       <label class="riga-toret">
         <input type="checkbox" id="chkMovida">
         <span>Zone della movida
-          <span class="desc">stima: densit&agrave; di bar, pub e locali notturni OSM</span>
-        </span>
+          <span class="desc">stima: densit&agrave; di bar, pub e locali notturni OSM</span></span>
       </label>
-      </div>
-    </div>
-    <div class="sezione">
-      <button class="titolo-sez collass" type="button" data-corpo="corpoListe" aria-expanded="false">
-        <span>Liste personalizzate</span><span class="freccia">&#9656;</span>
-      </button>
-      <div id="corpoListe" class="corpo-sez chiuso">
-      <div id="righeListe"></div>
-      <div class="riga-indirizzo" style="padding:4px 14px 8px">
-        <input type="text" id="nomeListaMenu" placeholder="Nome nuova lista">
-        <button class="cerca" id="btnCreaListaMenu" type="button">Crea</button>
-      </div>
-      <div class="azioni">
-        <button id="btnEsporta" type="button">Esporta</button>
-        <button id="btnImporta" type="button">Importa</button>
-        <button id="btnCondividi" type="button">Copia link</button>
-      </div>
-      <input type="file" id="fileImport" accept="application/json,.json" style="display:none">
       </div>
     </div>
     <div class="sezione">
@@ -464,7 +484,6 @@ body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
         <input type="checkbox" id="chkRicarica">
         <span>Colonnine di ricarica</span>
       </label>
-      <div class="titolo-sez" style="padding-top:2px;font-weight:400;text-transform:none;letter-spacing:0">dati OpenStreetMap, area di Torino</div>
       </div>
     </div>
     <div class="sezione">
@@ -475,8 +494,7 @@ body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
       <label class="riga-toret">
         <input type="checkbox" id="chkLineeBus">
         <span>Rete bus completa
-          <span class="desc">strade percorse dai bus (download pesante)</span>
-        </span>
+          <span class="desc">strade percorse dai bus (download pesante)</span></span>
       </label>
       <label class="riga-toret">
         <input type="checkbox" id="chkLineeTram">
@@ -491,16 +509,16 @@ body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
         <span>Linee ferroviarie</span>
       </label>
       <div class="titolo-sez" style="padding-bottom:2px">Linee singole</div>
-      <div class="riga-indirizzo" style="padding:2px 14px 6px">
-        <select id="selModo" style="flex:0 0 84px;margin-bottom:0">
+      <div class="blocco" style="padding-top:2px;display:flex;gap:6px">
+        <select id="selModo" style="flex:0 0 88px;margin-bottom:0">
           <option value="bus">Bus</option>
           <option value="tram">Tram</option>
           <option value="train">Treno</option>
         </select>
         <select id="selLinea" style="flex:1;margin-bottom:0"></select>
       </div>
-      <div class="riga-indirizzo" style="padding:0 14px 8px">
-        <button class="cerca" id="btnMostraLinea" type="button" style="flex:1;padding:7px 0">Mostra linea</button>
+      <div class="blocco" style="padding-top:6px">
+        <button class="cerca" id="btnMostraLinea" type="button" style="width:100%;padding:8px 0">Mostra linea</button>
       </div>
       <div id="lineeAttive"></div>
       </div>
@@ -509,7 +527,9 @@ body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
       <button class="titolo-sez collass" type="button" data-corpo="corpoBase" aria-expanded="false">
         <span>Mappa base</span><span class="freccia">&#9656;</span>
       </button>
-      <div id="corpoBase" class="corpo-sez chiuso"></div>
+      <div id="corpoBase" class="corpo-sez chiuso">
+
+      </div>
     </div>
     <div class="sezione">
       <button class="titolo-sez collass" type="button" data-corpo="corpoMeteo" aria-expanded="false">
@@ -519,66 +539,80 @@ body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
       <label class="riga-toret">
         <input type="checkbox" id="chkMeteo">
         <span>Condizioni attuali
-          <span class="desc">Open-Meteo, centro mappa</span>
-        </span>
+          <span class="desc">Open-Meteo, centro mappa</span></span>
       </label>
       <label class="riga-toret">
         <input type="checkbox" id="chkRadar">
         <span>Radar precipitazioni
-          <span class="desc">RainViewer, ultimo rilevamento</span>
-        </span>
+          <span class="desc">RainViewer, ultimo rilevamento</span></span>
       </label>
       </div>
     </div>
-  </div>
 
-  <div class="pannello-info" id="info"><h2></h2><p></p></div>
-
-  <div class="pila-sx">
-    <button class="fbtn btn-luogo" id="btnLuogo" type="button">+ Aggiungi luogo</button>
-    <button class="fbtn btn-distanza" id="btnDistanza" type="button">&#8646; Calcola percorso</button>
-  </div>
-  <button class="fbtn btn-gps" id="btnGps" type="button" title="La mia posizione" aria-label="Mostra la mia posizione">&#9678;</button>
-
-  <div class="pannello pannello-luogo" id="pannelloLuogo">
-    <button class="chiudi" id="chiudiPannello" type="button" aria-label="Chiudi">&times;</button>
-    <h3>Nuovo luogo di riferimento</h3>
-    <select id="selLista"></select>
-    <div class="riga-indirizzo" id="rigaNuovaLista" style="display:none;margin-bottom:6px">
-      <input type="text" id="nomeNuovaLista" placeholder="Nome della lista">
-      <button class="cerca" id="btnCreaLista" type="button">Crea</button>
     </div>
-    <button class="opzione-mappa" id="opzioneMappa" type="button">&#128205; Clicca un punto sulla mappa</button>
-    <div class="separatore">oppure per indirizzo</div>
-    <div class="riga-indirizzo">
-      <input type="text" id="campoIndirizzo" placeholder="Via, piazza, civico&hellip;">
-      <button class="cerca" id="btnCerca" type="button">Cerca</button>
-    </div>
-    <div class="risultati" id="risultati"></div>
-  </div>
+    <div class="vista" id="pannelloLuogo">
 
-  <div class="pannello pannello-rotta" id="pannelloRotta">
-    <button class="chiudi" id="chiudiRotta" type="button" aria-label="Chiudi">&times;</button>
-    <h3>Percorso pi&ugrave; breve su strada</h3>
-    <div id="tappe"></div>
-    <button class="opzione-mappa" id="btnAggTappa" type="button" style="margin-bottom:6px">+ Aggiungi tappa</button>
-    <div class="profili">
-      <button type="button" data-p="foot" class="sel">A piedi</button>
-      <button type="button" data-p="bike">In bici</button>
-      <button type="button" data-p="driving">In auto</button>
-    </div>
-    <button class="calcola" id="btnCalcola" type="button">Calcola percorso</button>
-    <div class="esito" id="esitoRotta"></div>
-    <button class="pulisci" id="btnPulisci" type="button">Rimuovi percorso dalla mappa</button>
-    <div class="separatore" style="margin-top:10px">oppure isocrone</div>
-    <select id="selIsoOrig"></select>
-    <button class="calcola" id="btnIsocrone" type="button">Aree raggiungibili (10/20/30 min)</button>
-    <button class="pulisci" id="btnIsoRimuovi" type="button">Rimuovi isocrone dalla mappa</button>
-  </div>
+      <div class="blocco" style="padding-top:12px">
+        <select id="selLista"></select>
+        <div class="riga-indirizzo" id="rigaNuovaLista" style="display:none">
+          <input type="text" id="nomeNuovaLista" placeholder="Nome della lista">
+          <button class="cerca" id="btnCreaLista" type="button">Crea</button>
+        </div>
+        <button class="opzione-mappa" id="opzioneMappa" type="button">&#128205; Clicca un punto sulla mappa</button>
+        <div class="separatore" style="margin:6px 0">oppure per indirizzo</div>
+        <div class="riga-indirizzo">
+          <input type="text" id="campoIndirizzo" placeholder="Via, piazza, civico&hellip;">
+          <button class="cerca" id="btnCerca" type="button">Cerca</button>
+        </div>
+        <div class="risultati" id="risultati"></div>
+      </div>
+      <div class="separatore">le mie liste</div>
+      <div id="righeListe"></div>
+      <div class="blocco">
+        <div class="riga-indirizzo">
+          <input type="text" id="nomeListaMenu" placeholder="Nome nuova lista">
+          <button class="cerca" id="btnCreaListaMenu" type="button">Crea</button>
+        </div>
+      </div>
+      <div class="azioni">
+        <button id="btnEsporta" type="button">Esporta</button>
+        <button id="btnImporta" type="button">Importa</button>
+        <button id="btnCondividi" type="button">Copia link</button>
+      </div>
+      <input type="file" id="fileImport" accept="application/json,.json" style="display:none">
 
-  <div class="carta-meteo" id="cartaMeteo"></div>
-  <div class="toast" id="toast"></div>
+    </div>
+    <div class="vista" id="pannelloRotta">
+
+      <div class="blocco" style="padding-top:12px">
+        <div id="tappe"></div>
+        <button class="opzione-mappa" id="btnAggTappa" type="button" style="margin-bottom:6px">+ Aggiungi tappa</button>
+        <div class="profili">
+          <button type="button" data-p="foot" class="sel">A piedi</button>
+          <button type="button" data-p="bike">In bici</button>
+          <button type="button" data-p="driving">In auto</button>
+        </div>
+        <button class="calcola" id="btnCalcola" type="button">Calcola percorso</button>
+        <div class="esito" id="esitoRotta"></div>
+        <button class="pulisci" id="btnPulisci" type="button">Rimuovi percorso dalla mappa</button>
+      </div>
+      <div class="separatore">oppure isocrone</div>
+      <div class="blocco" style="padding-top:0">
+        <select id="selIsoOrig"></select>
+        <button class="calcola" id="btnIsocrone" type="button">Aree raggiungibili (10/20/30 min)</button>
+        <button class="pulisci" id="btnIsoRimuovi" type="button">Rimuovi isocrone dalla mappa</button>
+      </div>
+
+    </div>
+  </div>
 </div>
+
+<nav class="barra">
+  <button id="btnMenu" type="button" aria-label="Filtri e livelli"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 4 21 4 14 12.5 14 19 10 21 10 12.5 3 4"></polygon></svg><span>Livelli</span></button>
+  <button id="btnLuogo" type="button" aria-label="I miei luoghi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg><span>Luoghi</span></button>
+  <button id="btnDistanza" type="button" aria-label="Percorsi e isocrone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="19" r="3"></circle><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"></path><circle cx="18" cy="5" r="3"></circle></svg><span>Percorso</span></button>
+  <button id="btnGps" type="button" aria-label="La mia posizione"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"></circle><line x1="12" y1="2" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="22"></line><line x1="2" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="22" y2="12"></line></svg><span>Posizione</span></button>
+</nav>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
@@ -662,7 +696,7 @@ const menu=document.getElementById('menu');
 
 // i pannelli sono sovrapposti alla mappa: senza questo, rotella e trascinamento
 // arrivano a Leaflet (zoom/pan della mappa) invece di scorrere il pannello
-['menu','pannelloLuogo','pannelloRotta','info','btnMenu','btnGps','btnLuogo','btnDistanza','toast']
+['menu','info','btnGps','toast','pillAnnulla','cartaMeteo']
   .forEach(id=>{
     const el=document.getElementById(id);
     if(!el) return;
@@ -673,13 +707,32 @@ document.querySelectorAll('.pila-sx').forEach(el=>{
   L.DomEvent.disableClickPropagation(el);
 });
 
-const ICONA_FILTRO='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 4 21 4 14 12.5 14 19 10 21 10 12.5 3 4"></polygon></svg>';
-const ICONA_X='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="5" y1="5" x2="19" y2="19"></line><line x1="19" y1="5" x2="5" y2="19"></line></svg>';
-btnMenu.onclick=()=>{
-  const aperto=menu.classList.toggle('aperto');
-  btnMenu.setAttribute('aria-expanded',aperto);
-  btnMenu.innerHTML=aperto?ICONA_X:ICONA_FILTRO;
-};
+// ---- scheda con tre viste (Livelli / Luoghi / Percorso) ----
+const TITOLI_VISTE={livelli:'Filtri e livelli',luoghi:'I miei luoghi',percorso:'Percorsi e isocrone'};
+const VISTE={livelli:document.getElementById('vistaLivelli'),
+             luoghi:document.getElementById('pannelloLuogo'),
+             percorso:document.getElementById('pannelloRotta')};
+const TABS={livelli:btnMenu,
+            luoghi:document.getElementById('btnLuogo'),
+            percorso:document.getElementById('btnDistanza')};
+let vistaAttiva=null;
+function apriVista(n){
+  Object.keys(VISTE).forEach(k=>{
+    VISTE[k].classList.toggle('aperto',k===n);
+    TABS[k].classList.toggle('sel',k===n);
+  });
+  document.getElementById('titoloScheda').textContent=TITOLI_VISTE[n];
+  menu.classList.add('aperto');
+  vistaAttiva=n;
+}
+function chiudiVista(){
+  menu.classList.remove('aperto');
+  Object.keys(TABS).forEach(k=>TABS[k].classList.remove('sel'));
+  vistaAttiva=null;
+}
+function toggleVista(n){ vistaAttiva===n ? chiudiVista() : apriVista(n); }
+document.getElementById('chiudiPannello').onclick=chiudiVista;
+btnMenu.onclick=()=>toggleVista('livelli');
 
 // rimuove tutti i filtri attivi (quartieri e livelli)
 document.getElementById('btnResetFiltri').onclick=()=>{
@@ -973,10 +1026,10 @@ const pannelloRotta=document.getElementById('pannelloRotta');
 
 function esciAddMode(){
   addMode=false;
-  btnLuogo.classList.remove('attivo');
-  btnLuogo.textContent='+ Aggiungi luogo';
+  document.getElementById('pillAnnulla').style.display='none';
   document.getElementById('mappa').classList.remove('mappa-crosshair');
 }
+document.getElementById('pillAnnulla').onclick=()=>esciAddMode();
 const selLista=document.getElementById('selLista');
 const rigaNuovaLista=document.getElementById('rigaNuovaLista');
 function popolaSelLista(selezionata){
@@ -1002,21 +1055,16 @@ document.getElementById('btnCreaLista').onclick=()=>{
 };
 
 btnLuogo.onclick=()=>{
-  if(addMode){ esciAddMode(); return; }
-  pannelloRotta.classList.remove('aperto');
-  pannelloLuogo.classList.toggle('aperto');
-  if(pannelloLuogo.classList.contains('aperto')){
-    popolaSelLista(selLista.value!=='__nuova'?selLista.value:'');
-    rigaNuovaLista.style.display='none';
-    campoInd.focus();
-  }
+  if(addMode) esciAddMode();
+  if(vistaAttiva==='luoghi'){ chiudiVista(); return; }
+  popolaSelLista(selLista.value!=='__nuova'?selLista.value:'');
+  rigaNuovaLista.style.display='none';
+  apriVista('luoghi');
 };
-document.getElementById('chiudiPannello').onclick=()=>pannelloLuogo.classList.remove('aperto');
 document.getElementById('opzioneMappa').onclick=()=>{
-  pannelloLuogo.classList.remove('aperto');
+  chiudiVista();
   addMode=true;
-  btnLuogo.classList.add('attivo');
-  btnLuogo.textContent='Clicca sulla mappa\u2026 (annulla)';
+  document.getElementById('pillAnnulla').style.display='block';
   document.getElementById('mappa').classList.add('mappa-crosshair');
 };
 mappa.on('click',e=>{
@@ -1045,7 +1093,7 @@ async function cercaIndirizzo(){
       b.textContent=d.display_name;
       b.onclick=()=>{
         const nome=d.display_name.split(',').slice(0,2).join(',').trim();
-        pannelloLuogo.classList.remove('aperto');
+        chiudiVista();
         aggiungiLuogo(nome,parseFloat(d.lat),parseFloat(d.lon),true);
         risultati.innerHTML='';campoInd.value='';
       };
@@ -1564,9 +1612,8 @@ function creaTappa(indiceSelezionato){
 }
 
 document.getElementById('btnDistanza').onclick=()=>{
-  pannelloLuogo.classList.remove('aperto');
-  pannelloRotta.classList.toggle('aperto');
-  if(!pannelloRotta.classList.contains('aperto')) return;
+  if(vistaAttiva==='percorso'){ chiudiVista(); return; }
+  apriVista('percorso');
   tappe.innerHTML='';
   if(luoghi.length<1){
     esitoRotta.innerHTML='Per i percorsi serve almeno un luogo salvato. Le isocrone funzionano anche dalla sola posizione attuale.';
@@ -1580,7 +1627,6 @@ document.getElementById('btnDistanza').onclick=()=>{
   creaTappa(1);        // arrivo: primo luogo salvato
   popolaSelIso();
 };
-document.getElementById('chiudiRotta').onclick=()=>pannelloRotta.classList.remove('aperto');
 
 btnAggTappa.onclick=()=>{
   if(tappe.querySelectorAll('.riga-tappa').length>=10){
@@ -1783,6 +1829,32 @@ btnIsocrone.onclick=async()=>{
     esitoRotta.innerHTML='Isocrone non disponibili al momento: riprova.';
   }
   btnIsocrone.disabled=false;
+};
+
+// ---------- ricerca tra i filtri ----------
+document.getElementById('cercaFiltri').oninput=e=>{
+  const q=e.target.value.trim().toLowerCase();
+  document.querySelectorAll('#vistaLivelli .sezione').forEach(sezEl=>{
+    const btn=sezEl.querySelector('.titolo-sez.collass');
+    const corpo=sezEl.querySelector('.corpo-sez');
+    if(!btn||!corpo) return;
+    let visibili=0;
+    corpo.querySelectorAll('.riga-toret, .voce').forEach(r=>{
+      const match=!q||r.textContent.toLowerCase().includes(q);
+      r.style.display=match?'':'none';
+      if(match) visibili++;
+    });
+    if(q){
+      // durante la ricerca: espande le sezioni con risultati, nasconde le altre
+      sezEl.style.display=visibili?'':'none';
+      corpo.classList.toggle('chiuso',!visibili);
+      btn.setAttribute('aria-expanded',!!visibili);
+    }else{
+      sezEl.style.display='';
+      corpo.classList.add('chiuso');
+      btn.setAttribute('aria-expanded','false');
+    }
+  });
 };
 </script>
 </body>
