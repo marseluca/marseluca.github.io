@@ -866,7 +866,6 @@ function disegnaLuogo(l){
     iconSize:[26,26],iconAnchor:[13,22],popupAnchor:[0,-20]
   });
   const m=L.marker([l.lat,l.lng],{icon:icona,riseOnHover:true}).addTo(gruppoLuoghi);
-  m.on('click',ev=>{ L.DomEvent.stopPropagation(ev); m.openPopup(); });
   L.marker([l.lat,l.lng],{icon:L.divIcon({className:'etichetta-luogo',html:l.nome,iconSize:null,iconAnchor:[-6,6]}),interactive:false}).addTo(gruppoLuoghi);
   m.bindPopup(()=>{
     const div=document.createElement('div');
