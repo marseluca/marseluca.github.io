@@ -240,6 +240,7 @@ select{
   background:none;border:none;box-shadow:none;
   font-family:'Archivo',sans-serif;font-weight:700;font-size:.7rem;
   color:var(--blu-scuro);text-shadow:0 1px 2px #fff,0 -1px 2px #fff;white-space:nowrap;
+  pointer-events:none;
 }
 .pin-luogo{
   background:var(--giallo);border:2px solid var(--blu-scuro);border-radius:50% 50% 50% 0;
@@ -580,6 +581,12 @@ select{
         <button id="btnCondividi" type="button">Copia link</button>
       </div>
       <input type="file" id="fileImport" accept="application/json,.json" style="display:none">
+      <div class="separatore">tracciati gpx</div>
+      <div id="righeGpx"></div>
+      <div class="azioni">
+        <button id="btnImportaGpx" type="button">Importa file GPX</button>
+      </div>
+      <input type="file" id="fileGpx" accept=".gpx,application/gpx+xml" style="display:none">
 
     </div>
     <div class="vista" id="pannelloRotta">
@@ -855,10 +862,11 @@ function disegnaLuogo(l){
   const col=coloreLuogo(l);
   const icona=L.divIcon({
     className:'',
-    html:`<div class="pin-luogo" style="background:${col}"></div>`,
-    iconSize:[18,18],iconAnchor:[9,18],popupAnchor:[0,-16]
+    html:`<div class="pin-luogo" style="background:${col};margin:4px"></div>`,
+    iconSize:[26,26],iconAnchor:[13,22],popupAnchor:[0,-20]
   });
-  const m=L.marker([l.lat,l.lng],{icon:icona}).addTo(gruppoLuoghi);
+  const m=L.marker([l.lat,l.lng],{icon:icona,riseOnHover:true}).addTo(gruppoLuoghi);
+  m.on('click',ev=>{ L.DomEvent.stopPropagation(ev); m.openPopup(); });
   L.marker([l.lat,l.lng],{icon:L.divIcon({className:'etichetta-luogo',html:l.nome,iconSize:null,iconAnchor:[-6,6]}),interactive:false}).addTo(gruppoLuoghi);
   m.bindPopup(()=>{
     const div=document.createElement('div');
@@ -1829,6 +1837,128 @@ btnIsocrone.onclick=async()=>{
     esitoRotta.innerHTML='Isocrone non disponibili al momento: riprova.';
   }
   btnIsocrone.disabled=false;
+};
+
+// ---------- tracciati GPX ----------
+const CHIAVE_GPX='torino_quartieri_gpx';
+let tracce=[];
+try{ tracce=JSON.parse(localStorage.getItem(CHIAVE_GPX)||'[]'); }catch(e){}
+function salvaTracce(){
+  try{ localStorage.setItem(CHIAVE_GPX,JSON.stringify(tracce)); }
+  catch(e){ mostraToast('Traccia troppo grande per il salvataggio: rester\u00e0 solo per questa sessione.'); }
+}
+const layerTracce={};   // id -> layer
+let contaColoriGpx=0;
+
+function distanzaTraccia(pts){
+  // haversine cumulativa in km
+  let d=0;
+  for(let i=1;i<pts.length;i++){
+    const [la1,lo1]=pts[i-1],[la2,lo2]=pts[i];
+    const p=Math.PI/180, a=Math.sin((la2-la1)*p/2)**2
+      +Math.cos(la1*p)*Math.cos(la2*p)*Math.sin((lo2-lo1)*p/2)**2;
+    d+=12742*Math.asin(Math.sqrt(a));
+  }
+  return d;
+}
+function disegnaTraccia(t,vola){
+  if(layerTracce[t.id]) mappa.removeLayer(layerTracce[t.id]);
+  const lay=L.layerGroup(t.segmenti.map(seg=>
+    L.polyline(seg,{color:t.colore,weight:3.5,opacity:.85,lineCap:'round'})
+      .bindTooltip(t.nome,{sticky:true})
+  )).addTo(mappa);
+  layerTracce[t.id]=lay;
+  if(vola){
+    const b=L.featureGroup(lay.getLayers()).getBounds();
+    if(b.isValid()) mappa.flyToBounds(b,{padding:[40,40],duration:.6});
+  }
+}
+function rigeneraRigheGpx(){
+  const cont=document.getElementById('righeGpx');
+  cont.innerHTML='';
+  if(!tracce.length){
+    cont.innerHTML='<div class="titolo-sez" style="font-weight:400;text-transform:none;letter-spacing:0">Nessun tracciato importato.</div>';
+    return;
+  }
+  tracce.forEach(t=>{
+    const lab=document.createElement('label');
+    lab.className='riga-toret';
+    const chk=document.createElement('input');
+    chk.type='checkbox';
+    chk.checked=!!layerTracce[t.id];
+    chk.onchange=()=>{
+      if(chk.checked) disegnaTraccia(t,true);
+      else if(layerTracce[t.id]){ mappa.removeLayer(layerTracce[t.id]); delete layerTracce[t.id]; }
+    };
+    const sw=document.createElement('span');
+    sw.className='swatch';sw.style.background=t.colore;
+    const sp=document.createElement('span');
+    sp.innerHTML=t.nome+'<span class="desc">'+t.km.toFixed(1)+' km \u00b7 '+t.punti+' punti</span>';
+    const x=document.createElement('button');
+    x.type='button';x.className='togli';x.innerHTML='&times;';
+    x.title='Elimina tracciato';
+    x.style.marginLeft='auto';
+    x.onclick=ev=>{
+      ev.preventDefault();ev.stopPropagation();
+      if(layerTracce[t.id]){ mappa.removeLayer(layerTracce[t.id]); delete layerTracce[t.id]; }
+      tracce=tracce.filter(z=>z.id!==t.id);
+      salvaTracce(); rigeneraRigheGpx();
+    };
+    lab.appendChild(chk);lab.appendChild(sw);lab.appendChild(sp);lab.appendChild(x);
+    cont.appendChild(lab);
+  });
+}
+rigeneraRigheGpx();
+
+document.getElementById('btnImportaGpx').onclick=()=>document.getElementById('fileGpx').click();
+document.getElementById('fileGpx').onchange=e=>{
+  const f=e.target.files[0];
+  if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      const xml=new DOMParser().parseFromString(rd.result,'application/xml');
+      if(xml.querySelector('parsererror')) throw new Error('xml');
+      // segmenti: trkseg se presenti, altrimenti rte (rotta)
+      let segmenti=[];
+      const trksegs=xml.querySelectorAll('trkseg');
+      const contenitori=trksegs.length?trksegs:xml.querySelectorAll('rte');
+      const selettore=trksegs.length?'trkpt':'rtept';
+      contenitori.forEach(seg=>{
+        const pts=[...seg.querySelectorAll(selettore)]
+          .map(p=>[parseFloat(p.getAttribute('lat')),parseFloat(p.getAttribute('lon'))])
+          .filter(c=>isFinite(c[0])&&isFinite(c[1]));
+        if(pts.length>1) segmenti.push(pts);
+      });
+      if(!segmenti.length) throw new Error('vuoto');
+      // semplificazione: massimo ~3000 punti totali, per localStorage e resa fluida
+      const totale=segmenti.reduce((s,x)=>s+x.length,0);
+      if(totale>3000){
+        const passo=Math.ceil(totale/3000);
+        segmenti=segmenti.map(seg=>seg.filter((_,i)=>i%passo===0 || i===seg.length-1));
+      }
+      const tutti=segmenti.flat();
+      const nome=(xml.querySelector('trk > name, rte > name, metadata > name')||{}).textContent
+        || f.name.replace(/\.gpx$/i,'');
+      const t={
+        id:'g'+Date.now(),
+        nome:nome.trim().slice(0,40),
+        colore:COLORI_LISTE[contaColoriGpx++%COLORI_LISTE.length],
+        segmenti:segmenti.map(seg=>seg.map(c=>[+c[0].toFixed(5),+c[1].toFixed(5)])),
+        km:distanzaTraccia(tutti),
+        punti:tutti.length
+      };
+      tracce.push(t); salvaTracce();
+      disegnaTraccia(t,true);
+      rigeneraRigheGpx();
+      chiudiVista();
+      mostraToast('Tracciato \u201c'+t.nome+'\u201d importato: '+t.km.toFixed(1)+' km.');
+    }catch(err){
+      mostraToast('File GPX non valido o senza punti traccia.');
+    }
+    e.target.value='';
+  };
+  rd.readAsText(f);
 };
 
 // ---------- ricerca tra i filtri ----------
