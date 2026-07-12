@@ -292,14 +292,22 @@ body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
       </div>
     </div>
     <div class="sezione">
+      <button class="titolo-sez collass" type="button" data-corpo="corpoListe" aria-expanded="false">
+        <span>Liste personalizzate</span><span class="freccia">&#9656;</span>
+      </button>
+      <div id="corpoListe" class="corpo-sez chiuso">
+      <div id="righeListe"></div>
+      <div class="riga-indirizzo" style="padding:4px 14px 8px">
+        <input type="text" id="nomeListaMenu" placeholder="Nome nuova lista">
+        <button class="cerca" id="btnCreaListaMenu" type="button">Crea</button>
+      </div>
+      </div>
+    </div>
+    <div class="sezione">
       <button class="titolo-sez collass" type="button" data-corpo="corpoLuoghi" aria-expanded="false">
         <span>Luoghi e verde</span><span class="freccia">&#9656;</span>
       </button>
       <div id="corpoLuoghi" class="corpo-sez chiuso">
-      <label class="riga-toret">
-        <input type="checkbox" id="chkMieiLuoghi">
-        <span>I miei luoghi salvati</span>
-      </label>
       <label class="riga-toret">
         <input type="checkbox" id="chkToret">
         <span>Tor&egrave;t e fontanelle</span>
@@ -467,6 +475,11 @@ body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
   <div class="pannello pannello-luogo" id="pannelloLuogo">
     <button class="chiudi" id="chiudiPannello" type="button" aria-label="Chiudi">&times;</button>
     <h3>Nuovo luogo di riferimento</h3>
+    <select id="selLista"></select>
+    <div class="riga-indirizzo" id="rigaNuovaLista" style="display:none;margin-bottom:6px">
+      <input type="text" id="nomeNuovaLista" placeholder="Nome della lista">
+      <button class="cerca" id="btnCreaLista" type="button">Crea</button>
+    </div>
     <button class="opzione-mappa" id="opzioneMappa" type="button">&#128205; Clicca un punto sulla mappa</button>
     <div class="separatore">oppure per indirizzo</div>
     <div class="riga-indirizzo">
@@ -669,21 +682,60 @@ function salvaLuoghi(){
   try{ localStorage.setItem(CHIAVE,JSON.stringify(luoghi)); }catch(e){ storageOk=false; }
 }
 
-const gruppoLuoghi=L.layerGroup(); // non aggiunto alla mappa finché il filtro è spento
-const iconaPin=L.divIcon({className:'pin-luogo',iconSize:[18,18],iconAnchor:[9,18],popupAnchor:[0,-16]});
+// ---- liste personalizzate ----
+const CHIAVE_LISTE='torino_quartieri_liste';
+const COLORI_LISTE=['#e74c3c','#8e44ad','#2980b9','#16a085','#f39c12','#d35400','#2c3e50','#c2185b','#00897b','#5e35b1'];
+let liste=[];
+try{ liste=JSON.parse(localStorage.getItem(CHIAVE_LISTE)||'[]'); }catch(e){}
+function salvaListe(){
+  try{ localStorage.setItem(CHIAVE_LISTE,JSON.stringify(liste)); }catch(e){}
+}
+function creaLista(nome){
+  const l={id:'l'+Date.now(),nome,colore:COLORI_LISTE[liste.length%COLORI_LISTE.length]};
+  liste.push(l); salvaListe(); rigeneraMenuListe();
+  return l;
+}
+function coloreLuogo(l){
+  const li=l.listaId && liste.find(x=>x.id===l.listaId);
+  return li?li.colore:'#f0b429'; // giallo di default per i luoghi senza lista
+}
+function chiaveVis(l){
+  return (l.listaId && liste.some(x=>x.id===l.listaId))?l.listaId:'';
+}
+
+// visibilita per lista ('' = luoghi senza lista); tutto spento al primo accesso
+const visListe={};
+
+const gruppoLuoghi=L.layerGroup().addTo(mappa); // vuoto finche nessuna lista e visibile
 
 function disegnaLuogo(l){
-  const m=L.marker([l.lat,l.lng],{icon:iconaPin}).addTo(gruppoLuoghi);
+  const col=coloreLuogo(l);
+  const icona=L.divIcon({
+    className:'',
+    html:`<div class="pin-luogo" style="background:${col}"></div>`,
+    iconSize:[18,18],iconAnchor:[9,18],popupAnchor:[0,-16]
+  });
+  const m=L.marker([l.lat,l.lng],{icon:icona}).addTo(gruppoLuoghi);
   L.marker([l.lat,l.lng],{icon:L.divIcon({className:'etichetta-luogo',html:l.nome,iconSize:null,iconAnchor:[-6,6]}),interactive:false}).addTo(gruppoLuoghi);
   m.bindPopup(()=>{
     const div=document.createElement('div');
     div.className='popup-luogo';
+    const opzioni=['<option value="">Nessuna lista</option>']
+      .concat(liste.map(x=>`<option value="${x.id}"${x.id===l.listaId?' selected':''}>${x.nome}</option>`))
+      .join('');
     div.innerHTML=`<input type="text" value="${l.nome.replace(/"/g,'&quot;')}"><br>
+      <select style="margin-top:6px;width:100%;font-size:16px;padding:4px">${opzioni}</select><br>
       <button class="salva" type="button">Salva</button>
       <button class="elimina" type="button">Elimina</button>`;
     div.querySelector('.salva').onclick=()=>{
       const n=div.querySelector('input').value.trim();
-      if(n){ l.nome=n; salvaLuoghi(); m.closePopup(); ridisegnaLuoghi(); }
+      const nuovaLista=div.querySelector('select').value||null;
+      if(n){
+        l.nome=n; l.listaId=nuovaLista;
+        salvaLuoghi(); m.closePopup();
+        attivaVisibilita(chiaveVis(l));
+        ridisegnaLuoghi();
+      }
     };
     div.querySelector('.elimina').onclick=()=>{
       luoghi=luoghi.filter(x=>x.id!==l.id); salvaLuoghi(); ridisegnaLuoghi();
@@ -691,22 +743,54 @@ function disegnaLuogo(l){
     return div;
   });
 }
-function ridisegnaLuoghi(){ gruppoLuoghi.clearLayers(); luoghi.forEach(disegnaLuogo); }
+function ridisegnaLuoghi(){
+  gruppoLuoghi.clearLayers();
+  luoghi.filter(l=>visListe[chiaveVis(l)]).forEach(disegnaLuogo);
+}
+
+// righe della sezione Liste personalizzate nel menu
+function rigeneraMenuListe(){
+  const cont=document.getElementById('righeListe');
+  cont.innerHTML='';
+  const voci=[{id:'',nome:'Luoghi senza lista',colore:'#f0b429'}].concat(liste);
+  voci.forEach(v=>{
+    const lab=document.createElement('label');
+    lab.className='riga-toret';
+    const chk=document.createElement('input');
+    chk.type='checkbox';
+    chk.checked=!!visListe[v.id];
+    chk.onchange=()=>{ visListe[v.id]=chk.checked; ridisegnaLuoghi(); };
+    const sw=document.createElement('span');
+    sw.className='swatch';
+    sw.style.background=v.colore;
+    const nome=document.createElement('span');
+    nome.textContent=v.nome;
+    lab.appendChild(chk);lab.appendChild(sw);lab.appendChild(nome);
+    cont.appendChild(lab);
+  });
+}
+function attivaVisibilita(chiave){
+  if(!visListe[chiave]){ visListe[chiave]=true; rigeneraMenuListe(); }
+}
+rigeneraMenuListe();
 ridisegnaLuoghi();
 
-// mostra/nascondi tutti i luoghi salvati
-document.getElementById('chkMieiLuoghi').onchange=e=>{
-  if(e.target.checked) gruppoLuoghi.addTo(mappa);
-  else mappa.removeLayer(gruppoLuoghi);
+document.getElementById('btnCreaListaMenu').onclick=()=>{
+  const inp=document.getElementById('nomeListaMenu');
+  const n=inp.value.trim();
+  if(!n) return;
+  creaLista(n); inp.value='';
+  mostraToast('Lista \u201c'+n+'\u201d creata.');
 };
 
 function aggiungiLuogo(nome,lat,lng,zoom){
-  const l={id:Date.now(),nome,lat,lng};
-  luoghi.push(l); salvaLuoghi(); ridisegnaLuoghi();
-  // aggiungere un luogo attiva automaticamente il filtro dei luoghi salvati
-  const chkML=document.getElementById('chkMieiLuoghi');
-  if(!chkML.checked) chkML.checked=true;
-  if(!mappa.hasLayer(gruppoLuoghi)) gruppoLuoghi.addTo(mappa);
+  let listaId=document.getElementById('selLista').value||null;
+  if(listaId==='__nuova') listaId=null;
+  const l={id:Date.now(),nome,lat,lng,listaId};
+  luoghi.push(l); salvaLuoghi();
+  // aggiungere un luogo rende visibile la sua lista
+  attivaVisibilita(chiaveVis(l));
+  ridisegnaLuoghi();
   if(zoom) mappa.flyTo([lat,lng],16,{duration:.6});
   gruppoLuoghi.eachLayer(ly=>{
     if(ly.getLatLng && ly.getLatLng().lat===l.lat && ly.openPopup) ly.openPopup();
@@ -728,11 +812,39 @@ function esciAddMode(){
   btnLuogo.textContent='+ Aggiungi luogo';
   document.getElementById('mappa').classList.remove('mappa-crosshair');
 }
+const selLista=document.getElementById('selLista');
+const rigaNuovaLista=document.getElementById('rigaNuovaLista');
+function popolaSelLista(selezionata){
+  selLista.innerHTML='';
+  selLista.add(new Option('Nessuna lista',''));
+  liste.forEach(x=>selLista.add(new Option(x.nome,x.id)));
+  selLista.add(new Option('\u2795 Crea nuova lista\u2026','__nuova'));
+  if(selezionata) selLista.value=selezionata;
+}
+selLista.onchange=()=>{
+  rigaNuovaLista.style.display = selLista.value==='__nuova' ? 'flex' : 'none';
+  if(selLista.value==='__nuova') document.getElementById('nomeNuovaLista').focus();
+};
+document.getElementById('btnCreaLista').onclick=()=>{
+  const inp=document.getElementById('nomeNuovaLista');
+  const n=inp.value.trim();
+  if(!n) return;
+  const l=creaLista(n);
+  inp.value='';
+  rigaNuovaLista.style.display='none';
+  popolaSelLista(l.id);
+  mostraToast('Lista \u201c'+n+'\u201d creata.');
+};
+
 btnLuogo.onclick=()=>{
   if(addMode){ esciAddMode(); return; }
   pannelloRotta.classList.remove('aperto');
   pannelloLuogo.classList.toggle('aperto');
-  if(pannelloLuogo.classList.contains('aperto')) campoInd.focus();
+  if(pannelloLuogo.classList.contains('aperto')){
+    popolaSelLista(selLista.value!=='__nuova'?selLista.value:'');
+    rigaNuovaLista.style.display='none';
+    campoInd.focus();
+  }
 };
 document.getElementById('chiudiPannello').onclick=()=>pannelloLuogo.classList.remove('aperto');
 document.getElementById('opzioneMappa').onclick=()=>{
