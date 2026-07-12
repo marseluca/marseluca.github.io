@@ -197,7 +197,7 @@ body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
   pointer-events:none;text-align:center;white-space:nowrap;
 }
 /* heatmap semitrasparente: multiply lascia leggere strade e nomi sottostanti */
-.leaflet-heatmap-layer{opacity:.6;mix-blend-mode:multiply}
+.leaflet-heatmap-layer{opacity:.78;mix-blend-mode:multiply;filter:saturate(1.25)}
 .etichetta-luogo{
   background:none;border:none;box-shadow:none;
   font-family:'Archivo',sans-serif;font-weight:700;font-size:.7rem;
@@ -273,6 +273,25 @@ body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
       </div>
     </div>
     <div class="sezione">
+      <button class="titolo-sez collass" type="button" data-corpo="corpoHeatmap" aria-expanded="false">
+        <span>Mappe di densit&agrave;</span><span class="freccia">&#9656;</span>
+      </button>
+      <div id="corpoHeatmap" class="corpo-sez chiuso">
+      <label class="riga-toret">
+        <input type="checkbox" id="chkZoneTuristiche">
+        <span>Zone pi&ugrave; visitate
+          <span class="desc">stima: densit&agrave; di luoghi d&rsquo;interesse OSM</span>
+        </span>
+      </label>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkMovida">
+        <span>Zone della movida
+          <span class="desc">stima: densit&agrave; di bar, pub e locali notturni OSM</span>
+        </span>
+      </label>
+      </div>
+    </div>
+    <div class="sezione">
       <button class="titolo-sez collass" type="button" data-corpo="corpoLuoghi" aria-expanded="false">
         <span>Luoghi e verde</span><span class="freccia">&#9656;</span>
       </button>
@@ -319,12 +338,6 @@ body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
       <label class="riga-toret">
         <input type="checkbox" id="chkPub">
         <span>Pub e birrerie</span>
-      </label>
-      <label class="riga-toret">
-        <input type="checkbox" id="chkMovida">
-        <span>Zone della movida
-          <span class="desc">stima: densit&agrave; di bar, pub e locali notturni OSM</span>
-        </span>
       </label>
       </div>
     </div>
@@ -402,12 +415,6 @@ body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
       <label class="riga-toret">
         <input type="checkbox" id="chkCulto">
         <span>Luoghi di culto</span>
-      </label>
-      <label class="riga-toret">
-        <input type="checkbox" id="chkZoneTuristiche">
-        <span>Zone pi&ugrave; visitate
-          <span class="desc">stima: densit&agrave; di luoghi d&rsquo;interesse OSM</span>
-        </span>
       </label>
       </div>
     </div>
@@ -1008,17 +1015,17 @@ livelloOsm({
 // e si sgrana da vicino
 function creaHeatmap(gradiente){
   return dati=>{
-    const raggio=z=>Math.max(12,Math.min(48,(z-8)*5));
+    const raggio=z=>Math.max(14,Math.min(52,(z-7.5)*5.5));
     const z0=mappa.getZoom()||13;
     const h=L.heatLayer(dati,{
-      radius:raggio(z0),blur:raggio(z0)*.9,
-      maxZoom:17,     // normalizzazione dell'intensita
+      radius:raggio(z0),blur:raggio(z0)*.75, // nuclei piu definiti
+      maxZoom:16,     // normalizzazione: intensita piu piena ai livelli di zoom tipici
       minOpacity:0,   // le zone a bassa densita restano trasparenti
       gradient:gradiente
     });
     h._quanti=dati.length;
     mappa.on('zoomend',()=>{
-      if(h._map) h.setOptions({radius:raggio(mappa.getZoom()),blur:raggio(mappa.getZoom())*.9});
+      if(h._map) h.setOptions({radius:raggio(mappa.getZoom()),blur:raggio(mappa.getZoom())*.75});
     });
     return h;
   };
@@ -1042,7 +1049,7 @@ livelloOsm({
     const w=(t==='attraction'||t==='museum')?1:(x.tags&&x.tags.historic)?.7:.5;
     return [c[0],c[1],w];
   }).filter(Boolean),
-  costruisci:creaHeatmap({ .3:'#7fb3d5', .5:'#7dcea0', .7:'#f7dc6f', .85:'#eb984e', 1:'#cb4335' }),
+  costruisci:creaHeatmap({ .25:'#5dade2', .45:'#58d68d', .65:'#f4d03f', .8:'#e67e22', 1:'#c0392b' }),
   toast:n=>'Heatmap su '+n+' luoghi d\u2019interesse'
 });
 
@@ -1060,7 +1067,7 @@ livelloOsm({
     const w=a==='nightclub'?1:a==='biergarten'?.7:.9;
     return [c[0],c[1],w];
   }).filter(Boolean),
-  costruisci:creaHeatmap({ .3:'#aeb6e8', .5:'#9b7ec9', .7:'#c058a8', .85:'#d6336c', 1:'#7d1935' }),
+  costruisci:creaHeatmap({ .25:'#a9b4f0', .45:'#9b59b6', .65:'#d34fa8', .8:'#e6336c', 1:'#78182f' }),
   toast:n=>'Heatmap movida su '+n+' locali'
 });
 
