@@ -64,6 +64,19 @@ body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
   font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
   color:var(--grigio);padding:10px 14px 4px;
 }
+.menu .titolo-sez.collass{
+  display:flex;width:100%;justify-content:space-between;align-items:center;
+  background:none;border:0;cursor:pointer;
+  font-family:'Archivo',sans-serif;
+  font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--grigio);padding:10px 14px 4px;
+}
+.menu .titolo-sez.collass:hover{color:var(--blu)}
+.menu .titolo-sez.collass .freccia{
+  font-size:.85rem;transition:transform .15s;
+}
+.menu .titolo-sez.collass[aria-expanded="true"] .freccia{transform:rotate(90deg)}
+.corpo-sez.chiuso{display:none}
 .menu .azioni{display:flex;gap:6px;padding:4px 14px 8px}
 .menu .azioni button{
   font-family:'Archivo',sans-serif;font-size:.72rem;font-weight:600;
@@ -234,20 +247,31 @@ body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
 </head>
 <body>
 <div id="mappa" class="">
-  <button class="btn-menu fbtn" id="btnMenu" type="button" aria-label="Apri o chiudi il menu opzioni" aria-expanded="false">&#9776;</button>
+  <button class="btn-menu fbtn" id="btnMenu" type="button" aria-label="Apri o chiudi i filtri" aria-expanded="false">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <polygon points="3 4 21 4 14 12.5 14 19 10 21 10 12.5 3 4"></polygon>
+    </svg>
+  </button>
 
   <div class="menu" id="menu">
-    <h2>Quartieri di Torino</h2>
+    <h2>Filtri</h2>
     <div class="sezione">
-      <div class="titolo-sez">Quartieri sulla mappa</div>
+      <button class="titolo-sez collass" type="button" data-corpo="corpoQuartieri" aria-expanded="false">
+        <span>Quartieri sulla mappa</span><span class="freccia">&#9656;</span>
+      </button>
+      <div id="corpoQuartieri" class="corpo-sez chiuso">
       <div class="azioni">
         <button id="btnTutti" type="button">Mostra tutti</button>
         <button id="btnNessuno" type="button">Nascondi tutti</button>
       </div>
       <div id="lista"></div>
+      </div>
     </div>
     <div class="sezione">
-      <div class="titolo-sez">Luoghi e verde</div>
+      <button class="titolo-sez collass" type="button" data-corpo="corpoLuoghi" aria-expanded="false">
+        <span>Luoghi e verde</span><span class="freccia">&#9656;</span>
+      </button>
+      <div id="corpoLuoghi" class="corpo-sez chiuso">
       <label class="riga-toret">
         <input type="checkbox" id="chkMieiLuoghi" checked>
         <span>I miei luoghi salvati</span>
@@ -264,9 +288,13 @@ body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
         <input type="checkbox" id="chkParchi">
         <span>Parchi e giardini</span>
       </label>
+      </div>
     </div>
     <div class="sezione">
-      <div class="titolo-sez">Cibo e locali</div>
+      <button class="titolo-sez collass" type="button" data-corpo="corpoCibo" aria-expanded="false">
+        <span>Cibo e locali</span><span class="freccia">&#9656;</span>
+      </button>
+      <div id="corpoCibo" class="corpo-sez chiuso">
       <label class="riga-toret">
         <input type="checkbox" id="chkRistoranti">
         <span>Ristoranti</span>
@@ -279,9 +307,98 @@ body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
         <input type="checkbox" id="chkGelaterie">
         <span>Gelaterie</span>
       </label>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkPizzerie">
+        <span>Pizzerie</span>
+      </label>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkPub">
+        <span>Pub e birrerie</span>
+      </label>
+      </div>
     </div>
     <div class="sezione">
-      <div class="titolo-sez">Trasporti</div>
+      <button class="titolo-sez collass" type="button" data-corpo="corpoNegozi" aria-expanded="false">
+        <span>Negozi e spesa</span><span class="freccia">&#9656;</span>
+      </button>
+      <div id="corpoNegozi" class="corpo-sez chiuso">
+      <label class="riga-toret">
+        <input type="checkbox" id="chkSupermercati">
+        <span>Supermercati</span>
+      </label>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkPanetterie">
+        <span>Panetterie</span>
+      </label>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkMercati">
+        <span>Mercati</span>
+      </label>
+      </div>
+    </div>
+    <div class="sezione">
+      <button class="titolo-sez collass" type="button" data-corpo="corpoServizi" aria-expanded="false">
+        <span>Servizi</span><span class="freccia">&#9656;</span>
+      </button>
+      <div id="corpoServizi" class="corpo-sez chiuso">
+      <label class="riga-toret">
+        <input type="checkbox" id="chkFarmacie">
+        <span>Farmacie</span>
+      </label>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkOspedali">
+        <span>Ospedali e cliniche</span>
+      </label>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkPoste">
+        <span>Uffici postali</span>
+      </label>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkBanche">
+        <span>Banche e bancomat</span>
+      </label>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkDefibrillatori">
+        <span>Defibrillatori</span>
+      </label>
+      </div>
+    </div>
+    <div class="sezione">
+      <button class="titolo-sez collass" type="button" data-corpo="corpoCultura" aria-expanded="false">
+        <span>Cultura e turismo</span><span class="freccia">&#9656;</span>
+      </button>
+      <div id="corpoCultura" class="corpo-sez chiuso">
+      <label class="riga-toret">
+        <input type="checkbox" id="chkMusei">
+        <span>Musei e gallerie</span>
+      </label>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkMonumenti">
+        <span>Monumenti e memoriali</span>
+      </label>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkCinemaTeatri">
+        <span>Cinema e teatri</span>
+      </label>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkBiblioteche">
+        <span>Biblioteche</span>
+      </label>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkPanorami">
+        <span>Punti panoramici</span>
+      </label>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkCulto">
+        <span>Luoghi di culto</span>
+      </label>
+      </div>
+    </div>
+    <div class="sezione">
+      <button class="titolo-sez collass" type="button" data-corpo="corpoTrasporti" aria-expanded="false">
+        <span>Trasporti</span><span class="freccia">&#9656;</span>
+      </button>
+      <div id="corpoTrasporti" class="corpo-sez chiuso">
       <label class="riga-toret">
         <input type="checkbox" id="chkBus">
         <span>Fermate bus</span>
@@ -298,7 +415,20 @@ body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
         <input type="checkbox" id="chkCiclabili">
         <span>Piste ciclabili</span>
       </label>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkMetro">
+        <span>Stazioni metro</span>
+      </label>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkBikeSharing">
+        <span>Bike sharing</span>
+      </label>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkRicarica">
+        <span>Colonnine di ricarica</span>
+      </label>
       <div class="titolo-sez" style="padding-top:2px;font-weight:400;text-transform:none;letter-spacing:0">dati OpenStreetMap, area di Torino</div>
+      </div>
     </div>
   </div>
 
@@ -419,6 +549,15 @@ btnMenu.onclick=()=>{
   const aperto=menu.classList.toggle('aperto');
   btnMenu.setAttribute('aria-expanded',aperto);
 };
+
+// sezioni del menu richiudibili (tutte chiuse all'apertura)
+document.querySelectorAll('.titolo-sez.collass').forEach(b=>{
+  const corpo=document.getElementById(b.dataset.corpo);
+  b.onclick=()=>{
+    const aperto=corpo.classList.toggle('chiuso')===false;
+    b.setAttribute('aria-expanded',aperto);
+  };
+});
 
 // ---------- lista quartieri con visibilita ----------
 const visibile={};
@@ -827,6 +966,41 @@ livelloOsm({
   }).bindTooltip('Pista ciclabile',{sticky:true}),
   toast:n=>n+' tratti di pista ciclabile caricati'
 });
+
+// livelli puntuali aggiuntivi, registrati in forma tabellare
+[
+ // Cibo e locali
+ {chk:'chkPizzerie',   cache:'pizzerie_osm',   nome:'pizzerie',            q:'nwr["cuisine"~"pizza"]',                              r:4.5,b:'#8a2f2f',f:'#e8a05a',fb:'Pizzeria'},
+ {chk:'chkPub',        cache:'pub_osm',        nome:'pub e birrerie',      q:'nwr["amenity"="pub"]',                                r:4.5,b:'#4e342e',f:'#c68b59',fb:'Pub'},
+ // Negozi e spesa
+ {chk:'chkSupermercati',cache:'supermercati_osm',nome:'supermercati',      q:'nwr["shop"="supermarket"]',                           r:5,  b:'#1a5276',f:'#5499c7',fb:'Supermercato'},
+ {chk:'chkPanetterie', cache:'panetterie_osm', nome:'panetterie',          q:'nwr["shop"="bakery"]',                                r:4.5,b:'#9c6d1e',f:'#e2b563',fb:'Panetteria'},
+ {chk:'chkMercati',    cache:'mercati_osm',    nome:'mercati',             q:'nwr["amenity"="marketplace"]',                        r:6,  b:'#7d3c98',f:'#bb8fce',fb:'Mercato'},
+ // Servizi
+ {chk:'chkFarmacie',   cache:'farmacie_osm',   nome:'farmacie',            q:'nwr["amenity"="pharmacy"]',                           r:5,  b:'#0e6655',f:'#45b39d',fb:'Farmacia'},
+ {chk:'chkOspedali',   cache:'ospedali_osm',   nome:'ospedali e cliniche', q:'nwr["amenity"~"^(hospital|clinic)$"]',                r:6,  b:'#922b21',f:'#ec7063',fb:'Ospedale'},
+ {chk:'chkPoste',      cache:'poste_osm',      nome:'uffici postali',      q:'nwr["amenity"="post_office"]',                        r:5,  b:'#9a7d0a',f:'#f4d03f',fb:'Ufficio postale'},
+ {chk:'chkBanche',     cache:'banche_osm',     nome:'banche e bancomat',   q:'nwr["amenity"~"^(bank|atm)$"]',                       r:4,  b:'#283747',f:'#85929e',fb:'Banca/ATM'},
+ {chk:'chkDefibrillatori',cache:'dae_osm',     nome:'defibrillatori',      q:'nwr["emergency"="defibrillator"]',                    r:5,  b:'#a93226',f:'#f1948a',fb:'Defibrillatore (DAE)'},
+ // Cultura e turismo
+ {chk:'chkMusei',      cache:'musei_osm',      nome:'musei e gallerie',    q:'nwr["tourism"~"^(museum|gallery)$"]',                 r:5.5,b:'#6c3483',f:'#af7ac5',fb:'Museo'},
+ {chk:'chkMonumenti',  cache:'monumenti_osm',  nome:'monumenti',           q:'nwr["historic"~"^(monument|memorial)$"]',             r:4.5,b:'#6e6a5e',f:'#b3ada0',fb:'Monumento'},
+ {chk:'chkCinemaTeatri',cache:'cineteatri_osm',nome:'cinema e teatri',     q:'nwr["amenity"~"^(cinema|theatre)$"]',                 r:5,  b:'#884ea0',f:'#d2b4de',fb:'Cinema/Teatro'},
+ {chk:'chkBiblioteche',cache:'biblioteche_osm',nome:'biblioteche',         q:'nwr["amenity"="library"]',                            r:5,  b:'#1f618d',f:'#7fb3d5',fb:'Biblioteca'},
+ {chk:'chkPanorami',   cache:'panorami_osm',   nome:'punti panoramici',    q:'nwr["tourism"="viewpoint"]',                          r:5,  b:'#0b5345',f:'#48c9b0',fb:'Punto panoramico'},
+ {chk:'chkCulto',      cache:'culto_osm',      nome:'luoghi di culto',     q:'nwr["amenity"="place_of_worship"]',                   r:4.5,b:'#5b2c6f',f:'#a569bd',fb:'Luogo di culto'},
+ // Trasporti
+ {chk:'chkMetro',      cache:'metro_osm',      nome:'stazioni metro',      q:'nwr["railway"="station"]["station"="subway"]',        r:6,  b:'#b03a2e',f:'#e74c3c',fb:'Stazione metro'},
+ {chk:'chkBikeSharing',cache:'bikeshare_osm',  nome:'postazioni bike sharing',q:'nwr["amenity"="bicycle_rental"]',                  r:4,  b:'#117864',f:'#52be80',fb:'Bike sharing'},
+ {chk:'chkRicarica',   cache:'ricarica_osm',   nome:'colonnine di ricarica',q:'nwr["amenity"="charging_station"]',                  r:4,  b:'#1a5276',f:'#5dade2',fb:'Colonnina di ricarica'}
+].forEach(d=>livelloOsm({
+  chk:d.chk,cache:d.cache,
+  caricamento:'Scarico '+d.nome+' da OpenStreetMap\u2026',
+  query:'[out:json][timeout:40];'+d.q+BBOX+';out center qt;',
+  estrai:estraiPunti(d.fb),
+  marker:markerPunto({radius:d.r,color:d.b,fillColor:d.f}),
+  toast:n=>n+' '+d.nome+' caricati'
+}));
 
 // ---------- percorso su strada (multi-tappa) ----------
 const tappe=document.getElementById('tappe');
