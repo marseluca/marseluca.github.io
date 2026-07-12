@@ -140,6 +140,13 @@ body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
   padding:6px 8px;border:1px solid var(--bordo);border-radius:6px;
   background:#fff;margin-bottom:6px;
 }
+.riga-tappa{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.riga-tappa select{flex:1;margin-bottom:0}
+.riga-tappa .togli{
+  flex:none;width:26px;height:26px;border:1px solid var(--bordo);border-radius:6px;
+  background:none;cursor:pointer;color:var(--grigio);font-size:.9rem;line-height:1;
+}
+.riga-tappa .togli:hover{color:#8a3a3a;border-color:#c9a0a0}
 .profili{display:flex;gap:4px;margin:4px 0 10px}
 .profili button{
   flex:1;font-family:'Archivo',sans-serif;font-size:.72rem;font-weight:600;
@@ -242,6 +249,10 @@ body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
     <div class="sezione">
       <div class="titolo-sez">Luoghi e verde</div>
       <label class="riga-toret">
+        <input type="checkbox" id="chkMieiLuoghi" checked>
+        <span>I miei luoghi salvati</span>
+      </label>
+      <label class="riga-toret">
         <input type="checkbox" id="chkToret">
         <span>Tor&egrave;t e fontanelle</span>
       </label>
@@ -295,7 +306,7 @@ body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
 
   <div class="pila-sx">
     <button class="fbtn btn-luogo" id="btnLuogo" type="button">+ Aggiungi luogo</button>
-    <button class="fbtn btn-distanza" id="btnDistanza" type="button">&#8646; Distanza tra luoghi</button>
+    <button class="fbtn btn-distanza" id="btnDistanza" type="button">&#8646; Calcola percorso</button>
   </div>
   <button class="fbtn btn-gps" id="btnGps" type="button" title="La mia posizione" aria-label="Mostra la mia posizione">&#9678;</button>
 
@@ -314,8 +325,8 @@ body{height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro)}
   <div class="pannello pannello-rotta" id="pannelloRotta">
     <button class="chiudi" id="chiudiRotta" type="button" aria-label="Chiudi">&times;</button>
     <h3>Percorso pi&ugrave; breve su strada</h3>
-    <select id="selDa"></select>
-    <select id="selA"></select>
+    <div id="tappe"></div>
+    <button class="opzione-mappa" id="btnAggTappa" type="button" style="margin-bottom:6px">+ Aggiungi tappa</button>
     <div class="profili">
       <button type="button" data-p="foot" class="sel">A piedi</button>
       <button type="button" data-p="bike">In bici</button>
@@ -506,6 +517,12 @@ function disegnaLuogo(l){
 function ridisegnaLuoghi(){ gruppoLuoghi.clearLayers(); luoghi.forEach(disegnaLuogo); }
 ridisegnaLuoghi();
 
+// mostra/nascondi tutti i luoghi salvati
+document.getElementById('chkMieiLuoghi').onchange=e=>{
+  if(e.target.checked) gruppoLuoghi.addTo(mappa);
+  else mappa.removeLayer(gruppoLuoghi);
+};
+
 function aggiungiLuogo(nome,lat,lng,zoom){
   const l={id:Date.now(),nome,lat,lng};
   luoghi.push(l); salvaLuoghi(); ridisegnaLuoghi();
@@ -621,7 +638,12 @@ mappa.on('locationerror',e=>{
 // loader generico con cache locale di 30 giorni
 function livelloOsm(cfg){
   const chk=document.getElementById(cfg.chk);
-  let lay=null;
+  let lay=null, tsDati=null;
+  function dataAggiornamento(){
+    if(!tsDati) return '';
+    const d=new Date(tsDati);
+    return isNaN(d)?'':' \u00b7 dati OSM aggiornati al '+d.toLocaleDateString('it-IT');
+  }
   chk.onchange=async()=>{
     if(!chk.checked){
       if(lay) mappa.removeLayer(lay);
@@ -631,7 +653,7 @@ function livelloOsm(cfg){
       let dati=null;
       try{
         const c=JSON.parse(localStorage.getItem(cfg.cache)||'null');
-        if(c && Date.now()-c.t < 30*24*3600*1000) dati=c.d;
+        if(c && Date.now()-c.t < 30*24*3600*1000){ dati=c.d; tsDati=c.ts||c.t; }
       }catch(e){}
       if(!dati){
         mostraToast(cfg.caricamento);
@@ -644,7 +666,9 @@ function livelloOsm(cfg){
           });
           const j=await r.json();
           dati=cfg.estrai(j.elements);
-          try{localStorage.setItem(cfg.cache,JSON.stringify({t:Date.now(),d:dati}));}catch(e){}
+          // timestamp dei dati OSM restituito da Overpass
+          tsDati=(j.osm3s&&j.osm3s.timestamp_osm_base)||Date.now();
+          try{localStorage.setItem(cfg.cache,JSON.stringify({t:Date.now(),d:dati,ts:tsDati}));}catch(e){}
         }catch(e){
           chk.disabled=false;chk.checked=false;
           mostraToast('Download non riuscito: controlla la connessione e riprova.');
@@ -653,7 +677,9 @@ function livelloOsm(cfg){
         chk.disabled=false;
       }
       lay=L.layerGroup(dati.map(cfg.marker));
-      mostraToast(cfg.toast(dati.length));
+      mostraToast(cfg.toast(dati.length)+dataAggiornamento());
+    }else{
+      mostraToast(cfg.toast(lay.getLayers().length)+dataAggiornamento());
     }
     lay.addTo(mappa);
   };
@@ -802,33 +828,63 @@ livelloOsm({
   toast:n=>n+' tratti di pista ciclabile caricati'
 });
 
-// ---------- distanza su strada ----------
-const selDa=document.getElementById('selDa'),selA=document.getElementById('selA');
+// ---------- percorso su strada (multi-tappa) ----------
+const tappe=document.getElementById('tappe');
+const btnAggTappa=document.getElementById('btnAggTappa');
 const btnCalcola=document.getElementById('btnCalcola');
 const esitoRotta=document.getElementById('esitoRotta');
 const btnPulisci=document.getElementById('btnPulisci');
 let profilo='foot',lineaRotta=null;
 
+function popolaSelect(s){
+  s.add(new Option('\u25CE Posizione attuale','gps'));
+  luoghi.forEach(l=>s.add(new Option(l.nome,l.id)));
+}
+function aggiornaTogli(){
+  const righe=tappe.querySelectorAll('.riga-tappa');
+  righe.forEach(r=>{
+    r.querySelector('.togli').style.visibility = righe.length>2?'visible':'hidden';
+  });
+}
+function creaTappa(indiceSelezionato){
+  const riga=document.createElement('div');
+  riga.className='riga-tappa';
+  const s=document.createElement('select');
+  popolaSelect(s);
+  if(indiceSelezionato!==undefined && indiceSelezionato<s.options.length) s.selectedIndex=indiceSelezionato;
+  const x=document.createElement('button');
+  x.type='button';x.className='togli';x.innerHTML='&times;';
+  x.title='Rimuovi tappa';
+  x.onclick=()=>{ riga.remove(); aggiornaTogli(); };
+  riga.appendChild(s);riga.appendChild(x);
+  tappe.appendChild(riga);
+  aggiornaTogli();
+}
+
 document.getElementById('btnDistanza').onclick=()=>{
   pannelloLuogo.classList.remove('aperto');
   pannelloRotta.classList.toggle('aperto');
   if(!pannelloRotta.classList.contains('aperto')) return;
-  [selDa,selA].forEach(s=>s.innerHTML='');
+  tappe.innerHTML='';
   if(luoghi.length<1){
     esitoRotta.innerHTML='Serve almeno un luogo salvato: aggiungine con \u201c+ Aggiungi luogo\u201d.';
-    btnCalcola.disabled=true;
+    btnCalcola.disabled=true;btnAggTappa.disabled=true;
     return;
   }
-  btnCalcola.disabled=false;
+  btnCalcola.disabled=false;btnAggTappa.disabled=false;
   esitoRotta.innerHTML='';
-  [selDa,selA].forEach(s=>s.add(new Option('\u25CE Posizione attuale','gps')));
-  luoghi.forEach(l=>{
-    selDa.add(new Option(l.nome,l.id));
-    selA.add(new Option(l.nome,l.id));
-  });
-  selA.selectedIndex=1;
+  creaTappa(0);        // partenza: posizione attuale
+  creaTappa(1);        // arrivo: primo luogo salvato
 };
 document.getElementById('chiudiRotta').onclick=()=>pannelloRotta.classList.remove('aperto');
+
+btnAggTappa.onclick=()=>{
+  if(tappe.querySelectorAll('.riga-tappa').length>=10){
+    mostraToast('Massimo 10 tappe.');
+    return;
+  }
+  creaTappa();
+};
 
 pannelloRotta.querySelectorAll('.profili button').forEach(b=>{
   b.onclick=()=>{
@@ -863,23 +919,32 @@ function risolviPunto(val){
 }
 
 btnCalcola.onclick=async()=>{
-  if(selDa.value===selA.value){ esitoRotta.innerHTML='Scegli due punti diversi.'; return; }
-  let da,a;
+  const valori=[...tappe.querySelectorAll('select')].map(s=>s.value);
+  if(valori.length<2) return;
+  // tappe consecutive uguali non hanno senso
+  for(let i=1;i<valori.length;i++){
+    if(valori[i]===valori[i-1]){
+      esitoRotta.innerHTML='Due tappe consecutive coincidono: cambia la tappa '+(i+1)+'.';
+      return;
+    }
+  }
+  let punti;
   try{
     esitoRotta.innerHTML='Rilevo i punti\u2026';
-    [da,a]=await Promise.all([risolviPunto(selDa.value),risolviPunto(selA.value)]);
+    punti=await Promise.all(valori.map(risolviPunto));
   }catch(e){
     esitoRotta.innerHTML='Posizione non disponibile: consenti l\u2019accesso alla posizione (serve HTTPS o localhost).';
     return;
   }
-  if(!da||!a) return;
+  if(punti.some(p=>!p)) return;
   btnCalcola.disabled=true;
   esitoRotta.innerHTML='Calcolo in corso\u2026';
   const server={foot:'routed-foot',bike:'routed-bike',driving:'routed-car'}[profilo];
   const prof={foot:'foot',bike:'bike',driving:'driving'}[profilo];
   try{
-    const url=`https://routing.openstreetmap.de/${server}/route/v1/${prof}/`
-      +`${da.lng},${da.lat};${a.lng},${a.lat}?overview=full&geometries=geojson&alternatives=false&steps=false`;
+    const coords=punti.map(p=>p.lng+','+p.lat).join(';');
+    const url=`https://routing.openstreetmap.de/${server}/route/v1/${prof}/${coords}`
+      +'?overview=full&geometries=geojson&alternatives=false&steps=false';
     const r=await fetch(url);
     const dati=await r.json();
     if(dati.code!=='Ok'||!dati.routes||!dati.routes.length) throw new Error(dati.code||'no route');
@@ -892,8 +957,17 @@ btnCalcola.onclick=async()=>{
     const km=(rotta.distance/1000).toFixed(rotta.distance<10000?2:1);
     const min=Math.round(rotta.duration/60);
     const modo={foot:'a piedi',bike:'in bici',driving:'in auto'}[profilo];
-    esitoRotta.innerHTML=`<strong>${km} km</strong> su strada ${modo}, circa <strong>${min} min</strong><br>`
-      +`${da.nome} \u2192 ${a.nome}`;
+    let html=`<strong>${km} km</strong> su strada ${modo}, circa <strong>${min} min</strong><br>`
+      +punti.map(p=>p.nome).join(' \u2192 ');
+    // dettaglio per tratta se le tappe sono piu di due
+    if(rotta.legs && rotta.legs.length>1){
+      html+='<br><span style="font-size:.72rem;color:var(--grigio)">'
+        +rotta.legs.map((g,i)=>
+          `${i+1}. ${punti[i].nome} \u2192 ${punti[i+1].nome}: ${(g.distance/1000).toFixed(2)} km, ${Math.round(g.duration/60)} min`
+        ).join('<br>')
+        +'</span>';
+    }
+    esitoRotta.innerHTML=html;
     btnPulisci.style.display='block';
   }catch(e){
     esitoRotta.innerHTML='Calcolo non riuscito: controlla la connessione e riprova.';
