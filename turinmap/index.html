@@ -286,6 +286,7 @@ select{
 }
 .popup-luogo .salva{background:var(--blu);color:#fff}
 .popup-luogo .elimina{background:#f3e2e2;color:#8a3a3a}
+.popup-luogo .percorso{background:var(--giallo);color:var(--blu-scuro);display:block;width:100%;margin-right:0}
 
 /* su basemap scure: etichette chiare e heatmap in blend screen */
 .base-scura .etichetta{color:#f5f2e8;text-shadow:0 1px 3px rgba(13,20,30,.95),0 -1px 3px rgba(13,20,30,.95)}
@@ -641,7 +642,6 @@ select{
 <nav class="barra">
   <button id="btnMenu" type="button" aria-label="Filtri e livelli"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 4 21 4 14 12.5 14 19 10 21 10 12.5 3 4"></polygon></svg><span>Livelli</span></button>
   <button id="btnLuogo" type="button" aria-label="I miei luoghi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg><span>Luoghi</span></button>
-  <button id="btnDistanza" type="button" aria-label="Percorsi e isocrone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="19" r="3"></circle><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"></path><circle cx="18" cy="5" r="3"></circle></svg><span>Percorso</span></button>
   <button id="btnGps" type="button" aria-label="La mia posizione"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"></circle><line x1="12" y1="2" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="22"></line><line x1="2" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="22" y2="12"></line></svg><span>Posizione</span></button>
 </nav>
 
@@ -686,13 +686,37 @@ mappa.doubleClickZoom.disable();
 (function(){
   const SOGLIA_TEMPO=300,SOGLIA_DISTANZA=40,SOGLIA_TRASCINA=8,PX_PER_LIVELLO=90;
   const escludi='.leaflet-control-container,.pannello-info,.carta-meteo,.pill-annulla,.toast,.leaflet-popup,button,input,select,a,label';
-  let ultimoTocco=null,toccoCorrente=null,gesto=null;
+  let ultimoTocco=null,toccoCorrente=null,gesto=null,richiestaFrame=null;
   function distanza(x1,y1,x2,y2){ return Math.hypot(x2-x1,y2-y1); }
   function fuoriMappa(e){ return !!e.target.closest(escludi) || !e.target.closest('#mappa'); }
+  // durante il trascinamento la vista va aggiornata come fa il pinch nativo
+  // (map._move con zoom frazionario: i tile vengono scalati via CSS e
+  // ricaricati solo a fine gesto). setZoomAround qui farebbe un re-render
+  // completo a ogni touchmove, con effetto lampeggio.
+  function applicaZoomFluido(){
+    richiestaFrame=null;
+    if(!gesto||!gesto.trascinato) return;
+    const meta=mappa.getSize().divideBy(2);
+    const p=mappa.project(gesto.ancora,gesto.zoom).subtract(gesto.puntoAncora.subtract(meta));
+    gesto.centro=mappa.unproject(p,gesto.zoom);
+    mappa._move(gesto.centro,gesto.zoom,{pinch:true,round:false});
+  }
   function terminaGesto(rifinisci){
     if(!gesto) return;
+    if(richiestaFrame){ cancelAnimationFrame(richiestaFrame); richiestaFrame=null; }
     if(rifinisci && !gesto.trascinato){
-      mappa.setZoomAround(gesto.ancora,Math.min(mappa.getMaxZoom(),gesto.zoom0+mappa.options.zoomDelta),{animate:false});
+      mappa.setZoomAround(gesto.ancora,Math.min(mappa.getMaxZoom(),gesto.zoom0+mappa.options.zoomDelta),{animate:true});
+    }else if(gesto.trascinato){
+      // ultimo aggiornamento in modo sincrono: con un flick molto rapido il
+      // touchend puo arrivare prima che il primo frame rAF sia scattato
+      applicaZoomFluido();
+      // chiusura del gesto come in L.Map.TouchZoom: zoom definitivo (con snap)
+      // e ricarica dei tile alla risoluzione giusta
+      if(mappa.options.zoomAnimation){
+        mappa._animateZoom(gesto.centro,mappa._limitZoom(gesto.zoom),true,mappa.options.zoomSnap);
+      }else{
+        mappa._resetView(gesto.centro,mappa._limitZoom(gesto.zoom));
+      }
     }
     gesto=null;
     mappa.dragging.enable();
@@ -705,7 +729,10 @@ mappa.doubleClickZoom.disable();
     if(ultimoTocco && ora-ultimoTocco.t<SOGLIA_TEMPO && distanza(t.clientX,t.clientY,ultimoTocco.x,ultimoTocco.y)<SOGLIA_DISTANZA){
       e.preventDefault(); e.stopPropagation();
       mappa.dragging.disable();
-      gesto={y0:t.clientY,zoom0:mappa.getZoom(),ancora:mappa.mouseEventToLatLng(t),trascinato:false};
+      gesto={y0:t.clientY,zoom0:mappa.getZoom(),zoom:mappa.getZoom(),
+             ancora:mappa.mouseEventToLatLng(t),
+             puntoAncora:mappa.mouseEventToContainerPoint(t),
+             centro:null,trascinato:false};
       ultimoTocco=null; toccoCorrente=null;
     }else{
       ultimoTocco=null;
@@ -717,10 +744,14 @@ mappa.doubleClickZoom.disable();
     if(e.touches.length!==1){ terminaGesto(false); return; }
     e.preventDefault(); e.stopPropagation();
     const dy=e.touches[0].clientY-gesto.y0;
-    if(Math.abs(dy)>SOGLIA_TRASCINA) gesto.trascinato=true;
+    if(Math.abs(dy)>SOGLIA_TRASCINA && !gesto.trascinato){
+      gesto.trascinato=true;
+      mappa._stop();
+      mappa._moveStart(true,false);
+    }
     if(gesto.trascinato){
-      const nuovoZoom=Math.min(mappa.getMaxZoom(),Math.max(mappa.getMinZoom(),gesto.zoom0+dy/PX_PER_LIVELLO));
-      mappa.setZoomAround(gesto.ancora,nuovoZoom,{animate:false});
+      gesto.zoom=Math.min(mappa.getMaxZoom(),Math.max(mappa.getMinZoom(),gesto.zoom0+dy/PX_PER_LIVELLO));
+      if(!richiestaFrame) richiestaFrame=requestAnimationFrame(applicaZoomFluido);
     }
   },{capture:true,passive:false});
   document.addEventListener('touchend',e=>{
@@ -812,14 +843,14 @@ const TITOLI_VISTE={livelli:'Filtri e livelli',luoghi:'I miei luoghi',percorso:'
 const VISTE={livelli:document.getElementById('vistaLivelli'),
              luoghi:document.getElementById('pannelloLuogo'),
              percorso:document.getElementById('pannelloRotta')};
+// la vista percorso non ha un tab: si apre solo dal popup di un luogo
 const TABS={livelli:btnMenu,
-            luoghi:document.getElementById('btnLuogo'),
-            percorso:document.getElementById('btnDistanza')};
+            luoghi:document.getElementById('btnLuogo')};
 let vistaAttiva=null;
 function apriVista(n){
   Object.keys(VISTE).forEach(k=>{
     VISTE[k].classList.toggle('aperto',k===n);
-    TABS[k].classList.toggle('sel',k===n);
+    if(TABS[k]) TABS[k].classList.toggle('sel',k===n);
   });
   document.getElementById('titoloScheda').textContent=TITOLI_VISTE[n];
   menu.classList.add('aperto');
@@ -969,7 +1000,12 @@ function disegnaLuogo(l){
     div.innerHTML=`<input type="text" value="${l.nome.replace(/"/g,'&quot;')}"><br>
       <select style="margin-top:6px;width:100%;font-size:16px;padding:4px">${opzioni}</select><br>
       <button class="salva" type="button">Salva</button>
-      <button class="elimina" type="button">Elimina</button>`;
+      <button class="elimina" type="button">Elimina</button>
+      <button class="percorso" type="button">➤ Percorso fino a qui</button>`;
+    div.querySelector('.percorso').onclick=()=>{
+      m.closePopup();
+      apriPercorsoVerso(l);
+    };
     div.querySelector('.salva').onclick=()=>{
       const n=div.querySelector('input').value.trim();
       const nuovaLista=div.querySelector('select').value||null;
@@ -1340,6 +1376,22 @@ function markerLinea(opt,nome){
     .bindTooltip(nome,{sticky:true});
 }
 
+// estrattore misto per le reti di trasporto: tratte (way con geometria)
+// piu fermate (node), distinguibili perche le fermate sono oggetti {f,n}
+function estraiLineeFermate(fallback){
+  return el=>estraiLinee(el).concat(
+    el.filter(x=>x.type==='node')
+      .map(x=>({f:[+x.lat.toFixed(6),+x.lon.toFixed(6)],n:(x.tags&&x.tags.name)||fallback}))
+  );
+}
+function markerLineaFermate(optLinea,nomeLinea,optFermata){
+  const linea=markerLinea(optLinea,nomeLinea);
+  return x=>x.f
+    ? L.circleMarker(x.f,Object.assign({renderer:rendOsm,weight:1.5,fillColor:'#fff',fillOpacity:.95},optFermata))
+        .bindTooltip(x.n)
+    : linea(x);
+}
+
 // piazze con nome
 livelloOsm({
   chk:'chkPiazze',cache:'piazze_osm',
@@ -1405,43 +1457,52 @@ livelloOsm({
 // linee bus: tutte le strade percorse da relazioni route=bus
 // (le singole linee GTT come relazioni complete sarebbero decine di MB;
 // la rete delle way membre e il compromesso sostenibile lato client)
+// pulizia una tantum delle cache nel vecchio formato (senza fermate)
+try{
+  ['lineebus_osm','lineetram_osm','lineametro_osm','lineetreno_osm'].forEach(k=>localStorage.removeItem(k));
+  Object.keys(localStorage).filter(k=>k.indexOf('linea_')===0).forEach(k=>localStorage.removeItem(k));
+}catch(e){}
 livelloOsm({
-  chk:'chkLineeBus',cache:'lineebus_osm',
+  chk:'chkLineeBus',cache:'lineebus_osm2',
   caricamento:'Scarico la rete bus da OpenStreetMap\u2026 (richiede un po\u2019)',
-  query:'[out:json][timeout:90];relation["route"="bus"]'+BBOX+';way(r)'+BBOX+';out geom qt;',
-  estrai:estraiLinee,
-  marker:markerLinea({color:'#1565c0',weight:2,opacity:.55},'Rete bus'),
-  toast:n=>n+' tratti della rete bus caricati'
+  query:'[out:json][timeout:90];relation["route"="bus"]'+BBOX+';way(r)'+BBOX+';out geom qt;'
+    +'node["highway"="bus_stop"]'+BBOX+';out qt;',
+  estrai:estraiLineeFermate('Fermata bus'),
+  marker:markerLineaFermate({color:'#1565c0',weight:2,opacity:.55},'Rete bus',{radius:3,color:'#1565c0'}),
+  toast:n=>n+' tratti e fermate della rete bus caricati'
 });
 
 // linee tram (binari)
 livelloOsm({
-  chk:'chkLineeTram',cache:'lineetram_osm',
+  chk:'chkLineeTram',cache:'lineetram_osm2',
   caricamento:'Scarico le linee tram da OpenStreetMap\u2026',
-  query:'[out:json][timeout:40];way["railway"="tram"]'+BBOX+';out geom qt;',
-  estrai:estraiLinee,
-  marker:markerLinea({color:'#e65100',weight:2.5,opacity:.8},'Linea tram'),
-  toast:n=>n+' tratti di linea tram caricati'
+  query:'[out:json][timeout:40];way["railway"="tram"]'+BBOX+';out geom qt;'
+    +'node["railway"="tram_stop"]'+BBOX+';out qt;',
+  estrai:estraiLineeFermate('Fermata tram'),
+  marker:markerLineaFermate({color:'#e65100',weight:2.5,opacity:.8},'Linea tram',{radius:3,color:'#e65100'}),
+  toast:n=>n+' tratti e fermate tram caricati'
 });
 
 // linea metro
 livelloOsm({
-  chk:'chkLineaMetro',cache:'lineametro_osm',
+  chk:'chkLineaMetro',cache:'lineametro_osm2',
   caricamento:'Scarico la linea metro da OpenStreetMap\u2026',
-  query:'[out:json][timeout:30];way["railway"="subway"]'+BBOX+';out geom qt;',
-  estrai:estraiLinee,
-  marker:markerLinea({color:'#b03a2e',weight:4,opacity:.85},'Metro'),
-  toast:n=>n+' tratti di metropolitana caricati'
+  query:'[out:json][timeout:30];way["railway"="subway"]'+BBOX+';out geom qt;'
+    +'node["station"="subway"]'+BBOX+';out qt;',
+  estrai:estraiLineeFermate('Stazione metro'),
+  marker:markerLineaFermate({color:'#b03a2e',weight:4,opacity:.85},'Metro',{radius:4.5,color:'#b03a2e',weight:2}),
+  toast:n=>n+' tratti e stazioni della metro caricati'
 });
 
 // linee ferroviarie (esclusi binari di servizio, scali e raccordi)
 livelloOsm({
-  chk:'chkLineeTreno',cache:'lineetreno_osm',
+  chk:'chkLineeTreno',cache:'lineetreno_osm2',
   caricamento:'Scarico le linee ferroviarie da OpenStreetMap\u2026',
-  query:'[out:json][timeout:40];way["railway"="rail"]["service"!~"."]'+BBOX+';out geom qt;',
-  estrai:estraiLinee,
-  marker:markerLinea({color:'#37474f',weight:2.5,opacity:.8},'Ferrovia'),
-  toast:n=>n+' tratti ferroviari caricati'
+  query:'[out:json][timeout:40];way["railway"="rail"]["service"!~"."]'+BBOX+';out geom qt;'
+    +'node["railway"~"^(station|halt)$"]["station"!="subway"]'+BBOX+';out qt;',
+  estrai:estraiLineeFermate('Stazione'),
+  marker:markerLineaFermate({color:'#37474f',weight:2.5,opacity:.8},'Ferrovia',{radius:4.5,color:'#37474f',weight:2}),
+  toast:n=>n+' tratti e stazioni ferroviarie caricati'
 });
 
 // piste ciclabili (linee, non punti)
@@ -1565,11 +1626,17 @@ const lineeSingole={};     // chiave modo:ref -> {layer,riga}
 let contaColoriLinee=0;
 
 function estraiLineeRel(el){
-  const out=[];
+  const out=[],fermateViste={};
   el.forEach(x=>{
     if(x.type==='relation'&&x.members) x.members.forEach(m=>{
       if(m.type==='way'&&m.geometry&&m.geometry.length>1)
         out.push(m.geometry.map(g=>[+g.lat.toFixed(5),+g.lon.toFixed(5)]));
+      // fermate: membri node con ruolo stop* (deduplicate, la stessa fermata
+      // compare in entrambe le relazioni di direzione)
+      if(m.type==='node'&&/^stop/.test(m.role||'')&&m.lat!==undefined&&!fermateViste[m.ref]){
+        fermateViste[m.ref]=true;
+        out.push({f:[+m.lat.toFixed(6),+m.lon.toFixed(6)]});
+      }
     });
   });
   return out;
@@ -1630,7 +1697,7 @@ btnMostraLinea.onclick=async()=>{
   if(lineeSingole[chiave]){ mostraToast('Linea gi\u00e0 in elenco qui sotto.'); return; }
   // geometria: dalla cache o da Overpass, per id delle relazioni
   let dati=null;
-  const kCache='linea_'+modo+'_'+voce.ref;
+  const kCache='linea2_'+modo+'_'+voce.ref; // "linea2": dal formato con fermate
   try{
     const c=JSON.parse(localStorage.getItem(kCache)||'null');
     if(c && Date.now()-c.t < 30*24*3600*1000) dati=c.d;
@@ -1659,8 +1726,11 @@ btnMostraLinea.onclick=async()=>{
   const nomi={bus:'Bus',tram:'Tram',train:'Treno'};
   const nome=nomi[modo]+' '+voce.ref;
   const layer=L.layerGroup(dati.map(pts=>
-    L.polyline(pts,{renderer:rendOsm,color:col,weight:3.5,opacity:.85,lineCap:'round'})
-      .bindTooltip(nome,{sticky:true})
+    pts.f
+      ? L.circleMarker(pts.f,{renderer:rendOsm,radius:3.5,color:col,weight:1.5,fillColor:'#fff',fillOpacity:.95})
+          .bindTooltip(nome+' – fermata')
+      : L.polyline(pts,{renderer:rendOsm,color:col,weight:3.5,opacity:.85,lineCap:'round'})
+          .bindTooltip(nome,{sticky:true})
   )).addTo(mappa);
   // riga nel menu con checkbox e swatch, come le liste
   const lab=document.createElement('label');
@@ -1711,22 +1781,18 @@ function creaTappa(indiceSelezionato){
   aggiornaTogli();
 }
 
-document.getElementById('btnDistanza').onclick=()=>{
-  if(vistaAttiva==='percorso'){ chiudiVista(); return; }
+// si apre solo dal popup di un luogo salvato: partenza dalla posizione
+// attuale, arrivo sul luogo cliccato (le tappe restano modificabili)
+function apriPercorsoVerso(luogo){
   apriVista('percorso');
   tappe.innerHTML='';
-  if(luoghi.length<1){
-    esitoRotta.innerHTML='Per i percorsi serve almeno un luogo salvato. Le isocrone funzionano anche dalla sola posizione attuale.';
-    btnCalcola.disabled=true;btnAggTappa.disabled=true;
-    popolaSelIso();
-    return;
-  }
   btnCalcola.disabled=false;btnAggTappa.disabled=false;
   esitoRotta.innerHTML='';
-  creaTappa(0);        // partenza: posizione attuale
-  creaTappa(1);        // arrivo: primo luogo salvato
+  creaTappa(0);                              // partenza: posizione attuale
+  creaTappa(luoghi.indexOf(luogo)+1);        // arrivo: il luogo cliccato
   popolaSelIso();
-};
+  selIsoOrig.value=String(luogo.id);
+}
 
 btnAggTappa.onclick=()=>{
   if(tappe.querySelectorAll('.riga-tappa').length>=10){
@@ -1871,8 +1937,12 @@ document.getElementById('chkRadar').onchange=async e=>{
     const j=await r.json();
     const frame=j.radar&&j.radar.past&&j.radar.past[j.radar.past.length-1];
     if(!frame) throw new Error('no frame');
-    radarLayer=L.tileLayer('https://tilecache.rainviewer.com'+frame.path+'/256/{z}/{x}/{y}/2/1_1.png',
-      {opacity:.65,zIndex:5,attribution:'RainViewer'}).addTo(mappa);
+    // i tile radar esistono solo fino a z=7 (oltre il server risponde con
+    // l'immagine "Zoom level not supported"): con maxNativeZoom Leaflet
+    // scarica i tile a z=7 e li ingrandisce, a qualunque zoom della mappa.
+    // Formato 512px + zoomOffset -1: stessa griglia, risoluzione doppia.
+    radarLayer=L.tileLayer('https://tilecache.rainviewer.com'+frame.path+'/512/{z}/{x}/{y}/2/1_1.png',
+      {opacity:.65,zIndex:5,tileSize:512,zoomOffset:-1,maxNativeZoom:8,maxZoom:20,attribution:'RainViewer'}).addTo(mappa);
     const quando=new Date(frame.time*1000);
     mostraToast('Radar delle '+quando.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})
       +' (se non vedi nulla, non sta piovendo).');
