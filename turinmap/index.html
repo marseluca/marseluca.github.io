@@ -240,6 +240,12 @@ select{
   padding:8px 14px;font-size:.8rem;line-height:1.5;display:none;max-width:74vw;
 }
 .carta-meteo strong{color:var(--blu);font-variant-numeric:tabular-nums}
+.etichetta-rotta{
+  background:var(--blu-scuro);color:#fff;border:0;border-radius:16px;
+  padding:5px 12px;font-family:'Archivo',sans-serif;font-size:.75rem;font-weight:600;
+  box-shadow:var(--ombra);white-space:nowrap;
+}
+.etichetta-rotta.leaflet-tooltip-top::before{border-top-color:var(--blu-scuro)}
 .legenda-radar{
   position:absolute;left:12px;bottom:12px;z-index:1000;
   background:var(--carta);border:1px solid var(--bordo);border-radius:8px;
@@ -648,13 +654,6 @@ select{
         <div class="esito" id="esitoRotta"></div>
         <button class="pulisci" id="btnPulisci" type="button">Rimuovi percorso dalla mappa</button>
       </div>
-      <div class="separatore">oppure isocrone</div>
-      <div class="blocco" style="padding-top:0">
-        <select id="selIsoOrig"></select>
-        <button class="calcola" id="btnIsocrone" type="button">Aree raggiungibili (10/20/30 min)</button>
-        <button class="pulisci" id="btnIsoRimuovi" type="button">Rimuovi isocrone dalla mappa</button>
-      </div>
-
     </div>
   </div>
 </div>
@@ -859,7 +858,7 @@ document.querySelectorAll('.pila-sx').forEach(el=>{
 });
 
 // ---- scheda con tre viste (Livelli / Luoghi / Percorso) ----
-const TITOLI_VISTE={livelli:'Filtri e livelli',luoghi:'I miei luoghi',percorso:'Percorsi e isocrone'};
+const TITOLI_VISTE={livelli:'Filtri e livelli',luoghi:'I miei luoghi',percorso:'Percorso'};
 const VISTE={livelli:document.getElementById('vistaLivelli'),
              luoghi:document.getElementById('pannelloLuogo'),
              percorso:document.getElementById('pannelloRotta')};
@@ -1793,7 +1792,7 @@ const btnAggTappa=document.getElementById('btnAggTappa');
 const btnCalcola=document.getElementById('btnCalcola');
 const esitoRotta=document.getElementById('esitoRotta');
 const btnPulisci=document.getElementById('btnPulisci');
-let profilo='foot',lineaRotta=null;
+let profilo='foot',lineaRotta=null,etichettaRotta=null;
 
 function popolaSelect(s){
   s.add(new Option('\u25CE Posizione attuale','gps'));
@@ -1829,8 +1828,6 @@ function apriPercorsoVerso(luogo){
   esitoRotta.innerHTML='';
   creaTappa(0);                              // partenza: posizione attuale
   creaTappa(luoghi.indexOf(luogo)+1);        // arrivo: il luogo cliccato
-  popolaSelIso();
-  selIsoOrig.value=String(luogo.id);
 }
 
 btnAggTappa.onclick=()=>{
@@ -1851,6 +1848,7 @@ pannelloRotta.querySelectorAll('.profili button').forEach(b=>{
 
 function pulisciRotta(){
   if(lineaRotta){ mappa.removeLayer(lineaRotta); lineaRotta=null; }
+  if(etichettaRotta){ mappa.removeLayer(etichettaRotta); etichettaRotta=null; }
   btnPulisci.style.display='none';
 }
 btnPulisci.onclick=()=>{ pulisciRotta(); esitoRotta.innerHTML=''; };
@@ -1912,6 +1910,15 @@ btnCalcola.onclick=async()=>{
     const km=(rotta.distance/1000).toFixed(rotta.distance<10000?2:1);
     const min=Math.round(rotta.duration/60);
     const modo={foot:'a piedi',bike:'in bici',driving:'in auto'}[profilo];
+    // etichetta fissa a meta del tracciato: mezzo, distanza e durata
+    const coordsRotta=rotta.geometry.coordinates;
+    const meta=coordsRotta[Math.floor(coordsRotta.length/2)];
+    const durata=min>=60?Math.floor(min/60)+' h'+(min%60?' '+(min%60)+' min':''):min+' min';
+    const iconaModo={foot:'🚶',bike:'🚲',driving:'🚗'}[profilo];
+    etichettaRotta=L.tooltip({permanent:true,direction:'top',className:'etichetta-rotta'})
+      .setLatLng([meta[1],meta[0]])
+      .setContent(iconaModo+' '+modo+' · '+km+' km · '+durata)
+      .addTo(mappa);
     let html=`<strong>${km} km</strong> su strada ${modo}, circa <strong>${min} min</strong><br>`
       +punti.map(p=>p.nome).join(' \u2192 ');
     // dettaglio per tratta se le tappe sono piu di due
@@ -1994,55 +2001,6 @@ document.getElementById('chkRadar').onchange=async e=>{
     e.target.checked=false;
     mostraToast('Radar non disponibile: riprova.');
   }
-};
-
-// ---------- isocrone (Valhalla / FOSSGIS) ----------
-const selIsoOrig=document.getElementById('selIsoOrig');
-const btnIsocrone=document.getElementById('btnIsocrone');
-const btnIsoRimuovi=document.getElementById('btnIsoRimuovi');
-let isoLayer=null;
-function popolaSelIso(){
-  selIsoOrig.innerHTML='';
-  selIsoOrig.add(new Option('\u25CE Posizione attuale','gps'));
-  luoghi.forEach(l=>selIsoOrig.add(new Option(l.nome,l.id)));
-}
-function rimuoviIsocrone(){
-  if(isoLayer){ mappa.removeLayer(isoLayer); isoLayer=null; }
-  btnIsoRimuovi.style.display='none';
-}
-btnIsoRimuovi.onclick=rimuoviIsocrone;
-btnIsocrone.onclick=async()=>{
-  let p;
-  try{ p=await risolviPunto(selIsoOrig.value); }
-  catch(e){
-    esitoRotta.innerHTML='Posizione non disponibile: consenti l\u2019accesso alla posizione.';
-    return;
-  }
-  if(!p) return;
-  btnIsocrone.disabled=true;
-  esitoRotta.innerHTML='Calcolo le isocrone\u2026';
-  const costing={foot:'pedestrian',bike:'bicycle',driving:'auto'}[profilo];
-  try{
-    const q={locations:[{lat:p.lat,lon:p.lng}],costing:costing,
-      contours:[{time:10},{time:20},{time:30}],polygons:true,denoise:.3};
-    const r=await fetch('https://valhalla1.openstreetmap.de/isochrone?json='+encodeURIComponent(JSON.stringify(q)));
-    const j=await r.json();
-    if(!j.features||!j.features.length) throw new Error('no iso');
-    rimuoviIsocrone();
-    const colori={10:'#2e7d32',20:'#f0a020',30:'#c0392b'};
-    isoLayer=L.geoJSON(j,{
-      style:f=>({color:colori[f.properties.contour]||'#666',weight:2,
-                 fillColor:colori[f.properties.contour]||'#666',fillOpacity:.1})
-    }).addTo(mappa);
-    isoLayer.eachLayer(ly=>ly.bindTooltip(ly.feature.properties.contour+' min',{sticky:true}));
-    mappa.flyToBounds(isoLayer.getBounds(),{padding:[40,40],duration:.6});
-    const modo={foot:'a piedi',bike:'in bici',driving:'in auto'}[profilo];
-    esitoRotta.innerHTML='Aree raggiungibili '+modo+' da <strong>'+p.nome+'</strong> in 10, 20 e 30 minuti.';
-    btnIsoRimuovi.style.display='block';
-  }catch(e){
-    esitoRotta.innerHTML='Isocrone non disponibili al momento: riprova.';
-  }
-  btnIsocrone.disabled=false;
 };
 
 // ---------- tracciati GPX ----------
