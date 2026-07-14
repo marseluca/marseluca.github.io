@@ -126,14 +126,38 @@ body{
 .voce.attiva{background:var(--blu);color:var(--carta)}
 .voce.spento{opacity:.5}
 .swatch{width:12px;height:12px;border-radius:3px;flex:none;border:1px solid rgba(0,0,0,.18)}
-.voce .occhio{margin-left:auto;flex:none;width:18px;height:18px;cursor:pointer;accent-color:var(--blu)}
 .riga-toret{
   display:flex;align-items:center;gap:10px;padding:9px 16px;
   font-size:.86rem;cursor:pointer;
 }
 .riga-toret:hover{background:#efece3}
-.riga-toret input{width:18px;height:18px;accent-color:var(--blu);cursor:pointer;flex:none}
 .riga-toret .desc{font-size:.7rem;color:var(--grigio);display:block}
+
+/* ---------- interruttore: levetta al posto della checkbox nativa ---------- */
+.voce .occhio,
+.riga-toret input[type=checkbox]{
+  appearance:none;-webkit-appearance:none;flex:none;position:relative;margin:0;
+  width:36px;height:21px;border-radius:11px;background:var(--bordo);
+  cursor:pointer;transition:background .18s;
+}
+.voce .occhio{margin-left:auto;width:30px;height:17px;border-radius:9px}
+.voce .occhio::before,
+.riga-toret input[type=checkbox]::before{
+  content:'';position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;
+  background:var(--bianco);box-shadow:0 1px 3px rgba(13,36,64,.35);
+  transition:transform .18s;
+}
+.voce .occhio::before{width:13px;height:13px}
+.riga-toret input[type=checkbox]:checked{background:var(--blu)}
+.riga-toret input[type=checkbox]:checked::before{transform:translateX(15px)}
+.voce .occhio:checked{background:var(--blu)}
+.voce .occhio:checked::before{transform:translateX(13px)}
+.voce.attiva .occhio{background:rgba(255,255,255,.35)}
+.voce.attiva .occhio:checked{background:var(--giallo)}
+.riga-toret input[type=checkbox]:disabled,
+.voce .occhio:disabled{opacity:.5;cursor:wait}
+.riga-toret input[type=checkbox]:focus-visible,
+.voce .occhio:focus-visible{outline:2px solid var(--blu);outline-offset:2px}
 
 /* ---------- controlli nei pannelli ---------- */
 .blocco{padding:10px 16px 4px}
@@ -653,6 +677,75 @@ function cambiaBasemap(chiave){
   baseAttiva=chiave;
   document.body.classList.toggle('base-scura',BASEMAPS[chiave].scura);
 }
+
+// ---------- gesto doppio-tocco + trascina per lo zoom (stile Google Maps) ----------
+// secondo tocco tenuto e trascinato in basso = zoom in, in alto = zoom out.
+// un doppio tocco "secco" (senza trascinamento) resta uno zoom in di un livello.
+// sostituisce doubleClickZoom nativo, che qui va disattivato per non entrare in conflitto.
+mappa.doubleClickZoom.disable();
+(function(){
+  const SOGLIA_TEMPO=300,SOGLIA_DISTANZA=40,SOGLIA_TRASCINA=8,PX_PER_LIVELLO=90;
+  const escludi='.leaflet-control-container,.pannello-info,.carta-meteo,.pill-annulla,.toast,.leaflet-popup,button,input,select,a,label';
+  let ultimoTocco=null,toccoCorrente=null,gesto=null;
+  function distanza(x1,y1,x2,y2){ return Math.hypot(x2-x1,y2-y1); }
+  function fuoriMappa(e){ return !!e.target.closest(escludi) || !e.target.closest('#mappa'); }
+  function terminaGesto(rifinisci){
+    if(!gesto) return;
+    if(rifinisci && !gesto.trascinato){
+      mappa.setZoomAround(gesto.ancora,Math.min(mappa.getMaxZoom(),gesto.zoom0+mappa.options.zoomDelta),{animate:false});
+    }
+    gesto=null;
+    mappa.dragging.enable();
+  }
+  document.addEventListener('touchstart',e=>{
+    if(e.touches.length!==1){ terminaGesto(false); ultimoTocco=null; toccoCorrente=null; return; }
+    const t=e.touches[0];
+    if(fuoriMappa(e)){ ultimoTocco=null; toccoCorrente=null; return; }
+    const ora=Date.now();
+    if(ultimoTocco && ora-ultimoTocco.t<SOGLIA_TEMPO && distanza(t.clientX,t.clientY,ultimoTocco.x,ultimoTocco.y)<SOGLIA_DISTANZA){
+      e.preventDefault(); e.stopPropagation();
+      mappa.dragging.disable();
+      gesto={y0:t.clientY,zoom0:mappa.getZoom(),ancora:mappa.mouseEventToLatLng(t),trascinato:false};
+      ultimoTocco=null; toccoCorrente=null;
+    }else{
+      ultimoTocco=null;
+      toccoCorrente={t:ora,x:t.clientX,y:t.clientY};
+    }
+  },{capture:true,passive:false});
+  document.addEventListener('touchmove',e=>{
+    if(!gesto) return;
+    if(e.touches.length!==1){ terminaGesto(false); return; }
+    e.preventDefault(); e.stopPropagation();
+    const dy=e.touches[0].clientY-gesto.y0;
+    if(Math.abs(dy)>SOGLIA_TRASCINA) gesto.trascinato=true;
+    if(gesto.trascinato){
+      const nuovoZoom=Math.min(mappa.getMaxZoom(),Math.max(mappa.getMinZoom(),gesto.zoom0+dy/PX_PER_LIVELLO));
+      mappa.setZoomAround(gesto.ancora,nuovoZoom,{animate:false});
+    }
+  },{capture:true,passive:false});
+  document.addEventListener('touchend',e=>{
+    if(gesto){
+      e.preventDefault(); e.stopPropagation();
+      terminaGesto(true);
+      ultimoTocco=null; toccoCorrente=null;
+      return;
+    }
+    if(toccoCorrente && e.changedTouches.length===1 && e.touches.length===0){
+      const t=e.changedTouches[0];
+      const durata=Date.now()-toccoCorrente.t;
+      if(durata<250 && distanza(t.clientX,t.clientY,toccoCorrente.x,toccoCorrente.y)<10){
+        ultimoTocco={t:Date.now(),x:t.clientX,y:t.clientY};
+        toccoCorrente=null;
+        return;
+      }
+    }
+    ultimoTocco=null; toccoCorrente=null;
+  },{capture:true,passive:false});
+  document.addEventListener('touchcancel',()=>{
+    terminaGesto(false);
+    ultimoTocco=null; toccoCorrente=null;
+  },{capture:true});
+})();
 
 const colore={},layers={},voci={},etichette={};
 DATI.features.sort((a,b)=>a.properties.id-b.properties.id)
