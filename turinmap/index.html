@@ -240,6 +240,20 @@ select{
   padding:8px 14px;font-size:.8rem;line-height:1.5;display:none;max-width:74vw;
 }
 .carta-meteo strong{color:var(--blu);font-variant-numeric:tabular-nums}
+.legenda-radar{
+  position:absolute;left:12px;bottom:12px;z-index:1000;
+  background:var(--carta);border:1px solid var(--bordo);border-radius:8px;
+  box-shadow:var(--ombra);padding:8px 12px;font-size:.66rem;display:none;
+  width:230px;max-width:70vw;line-height:1.4;
+}
+.legenda-radar .titolo-legenda{font-size:.7rem;font-weight:600;color:var(--blu)}
+.legenda-radar .barra-colori{
+  height:8px;border-radius:4px;margin:5px 0 3px;
+  /* colori ufficiali dello schema RainViewer "Universal Blue" (id 2) */
+  background:linear-gradient(90deg,#88ddee,#00a3e0,#0077aa,#005588,#ffee00,#ffaa00,#ff4400,#c10000,#ff77ff);
+}
+.legenda-radar .estremi{display:flex;justify-content:space-between;color:var(--grigio)}
+.legenda-radar .fonte{color:var(--grigio);margin-top:4px}
 .pill-annulla{
   position:absolute;left:50%;transform:translateX(-50%);top:12px;z-index:1250;
   background:var(--blu);color:var(--carta);border:0;border-radius:20px;cursor:pointer;
@@ -326,6 +340,12 @@ select{
 <div id="mappa">
   <div class="pannello-info" id="info"><h2></h2><p></p></div>
   <div class="carta-meteo" id="cartaMeteo"></div>
+  <div class="legenda-radar" id="legendaRadar">
+    <span class="titolo-legenda">Intensit&agrave; precipitazioni</span>
+    <div class="barra-colori"></div>
+    <div class="estremi"><span>Debole</span><span>Moderata</span><span>Forte</span><span>Grandine</span></div>
+    <div class="fonte" id="fonteRadar">Fonte: RainViewer</div>
+  </div>
   <button class="pill-annulla" id="pillAnnulla" type="button">Tocca la mappa per il luogo &middot; Annulla</button>
   <div class="toast" id="toast"></div>
 </div>
@@ -1102,28 +1122,47 @@ document.getElementById('fileImport').onchange=e=>{
   rd.readAsText(f);
 };
 document.getElementById('btnCondividi').onclick=async()=>{
-  if(!luoghi.length){ mostraToast('Non ci sono luoghi da condividere.'); return; }
-  const dati=btoa(unescape(encodeURIComponent(JSON.stringify({liste,luoghi}))));
+  // nel link finiscono solo i luoghi attualmente mostrati sulla mappa
+  // (liste visibili), con le sole liste che servono per i colori
+  const visibili=luoghi.filter(l=>visListe[chiaveVis(l)]);
+  if(!visibili.length){ mostraToast('Nessun luogo visibile sulla mappa: attiva almeno una lista prima di condividere.'); return; }
+  const listeUsate=liste.filter(x=>visibili.some(l=>l.listaId===x.id));
+  const dati=btoa(unescape(encodeURIComponent(JSON.stringify({liste:listeUsate,luoghi:visibili}))));
   const url=location.origin!=='null'
     ? location.origin+location.pathname+'#dati='+dati
     : location.href.split('#')[0]+'#dati='+dati;
   try{
     await navigator.clipboard.writeText(url);
-    mostraToast('Link copiato: chi lo apre pu\u00f2 importare i tuoi luoghi.');
+    mostraToast('Link copiato: mostra i '+visibili.length+' luoghi ora visibili, in sola visualizzazione.');
   }catch(e){
     location.hash='dati='+dati;
     mostraToast('Copia automatica non riuscita: il link \u00e8 ora nella barra degli indirizzi.');
   }
 };
-// import automatico da link condiviso
+// apertura da link condiviso: i luoghi vengono solo mostrati sulla mappa,
+// in un layer temporaneo, senza scrivere nulla in localStorage
 (function(){
   if(!location.hash.startsWith('#dati=')) return;
   try{
     const d=JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(6)))));
-    const nLuoghi=(d.luoghi||[]).length, nListe=(d.liste||[]).length;
-    if(nLuoghi&&confirm('Questo link contiene '+nLuoghi+' luoghi e '+nListe+' liste. Importarli?')){
-      const {nl,np}=uniscoDati(d);
-      mostraToast('Importati '+np+' luoghi e '+nl+' liste.');
+    const arr=(d.luoghi||[]).filter(x=>x&&typeof x.lat==='number'&&typeof x.lng==='number');
+    if(arr.length){
+      const gruppo=L.layerGroup().addTo(mappa);
+      arr.forEach(l=>{
+        const li=(d.liste||[]).find(x=>x&&x.id===l.listaId);
+        const col=(li&&li.colore)||'#f0b429';
+        const nome=String(l.nome||'Luogo condiviso');
+        L.marker([l.lat,l.lng],{icon:L.divIcon({
+          className:'',
+          html:'<div class="pin-luogo" style="background:'+col+';margin:4px"></div>',
+          iconSize:[26,26],iconAnchor:[13,22],popupAnchor:[0,-20]
+        })}).addTo(gruppo)
+          .bindPopup('<strong>'+nome.replace(/</g,'&lt;')+'</strong>'
+            +(li?'<br><span style="color:var(--grigio)">'+String(li.nome).replace(/</g,'&lt;')+'</span>':''));
+        L.marker([l.lat,l.lng],{icon:L.divIcon({className:'etichetta-luogo',html:nome.replace(/</g,'&lt;'),iconSize:null,iconAnchor:[-6,6]}),interactive:false}).addTo(gruppo);
+      });
+      mappa.fitBounds(L.featureGroup(gruppo.getLayers()).getBounds(),{padding:[60,60],maxZoom:16});
+      mostraToast(arr.length+' luoghi da un link condiviso: solo in visualizzazione, non vengono salvati.');
     }
   }catch(e){}
   history.replaceState(null,'',location.pathname+location.search);
@@ -1927,9 +1966,12 @@ document.getElementById('chkMeteo').onchange=async e=>{
 
 // ---------- radar precipitazioni (RainViewer) ----------
 let radarLayer=null;
+const legendaRadar=document.getElementById('legendaRadar');
+L.DomEvent.disableClickPropagation(legendaRadar);
 document.getElementById('chkRadar').onchange=async e=>{
   if(!e.target.checked){
     if(radarLayer){ mappa.removeLayer(radarLayer); radarLayer=null; }
+    legendaRadar.style.display='none';
     return;
   }
   try{
@@ -1944,8 +1986,10 @@ document.getElementById('chkRadar').onchange=async e=>{
     radarLayer=L.tileLayer('https://tilecache.rainviewer.com'+frame.path+'/512/{z}/{x}/{y}/2/1_1.png',
       {opacity:.65,zIndex:5,tileSize:512,zoomOffset:-1,maxNativeZoom:8,maxZoom:20,attribution:'RainViewer'}).addTo(mappa);
     const quando=new Date(frame.time*1000);
-    mostraToast('Radar delle '+quando.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})
-      +' (se non vedi nulla, non sta piovendo).');
+    const ora=quando.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('fonteRadar').textContent='Fonte: RainViewer · rilevamento delle '+ora;
+    legendaRadar.style.display='block';
+    mostraToast('Radar RainViewer delle '+ora+' (se non vedi nulla, non sta piovendo).');
   }catch(err){
     e.target.checked=false;
     mostraToast('Radar non disponibile: riprova.');
