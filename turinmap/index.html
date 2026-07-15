@@ -54,8 +54,25 @@ body{
   content:'';position:absolute;top:0;left:20%;right:20%;height:3px;
   background:var(--giallo);border-radius:0 0 3px 3px;
 }
-.barra #btnGps.attivo{color:var(--giallo)}
 .barra button:focus-visible{outline:2px solid var(--blu);outline-offset:-2px}
+.barra #btnAggiungi .cerchio-piu{
+  width:46px;height:46px;border-radius:50%;background:var(--blu);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.7rem;font-weight:600;line-height:1;margin-top:-20px;
+  box-shadow:var(--ombra);transition:background .15s;
+}
+.barra #btnAggiungi.sel .cerchio-piu,.barra #btnAggiungi:hover .cerchio-piu{
+  background:var(--giallo);color:var(--blu-scuro);
+}
+.barra #btnAggiungi.sel::before{display:none}
+.btn-gps-flottante{
+  position:absolute;right:12px;bottom:24px;z-index:1000;
+  width:48px;height:48px;border-radius:50%;border:1px solid var(--bordo);
+  background:var(--bianco);color:var(--blu);cursor:pointer;box-shadow:var(--ombra);
+  display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s;
+}
+.btn-gps-flottante svg{width:23px;height:23px}
+.btn-gps-flottante.attivo{background:var(--giallo);color:var(--blu-scuro)}
 
 /* ---------- scheda (bottom sheet / pannello laterale) ---------- */
 .scheda{
@@ -80,11 +97,7 @@ body{
   font-family:'Fraunces',serif;font-size:1.02rem;color:var(--blu);
   flex:1;padding-top:4px;
 }
-.chiudi-scheda{
-  border:0;background:none;cursor:pointer;color:var(--grigio);
-  font-size:1.3rem;line-height:1;padding:4px 6px;border-radius:6px;
-}
-.chiudi-scheda:hover{color:var(--blu)}
+.scheda.trascinando{transition:none}
 .scheda-corpo{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .vista{display:none;padding-bottom:12px}
 .vista.aperto{display:block}
@@ -240,6 +253,16 @@ select{
   padding:8px 14px;font-size:.8rem;line-height:1.5;display:none;max-width:74vw;
 }
 .carta-meteo strong{color:var(--blu);font-variant-numeric:tabular-nums}
+.freccia-vento{display:flex;flex-direction:column;align-items:center}
+.freccia-vento svg{width:20px;height:20px;filter:drop-shadow(0 1px 2px rgba(255,255,255,.8))}
+.freccia-vento span{font-size:.6rem;font-weight:700;color:var(--inchiostro);text-shadow:0 1px 2px #fff,0 -1px 2px #fff}
+.base-scura .freccia-vento svg{filter:drop-shadow(0 1px 2px rgba(13,20,30,.9))}
+.base-scura .freccia-vento span{color:#f5f2e8;text-shadow:0 1px 2px rgba(13,20,30,.9)}
+.chip-temp{
+  display:flex;align-items:center;justify-content:center;height:100%;
+  border-radius:12px;font-size:.68rem;font-weight:700;
+  box-shadow:0 1px 4px rgba(13,36,64,.35);
+}
 .etichetta-rotta{
   background:var(--blu-scuro);color:#fff;border:0;border-radius:16px;
   padding:5px 12px;font-family:'Archivo',sans-serif;font-size:.75rem;font-weight:600;
@@ -354,22 +377,19 @@ select{
   </div>
   <button class="pill-annulla" id="pillAnnulla" type="button">Tocca la mappa per il luogo &middot; Annulla</button>
   <div class="toast" id="toast"></div>
+  <button class="btn-gps-flottante" id="btnGps" type="button" aria-label="La mia posizione"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"></circle><line x1="12" y1="2" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="22"></line><line x1="2" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="22" y2="12"></line></svg></button>
 </div>
 
 <div class="scheda" id="menu">
   <div class="maniglia"></div>
   <div class="scheda-testa">
     <h2 id="titoloScheda">Filtri</h2>
-    <button class="chiudi-scheda" id="chiudiPannello" type="button" aria-label="Chiudi">&times;</button>
   </div>
   <div class="scheda-corpo">
     <div class="vista" id="vistaLivelli">
 
       <div class="azioni" style="padding-top:10px">
         <button id="btnResetFiltri" type="button">Rimuovi tutti i filtri</button>
-      </div>
-      <div class="blocco" style="padding-top:0">
-        <input type="text" id="cercaFiltri" placeholder="Cerca un filtro&hellip;">
       </div>
     <div class="sezione">
       <button class="titolo-sez collass" type="button" data-corpo="corpoQuartieri" aria-expanded="false">
@@ -598,11 +618,21 @@ select{
         <span>Radar precipitazioni
           <span class="desc">RainViewer, ultimo rilevamento</span></span>
       </label>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkVento">
+        <span>Vento
+          <span class="desc">Open-Meteo, frecce su griglia</span></span>
+      </label>
+      <label class="riga-toret">
+        <input type="checkbox" id="chkTemperature">
+        <span>Temperature
+          <span class="desc">Open-Meteo, valori su griglia</span></span>
+      </label>
       </div>
     </div>
 
     </div>
-    <div class="vista" id="pannelloLuogo">
+    <div class="vista" id="pannelloAggiungi">
 
       <div class="blocco" style="padding-top:12px">
         <select id="selLista"></select>
@@ -618,7 +648,16 @@ select{
         </div>
         <div class="risultati" id="risultati"></div>
       </div>
-      <div class="separatore">le mie liste</div>
+      <div class="separatore">oppure un tracciato</div>
+      <div class="azioni">
+        <button id="btnImportaGpx" type="button">Importa file GPX</button>
+      </div>
+      <input type="file" id="fileGpx" accept=".gpx,application/gpx+xml" style="display:none">
+
+    </div>
+    <div class="vista" id="pannelloLuogo">
+
+      <div class="separatore" style="padding-top:10px">le mie liste</div>
       <div id="righeListe"></div>
       <div class="blocco">
         <div class="riga-indirizzo">
@@ -634,10 +673,6 @@ select{
       <input type="file" id="fileImport" accept="application/json,.json" style="display:none">
       <div class="separatore">tracciati gpx</div>
       <div id="righeGpx"></div>
-      <div class="azioni">
-        <button id="btnImportaGpx" type="button">Importa file GPX</button>
-      </div>
-      <input type="file" id="fileGpx" accept=".gpx,application/gpx+xml" style="display:none">
 
     </div>
     <div class="vista" id="pannelloRotta">
@@ -660,8 +695,8 @@ select{
 
 <nav class="barra">
   <button id="btnMenu" type="button" aria-label="Filtri e livelli"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 4 21 4 14 12.5 14 19 10 21 10 12.5 3 4"></polygon></svg><span>Livelli</span></button>
-  <button id="btnLuogo" type="button" aria-label="I miei luoghi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg><span>Luoghi</span></button>
-  <button id="btnGps" type="button" aria-label="La mia posizione"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"></circle><line x1="12" y1="2" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="22"></line><line x1="2" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="22" y2="12"></line></svg><span>Posizione</span></button>
+  <button id="btnAggiungi" type="button" aria-label="Aggiungi un luogo"><span class="cerchio-piu">+</span></button>
+  <button id="btnLuogo" type="button" aria-label="Le mie liste"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg><span>Liste</span></button>
 </nav>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -857,13 +892,15 @@ document.querySelectorAll('.pila-sx').forEach(el=>{
   L.DomEvent.disableClickPropagation(el);
 });
 
-// ---- scheda con tre viste (Livelli / Luoghi / Percorso) ----
-const TITOLI_VISTE={livelli:'Filtri e livelli',luoghi:'I miei luoghi',percorso:'Percorso'};
+// ---- scheda con quattro viste (Livelli / Aggiungi / Liste / Percorso) ----
+const TITOLI_VISTE={livelli:'Filtri e livelli',aggiungi:'Aggiungi alla mappa',luoghi:'Le mie liste',percorso:'Percorso'};
 const VISTE={livelli:document.getElementById('vistaLivelli'),
+             aggiungi:document.getElementById('pannelloAggiungi'),
              luoghi:document.getElementById('pannelloLuogo'),
              percorso:document.getElementById('pannelloRotta')};
 // la vista percorso non ha un tab: si apre solo dal popup di un luogo
 const TABS={livelli:btnMenu,
+            aggiungi:document.getElementById('btnAggiungi'),
             luoghi:document.getElementById('btnLuogo')};
 let vistaAttiva=null;
 function apriVista(n){
@@ -881,8 +918,36 @@ function chiudiVista(){
   vistaAttiva=null;
 }
 function toggleVista(n){ vistaAttiva===n ? chiudiVista() : apriVista(n); }
-document.getElementById('chiudiPannello').onclick=chiudiVista;
 btnMenu.onclick=()=>toggleVista('livelli');
+
+// chiusura della scheda trascinandola verso il basso (dalla testata o
+// dalla maniglia); sostituisce la vecchia X. Solo sul layout mobile:
+// su desktop la scheda e un pannello laterale e si chiude dal tab attivo
+(function(){
+  let y0=null,dy=0,inCorso=false;
+  const mobile=()=>window.matchMedia('(max-width:680px)').matches;
+  [menu.querySelector('.scheda-testa'),menu.querySelector('.maniglia')].forEach(el=>{
+    el.addEventListener('touchstart',e=>{
+      if(e.touches.length!==1||!mobile()) return;
+      y0=e.touches[0].clientY; dy=0; inCorso=true;
+      menu.classList.add('trascinando');
+    },{passive:true});
+    el.addEventListener('touchmove',e=>{
+      if(!inCorso) return;
+      dy=Math.max(0,e.touches[0].clientY-y0);
+      menu.style.transform='translateY('+dy+'px)';
+    },{passive:true});
+    el.addEventListener('touchend',fine);
+    el.addEventListener('touchcancel',fine);
+  });
+  function fine(){
+    if(!inCorso) return;
+    inCorso=false;
+    menu.classList.remove('trascinando');
+    menu.style.transform='';
+    if(dy>70) chiudiVista();
+  }
+})();
 
 // rimuove tutti i filtri attivi (quartieri e livelli)
 document.getElementById('btnResetFiltri').onclick=()=>{
@@ -1230,10 +1295,14 @@ document.getElementById('btnCreaLista').onclick=()=>{
 
 btnLuogo.onclick=()=>{
   if(addMode) esciAddMode();
-  if(vistaAttiva==='luoghi'){ chiudiVista(); return; }
+  toggleVista('luoghi');
+};
+document.getElementById('btnAggiungi').onclick=()=>{
+  if(addMode) esciAddMode();
+  if(vistaAttiva==='aggiungi'){ chiudiVista(); return; }
   popolaSelLista(selLista.value!=='__nuova'?selLista.value:'');
   rigaNuovaLista.style.display='none';
-  apriVista('luoghi');
+  apriVista('aggiungi');
 };
 document.getElementById('opzioneMappa').onclick=()=>{
   chiudiVista();
@@ -2003,6 +2072,89 @@ document.getElementById('chkRadar').onchange=async e=>{
   }
 };
 
+// ---------- overlay vento e temperature (Open-Meteo su griglia) ----------
+// stessa fonte della card meteo (niente API key): una sola richiesta
+// multi-localita per una griglia di punti che copre il bbox di Torino
+const PUNTI_GRIGLIA=(()=>{
+  const out=[];
+  for(let r=0;r<5;r++)for(let c=0;c<6;c++)
+    out.push([(45.005+r*0.0325).toFixed(3),(7.545+c*0.044).toFixed(3)]);
+  return out;
+})();
+async function grigliaMeteo(campi){
+  const url='https://api.open-meteo.com/v1/forecast?latitude='+PUNTI_GRIGLIA.map(p=>p[0]).join(',')
+    +'&longitude='+PUNTI_GRIGLIA.map(p=>p[1]).join(',')+'&current='+campi;
+  const r=await fetch(url);
+  const j=await r.json();
+  return (Array.isArray(j)?j:[j]).filter(d=>d&&d.current);
+}
+function puntoCardinale(g){
+  return ['N','NE','E','SE','S','SO','O','NO'][Math.round(g/45)%8];
+}
+const SVG_FRECCIA='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="4"></line><polyline points="5 11 12 4 19 11"></polyline></svg>';
+
+let ventoLayer=null;
+document.getElementById('chkVento').onchange=async e=>{
+  if(!e.target.checked){
+    if(ventoLayer){ mappa.removeLayer(ventoLayer); ventoLayer=null; }
+    return;
+  }
+  try{
+    const dati=await grigliaMeteo('wind_speed_10m,wind_direction_10m,wind_gusts_10m');
+    if(!dati.length) throw new Error('vuoto');
+    if(!e.target.checked) return;   // spento durante il download
+    ventoLayer=L.layerGroup(dati.map(d=>{
+      const v=Math.round(d.current.wind_speed_10m);
+      const dir=d.current.wind_direction_10m;
+      const col=v<10?'#8fa3b8':v<20?'#2980b9':v<35?'#e67e22':'#c0392b';
+      // la freccia punta dove va il vento (dir e la provenienza)
+      return L.marker([d.latitude,d.longitude],{icon:L.divIcon({
+        className:'freccia-vento',
+        html:'<div style="transform:rotate('+((dir+180)%360)+'deg);color:'+col+'">'+SVG_FRECCIA+'</div><span>'+v+'</span>',
+        iconSize:[34,38],iconAnchor:[17,19]
+      }),keyboard:false})
+        .bindTooltip(v+' km/h da '+puntoCardinale(dir)+' · raffiche '+Math.round(d.current.wind_gusts_10m)+' km/h');
+    })).addTo(mappa);
+    mostraToast('Vento attuale su '+dati.length+' punti · fonte Open-Meteo');
+  }catch(err){
+    e.target.checked=false;
+    mostraToast('Dati vento non disponibili: riprova.');
+  }
+};
+
+function coloreTemp(t){
+  return t<=0?['#7e57c2','#fff']:t<8?['#2a6fdb','#fff']:t<14?['#29b6f6','#0d2440']
+    :t<19?['#26a69a','#fff']:t<24?['#9ccc65','#1c2430']:t<29?['#fbc02d','#1c2430']
+    :t<33?['#f57c00','#fff']:['#d32f2f','#fff'];
+}
+let tempLayer=null;
+document.getElementById('chkTemperature').onchange=async e=>{
+  if(!e.target.checked){
+    if(tempLayer){ mappa.removeLayer(tempLayer); tempLayer=null; }
+    return;
+  }
+  try{
+    const dati=await grigliaMeteo('temperature_2m,apparent_temperature');
+    if(!dati.length) throw new Error('vuoto');
+    if(!e.target.checked) return;   // spento durante il download
+    tempLayer=L.layerGroup(dati.map(d=>{
+      const t=d.current.temperature_2m;
+      const [sfondo,testo]=coloreTemp(t);
+      return L.marker([d.latitude,d.longitude],{icon:L.divIcon({
+        className:'',
+        html:'<div class="chip-temp" style="background:'+sfondo+';color:'+testo+'">'+Math.round(t)+'°</div>',
+        iconSize:[40,22],iconAnchor:[20,11]
+      }),keyboard:false})
+        .bindTooltip(t.toFixed(1)+'°C · percepiti '+Math.round(d.current.apparent_temperature)
+          +'°'+(d.elevation!==undefined?' · quota '+Math.round(d.elevation)+' m':''));
+    })).addTo(mappa);
+    mostraToast('Temperature attuali su '+dati.length+' punti · fonte Open-Meteo');
+  }catch(err){
+    e.target.checked=false;
+    mostraToast('Temperature non disponibili: riprova.');
+  }
+};
+
 // ---------- tracciati GPX ----------
 const CHIAVE_GPX='torino_quartieri_gpx';
 let tracce=[];
@@ -2126,30 +2278,6 @@ document.getElementById('fileGpx').onchange=e=>{
 };
 
 // ---------- ricerca tra i filtri ----------
-document.getElementById('cercaFiltri').oninput=e=>{
-  const q=e.target.value.trim().toLowerCase();
-  document.querySelectorAll('#vistaLivelli .sezione').forEach(sezEl=>{
-    const btn=sezEl.querySelector('.titolo-sez.collass');
-    const corpo=sezEl.querySelector('.corpo-sez');
-    if(!btn||!corpo) return;
-    let visibili=0;
-    corpo.querySelectorAll('.riga-toret, .voce').forEach(r=>{
-      const match=!q||r.textContent.toLowerCase().includes(q);
-      r.style.display=match?'':'none';
-      if(match) visibili++;
-    });
-    if(q){
-      // durante la ricerca: espande le sezioni con risultati, nasconde le altre
-      sezEl.style.display=visibili?'':'none';
-      corpo.classList.toggle('chiuso',!visibili);
-      btn.setAttribute('aria-expanded',!!visibili);
-    }else{
-      sezEl.style.display='';
-      corpo.classList.add('chiuso');
-      btn.setAttribute('aria-expanded','false');
-    }
-  });
-};
 </script>
 </body>
 </html>
