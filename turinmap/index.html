@@ -73,6 +73,7 @@ body{
 }
 .btn-gps-flottante svg{width:23px;height:23px}
 .btn-gps-flottante.attivo{background:var(--giallo);color:var(--blu-scuro)}
+.btn-rotta-flottante{bottom:82px}
 
 /* ---------- scheda (bottom sheet / pannello laterale) ---------- */
 .scheda{
@@ -210,7 +211,27 @@ select{
 }
 .separatore::before,.separatore::after{content:'';flex:1;height:1px;background:var(--bordo)}
 .riga-tappa{display:flex;gap:6px;align-items:center;margin-bottom:6px}
-.riga-tappa select{flex:1;margin-bottom:0}
+.cerca-tappa{position:relative;flex:1}
+.cerca-tappa input{
+  width:100%;font-family:'Archivo',sans-serif;font-size:16px;
+  padding:9px 10px;border:1px solid var(--bordo);border-radius:8px;
+  background:var(--bianco);color:var(--inchiostro);
+}
+.cerca-tappa input:focus{outline:2px solid var(--blu);outline-offset:-1px}
+.cerca-tappa input.manca{border-color:#c0392b;outline-color:#c0392b}
+.ris-tappa{
+  position:absolute;top:calc(100% + 2px);left:0;right:0;z-index:20;
+  background:var(--bianco);border:1px solid var(--bordo);border-radius:8px;
+  box-shadow:var(--ombra);max-height:180px;overflow-y:auto;display:none;
+}
+.voce-tappa{
+  display:flex;align-items:center;gap:8px;width:100%;text-align:left;
+  border:0;background:none;cursor:pointer;
+  font-family:'Archivo',sans-serif;font-size:.82rem;padding:9px 12px;
+}
+.voce-tappa:hover{background:#efece3}
+.voce-tappa .pallino{width:10px;height:10px;border-radius:50%;flex:none}
+.vuoto-tappa{padding:9px 12px;color:var(--grigio);font-size:.75rem}
 .riga-tappa .togli{
   flex:none;width:30px;height:30px;border:1px solid var(--bordo);border-radius:8px;
   background:var(--bianco);cursor:pointer;color:var(--grigio);font-size:.95rem;line-height:1;
@@ -253,8 +274,6 @@ select{
   padding:8px 14px;font-size:.8rem;line-height:1.5;display:none;max-width:74vw;
 }
 .carta-meteo strong{color:var(--blu);font-variant-numeric:tabular-nums}
-.freccia-vento{display:flex;align-items:center;justify-content:center;color:#fff}
-.freccia-vento svg{width:22px;height:22px;filter:drop-shadow(0 1px 2px rgba(13,20,30,.75))}
 .etichetta-rotta{
   background:var(--blu-scuro);color:#fff;border:0;border-radius:16px;
   padding:5px 12px;font-family:'Archivo',sans-serif;font-size:.75rem;font-weight:600;
@@ -371,21 +390,10 @@ select{
       <div class="estremi"><span>Debole</span><span>Moderata</span><span>Forte</span><span>Grandine</span></div>
       <div class="fonte" id="fonteRadar">Fonte: RainViewer</div>
     </div>
-    <div class="legenda-radar" id="legendaVento">
-      <span class="titolo-legenda">Vento (km/h)</span>
-      <div class="barra-colori" style="background:linear-gradient(90deg,#dfe8f0 0%,#7fb3d5 20%,#2980b9 40%,#e67e22 70%,#c0392b 100%)"></div>
-      <div class="estremi"><span>0</span><span>25</span><span>50+</span></div>
-      <div class="fonte">Fonte: Open-Meteo &middot; frecce nel verso del vento</div>
-    </div>
-    <div class="legenda-radar" id="legendaTemp">
-      <span class="titolo-legenda">Temperatura (&deg;C)</span>
-      <div class="barra-colori" style="background:linear-gradient(90deg,#7e57c2 0%,#2a6fdb 21%,#29b6f6 37%,#26a69a 50%,#9ccc65 63%,#fbc02d 76%,#f57c00 87%,#d32f2f 100%)"></div>
-      <div class="estremi"><span>0</span><span>19</span><span>38+</span></div>
-      <div class="fonte">Fonte: Open-Meteo</div>
-    </div>
   </div>
   <button class="pill-annulla" id="pillAnnulla" type="button">Tocca la mappa per il luogo &middot; Annulla</button>
   <div class="toast" id="toast"></div>
+  <button class="btn-gps-flottante btn-rotta-flottante" id="btnRottaFab" type="button" aria-label="Calcola un percorso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="19" r="3"></circle><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"></path><circle cx="18" cy="5" r="3"></circle></svg></button>
   <button class="btn-gps-flottante" id="btnGps" type="button" aria-label="La mia posizione"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"></circle><line x1="12" y1="2" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="22"></line><line x1="2" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="22" y2="12"></line></svg></button>
 </div>
 
@@ -626,16 +634,6 @@ select{
         <input type="checkbox" id="chkRadar">
         <span>Radar precipitazioni
           <span class="desc">RainViewer, ultimo rilevamento</span></span>
-      </label>
-      <label class="riga-toret">
-        <input type="checkbox" id="chkVento">
-        <span>Vento
-          <span class="desc">Open-Meteo, frecce su griglia</span></span>
-      </label>
-      <label class="riga-toret">
-        <input type="checkbox" id="chkTemperature">
-        <span>Temperature
-          <span class="desc">Open-Meteo, valori su griglia</span></span>
       </label>
       </div>
     </div>
@@ -890,7 +888,7 @@ const menu=document.getElementById('menu');
 
 // i pannelli sono sovrapposti alla mappa: senza questo, rotella e trascinamento
 // arrivano a Leaflet (zoom/pan della mappa) invece di scorrere il pannello
-['menu','info','btnGps','toast','pillAnnulla','cartaMeteo','pilaLegende']
+['menu','info','btnGps','btnRottaFab','toast','pillAnnulla','cartaMeteo','pilaLegende']
   .forEach(id=>{
     const el=document.getElementById(id);
     if(!el) return;
@@ -1872,41 +1870,91 @@ const esitoRotta=document.getElementById('esitoRotta');
 const btnPulisci=document.getElementById('btnPulisci');
 let profilo='foot',lineaRotta=null,etichettaRotta=null;
 
-function popolaSelect(s){
-  s.add(new Option('\u25CE Posizione attuale','gps'));
-  luoghi.forEach(l=>s.add(new Option(l.nome,l.id)));
-}
 function aggiornaTogli(){
   const righe=tappe.querySelectorAll('.riga-tappa');
   righe.forEach(r=>{
     r.querySelector('.togli').style.visibility = righe.length>2?'visible':'hidden';
   });
 }
-function creaTappa(indiceSelezionato){
+// ogni tappa e un campo di ricerca sui luoghi salvati (risultati mentre
+// si digita) piu l'opzione "Posizione attuale"; la scelta finisce in
+// riga.dataset.val ('gps' oppure id del luogo)
+function creaTappa(preset){
   const riga=document.createElement('div');
   riga.className='riga-tappa';
-  const s=document.createElement('select');
-  popolaSelect(s);
-  if(indiceSelezionato!==undefined && indiceSelezionato<s.options.length) s.selectedIndex=indiceSelezionato;
+  const cont=document.createElement('div');
+  cont.className='cerca-tappa';
+  const inp=document.createElement('input');
+  inp.type='text';inp.placeholder='Cerca nei luoghi salvati\u2026';
+  inp.autocomplete='off';inp.spellcheck=false;
+  const ris=document.createElement('div');
+  ris.className='ris-tappa';
+  cont.appendChild(inp);cont.appendChild(ris);
   const x=document.createElement('button');
   x.type='button';x.className='togli';x.innerHTML='&times;';
   x.title='Rimuovi tappa';
   x.onclick=()=>{ riga.remove(); aggiornaTogli(); };
-  riga.appendChild(s);riga.appendChild(x);
+  riga.appendChild(cont);riga.appendChild(x);
+  function imposta(val,nome){
+    riga.dataset.val=val;
+    inp.value=nome;
+    inp.classList.remove('manca');
+    ris.style.display='none';
+  }
+  function mostraRisultati(){
+    const q=inp.value.trim().toLowerCase();
+    ris.innerHTML='';
+    const voci=[];
+    if(!q||'posizione attuale'.includes(q)) voci.push({val:'gps',nome:'\u25CE Posizione attuale'});
+    luoghi.filter(l=>!q||l.nome.toLowerCase().includes(q)).slice(0,8)
+      .forEach(l=>voci.push({val:String(l.id),nome:l.nome,colore:coloreLuogo(l)}));
+    if(!voci.length){
+      ris.innerHTML='<div class="vuoto-tappa">Nessun luogo salvato corrisponde</div>';
+    }
+    voci.forEach(v=>{
+      const b=document.createElement('button');
+      b.type='button';b.className='voce-tappa';
+      if(v.colore){
+        const p=document.createElement('span');
+        p.className='pallino';p.style.background=v.colore;
+        b.appendChild(p);
+      }
+      b.appendChild(document.createTextNode(v.nome));
+      // pointerdown: scatta prima del blur del campo, che chiuderebbe la lista
+      b.addEventListener('pointerdown',ev=>{ ev.preventDefault(); imposta(v.val,v.nome); });
+      ris.appendChild(b);
+    });
+    ris.style.display='block';
+  }
+  inp.addEventListener('input',()=>{ delete riga.dataset.val; inp.classList.remove('manca'); mostraRisultati(); });
+  inp.addEventListener('focus',mostraRisultati);
+  inp.addEventListener('blur',()=>setTimeout(()=>{ ris.style.display='none'; },150));
+  if(preset==='gps') imposta('gps','\u25CE Posizione attuale');
+  else if(preset) imposta(String(preset.id),preset.nome);
   tappe.appendChild(riga);
   aggiornaTogli();
 }
 
-// si apre solo dal popup di un luogo salvato: partenza dalla posizione
-// attuale, arrivo sul luogo cliccato (le tappe restano modificabili)
+// dal popup di un luogo salvato: partenza dalla posizione attuale,
+// arrivo sul luogo cliccato (le tappe restano modificabili)
 function apriPercorsoVerso(luogo){
   apriVista('percorso');
   tappe.innerHTML='';
   btnCalcola.disabled=false;btnAggTappa.disabled=false;
   esitoRotta.innerHTML='';
-  creaTappa(0);                              // partenza: posizione attuale
-  creaTappa(luoghi.indexOf(luogo)+1);        // arrivo: il luogo cliccato
+  creaTappa('gps');       // partenza: posizione attuale
+  creaTappa(luogo);       // arrivo: il luogo cliccato
 }
+// dal bottone flottante: arrivo da cercare
+document.getElementById('btnRottaFab').onclick=()=>{
+  if(vistaAttiva==='percorso'){ chiudiVista(); return; }
+  apriVista('percorso');
+  tappe.innerHTML='';
+  btnCalcola.disabled=false;btnAggTappa.disabled=false;
+  esitoRotta.innerHTML='';
+  creaTappa('gps');
+  creaTappa();
+};
 
 btnAggTappa.onclick=()=>{
   if(tappe.querySelectorAll('.riga-tappa').length>=10){
@@ -1950,7 +1998,15 @@ function risolviPunto(val){
 }
 
 btnCalcola.onclick=async()=>{
-  const valori=[...tappe.querySelectorAll('select')].map(s=>s.value);
+  const righe=[...tappe.querySelectorAll('.riga-tappa')];
+  const valori=righe.map(r=>r.dataset.val);
+  // ogni tappa deve essere stata scelta dai risultati della ricerca
+  const incomplete=righe.filter(r=>!r.dataset.val);
+  if(incomplete.length){
+    incomplete.forEach(r=>r.querySelector('input').classList.add('manca'));
+    esitoRotta.innerHTML='Completa le tappe evidenziate scegliendo un luogo dai risultati.';
+    return;
+  }
   if(valori.length<2) return;
   // tappe consecutive uguali non hanno senso
   for(let i=1;i<valori.length;i++){
@@ -2078,145 +2134,6 @@ document.getElementById('chkRadar').onchange=async e=>{
   }catch(err){
     e.target.checked=false;
     mostraToast('Radar non disponibile: riprova.');
-  }
-};
-
-// ---------- overlay vento e temperature (Open-Meteo su griglia) ----------
-// stessa fonte della card meteo (niente API key): una sola richiesta
-// multi-localita per una griglia regolare 7x8 che copre il bbox di Torino.
-// I valori vengono resi come campo continuo stile radar (interpolazione
-// bilineare su canvas -> ImageOverlay), non con leaflet.heat: quella e una
-// mappa di densita (somma punti vicini), non adatta a campi scalari.
-const LAT0=45.000,DLAT=0.024,LON0=7.535,DLON=0.0343,RIGHE_GRIGLIA=7,COLONNE_GRIGLIA=8;
-const PUNTI_GRIGLIA=(()=>{
-  const out=[];
-  for(let r=0;r<RIGHE_GRIGLIA;r++)for(let c=0;c<COLONNE_GRIGLIA;c++)
-    out.push([(LAT0+r*DLAT).toFixed(3),(LON0+c*DLON).toFixed(3)]);
-  return out;
-})();
-async function grigliaMeteo(campi){
-  const url='https://api.open-meteo.com/v1/forecast?latitude='+PUNTI_GRIGLIA.map(p=>p[0]).join(',')
-    +'&longitude='+PUNTI_GRIGLIA.map(p=>p[1]).join(',')+'&current='+campi;
-  const r=await fetch(url);
-  const j=await r.json();
-  const dati=(Array.isArray(j)?j:[j]).filter(d=>d&&d.current);
-  // l'API risponde nell'ordine della richiesta (location_id progressivo);
-  // NON si puo mappare per coordinate: vengono snappate alla griglia del
-  // modello e due punti vicini possono collassare sulla stessa cella
-  const ordinati=new Array(RIGHE_GRIGLIA*COLONNE_GRIGLIA);
-  dati.forEach((d,i)=>{
-    const k=d.location_id!==undefined?d.location_id:i;
-    if(k>=0&&k<ordinati.length) ordinati[k]=d;
-  });
-  for(let i=0;i<ordinati.length;i++)   // controllo esplicito: some() salta i buchi
-    if(!ordinati[i]||!ordinati[i].current) throw new Error('griglia incompleta');
-  return ordinati;
-}
-// scala di colori con interpolazione lineare tra i punti di controllo
-function scalaColori(stops){
-  const rgb=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
-  const cs=stops.map(s=>[s[0],rgb(s[1])]);
-  return v=>{
-    if(v<=cs[0][0]) return cs[0][1];
-    for(let i=1;i<cs.length;i++){
-      if(v<=cs[i][0]){
-        const f=(v-cs[i-1][0])/(cs[i][0]-cs[i-1][0]);
-        return cs[i-1][1].map((a,k)=>Math.round(a+(cs[i][1][k]-a)*f));
-      }
-    }
-    return cs[cs.length-1][1];
-  };
-}
-const SCALA_TEMP=scalaColori([[0,'#7e57c2'],[8,'#2a6fdb'],[14,'#29b6f6'],[19,'#26a69a'],
-                              [24,'#9ccc65'],[29,'#fbc02d'],[33,'#f57c00'],[38,'#d32f2f']]);
-const SCALA_VENTO=scalaColori([[0,'#dfe8f0'],[10,'#7fb3d5'],[20,'#2980b9'],[35,'#e67e22'],[50,'#c0392b']]);
-// campo continuo: interpolazione bilineare della griglia su canvas,
-// georeferenziato con ImageOverlay sugli estremi della griglia
-function campoInterpolato(ordinati,valore,scala){
-  const vals=[];
-  for(let r=0;r<RIGHE_GRIGLIA;r++)
-    vals.push(ordinati.slice(r*COLONNE_GRIGLIA,(r+1)*COLONNE_GRIGLIA).map(valore));
-  const cv=document.createElement('canvas');
-  cv.width=(COLONNE_GRIGLIA-1)*30; cv.height=(RIGHE_GRIGLIA-1)*30;
-  const ctx=cv.getContext('2d');
-  const img=ctx.createImageData(cv.width,cv.height);
-  for(let y=0;y<cv.height;y++){
-    // y=0 e il bordo nord (riga con latitudine massima)
-    const gy=(cv.height-1-y)/(cv.height-1)*(RIGHE_GRIGLIA-1);
-    const r0=Math.min(Math.floor(gy),RIGHE_GRIGLIA-2), fy=gy-r0;
-    for(let x=0;x<cv.width;x++){
-      const gx=x/(cv.width-1)*(COLONNE_GRIGLIA-1);
-      const c0=Math.min(Math.floor(gx),COLONNE_GRIGLIA-2), fx=gx-c0;
-      const v=vals[r0][c0]*(1-fx)*(1-fy)+vals[r0][c0+1]*fx*(1-fy)
-             +vals[r0+1][c0]*(1-fx)*fy+vals[r0+1][c0+1]*fx*fy;
-      const col=scala(v), i=(y*cv.width+x)*4;
-      img.data[i]=col[0]; img.data[i+1]=col[1]; img.data[i+2]=col[2]; img.data[i+3]=150;
-    }
-  }
-  ctx.putImageData(img,0,0);
-  const bounds=[[LAT0,LON0],[LAT0+(RIGHE_GRIGLIA-1)*DLAT,LON0+(COLONNE_GRIGLIA-1)*DLON]];
-  return L.imageOverlay(cv.toDataURL(),bounds,{opacity:.6,interactive:false});
-}
-function puntoCardinale(g){
-  return ['N','NE','E','SE','S','SO','O','NO'][Math.round(g/45)%8];
-}
-const SVG_FRECCIA='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="4"></line><polyline points="5 11 12 4 19 11"></polyline></svg>';
-
-let ventoLayer=null;
-const legendaVento=document.getElementById('legendaVento');
-document.getElementById('chkVento').onchange=async e=>{
-  if(!e.target.checked){
-    if(ventoLayer){ mappa.removeLayer(ventoLayer); ventoLayer=null; }
-    legendaVento.style.display='none';
-    return;
-  }
-  try{
-    const ordinati=await grigliaMeteo('wind_speed_10m,wind_direction_10m,wind_gusts_10m');
-    if(!e.target.checked) return;   // spento durante il download
-    // campo continuo dell'intensita + frecce (una cella su due) per la direzione
-    const strati=[campoInterpolato(ordinati,d=>d.current.wind_speed_10m,SCALA_VENTO)];
-    for(let r=0;r<RIGHE_GRIGLIA;r+=2)for(let c=0;c<COLONNE_GRIGLIA;c+=2){
-      const d=ordinati[r*COLONNE_GRIGLIA+c];
-      const v=Math.round(d.current.wind_speed_10m), dir=d.current.wind_direction_10m;
-      // la freccia punta dove va il vento (dir e la provenienza); ancorata
-      // alle coordinate richieste, non a quelle snappate dal modello
-      strati.push(L.marker([LAT0+r*DLAT,LON0+c*DLON],{icon:L.divIcon({
-        className:'freccia-vento',
-        html:'<div style="transform:rotate('+((dir+180)%360)+'deg)">'+SVG_FRECCIA+'</div>',
-        iconSize:[26,26],iconAnchor:[13,13]
-      }),keyboard:false})
-        .bindTooltip(v+' km/h da '+puntoCardinale(dir)+' · raffiche '+Math.round(d.current.wind_gusts_10m)+' km/h'));
-    }
-    ventoLayer=L.layerGroup(strati).addTo(mappa);
-    legendaVento.style.display='block';
-    const vv=ordinati.map(d=>d.current.wind_speed_10m);
-    mostraToast('Vento attuale '+Math.round(Math.min.apply(null,vv))+'–'
-      +Math.round(Math.max.apply(null,vv))+' km/h · fonte Open-Meteo');
-  }catch(err){
-    e.target.checked=false;
-    mostraToast('Dati vento non disponibili: riprova.');
-  }
-};
-
-let tempLayer=null;
-const legendaTemp=document.getElementById('legendaTemp');
-document.getElementById('chkTemperature').onchange=async e=>{
-  if(!e.target.checked){
-    if(tempLayer){ mappa.removeLayer(tempLayer); tempLayer=null; }
-    legendaTemp.style.display='none';
-    return;
-  }
-  try{
-    const ordinati=await grigliaMeteo('temperature_2m');
-    if(!e.target.checked) return;   // spento durante il download
-    tempLayer=campoInterpolato(ordinati,d=>d.current.temperature_2m,SCALA_TEMP).addTo(mappa);
-    legendaTemp.style.display='block';
-    const tt=ordinati.map(d=>d.current.temperature_2m);
-    mostraToast('Temperature attuali '+Math.round(Math.min.apply(null,tt))+'°–'
-      +Math.round(Math.max.apply(null,tt))+'° · fonte Open-Meteo');
-  }catch(err){
-    e.target.checked=false;
-    mostraToast('Temperature non disponibili: riprova.');
   }
 };
 
