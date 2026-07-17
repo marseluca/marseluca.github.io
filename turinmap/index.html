@@ -74,6 +74,17 @@ body{
 .btn-gps-flottante svg{width:23px;height:23px}
 .btn-gps-flottante.attivo{background:var(--giallo);color:var(--blu-scuro)}
 .btn-rotta-flottante{bottom:82px}
+.btn-rotta-flottante .ico-x{display:none}
+.btn-rotta-flottante.annulla .ico-rotta{display:none}
+.btn-rotta-flottante.annulla .ico-x{display:block}
+.btn-rotta-flottante.annulla{background:var(--blu-scuro);color:#fff}
+.pin-tappa{
+  width:24px;height:24px;border-radius:50%;
+  background:var(--blu-scuro);color:#fff;border:2px solid #fff;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Archivo',sans-serif;font-size:.72rem;font-weight:700;
+  box-shadow:0 1px 5px rgba(13,36,64,.45);
+}
 
 /* ---------- scheda (bottom sheet / pannello laterale) ---------- */
 .scheda{
@@ -393,7 +404,7 @@ select{
   </div>
   <button class="pill-annulla" id="pillAnnulla" type="button">Tocca la mappa per il luogo &middot; Annulla</button>
   <div class="toast" id="toast"></div>
-  <button class="btn-gps-flottante btn-rotta-flottante" id="btnRottaFab" type="button" aria-label="Calcola un percorso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="19" r="3"></circle><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"></path><circle cx="18" cy="5" r="3"></circle></svg></button>
+  <button class="btn-gps-flottante btn-rotta-flottante" id="btnRottaFab" type="button" aria-label="Calcola un percorso"><svg class="ico-rotta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="19" r="3"></circle><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"></path><circle cx="18" cy="5" r="3"></circle></svg><svg class="ico-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></button>
   <button class="btn-gps-flottante" id="btnGps" type="button" aria-label="La mia posizione"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"></circle><line x1="12" y1="2" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="22"></line><line x1="2" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="22" y2="12"></line></svg></button>
 </div>
 
@@ -1868,7 +1879,8 @@ const btnAggTappa=document.getElementById('btnAggTappa');
 const btnCalcola=document.getElementById('btnCalcola');
 const esitoRotta=document.getElementById('esitoRotta');
 const btnPulisci=document.getElementById('btnPulisci');
-let profilo='foot',lineaRotta=null,etichettaRotta=null;
+let profilo='foot',lineaRotta=null,etichettaRotta=null,marcatoriRotta=null;
+const btnRottaFab=document.getElementById('btnRottaFab');
 
 function aggiornaTogli(){
   const righe=tappe.querySelectorAll('.riga-tappa');
@@ -1945,8 +1957,17 @@ function apriPercorsoVerso(luogo){
   creaTappa('gps');       // partenza: posizione attuale
   creaTappa(luogo);       // arrivo: il luogo cliccato
 }
-// dal bottone flottante: arrivo da cercare
-document.getElementById('btnRottaFab').onclick=()=>{
+// dal bottone flottante: arrivo da cercare. Con un percorso sulla mappa
+// il FAB diventa una X: rimuove il percorso e libera i campi delle tappe
+btnRottaFab.onclick=()=>{
+  if(lineaRotta){
+    pulisciRotta();
+    esitoRotta.innerHTML='';
+    tappe.innerHTML='';
+    if(vistaAttiva==='percorso'){ creaTappa('gps'); creaTappa(); }
+    mostraToast('Percorso rimosso dalla mappa.');
+    return;
+  }
   if(vistaAttiva==='percorso'){ chiudiVista(); return; }
   apriVista('percorso');
   tappe.innerHTML='';
@@ -1975,6 +1996,8 @@ pannelloRotta.querySelectorAll('.profili button').forEach(b=>{
 function pulisciRotta(){
   if(lineaRotta){ mappa.removeLayer(lineaRotta); lineaRotta=null; }
   if(etichettaRotta){ mappa.removeLayer(etichettaRotta); etichettaRotta=null; }
+  if(marcatoriRotta){ mappa.removeLayer(marcatoriRotta); marcatoriRotta=null; }
+  btnRottaFab.classList.remove('annulla');   // il FAB torna icona percorso
   btnPulisci.style.display='none';
 }
 btnPulisci.onclick=()=>{ pulisciRotta(); esitoRotta.innerHTML=''; };
@@ -2040,6 +2063,14 @@ btnCalcola.onclick=async()=>{
     lineaRotta=L.geoJSON({type:'Feature',geometry:rotta.geometry},{
       style:{color:'#0d2440',weight:5,opacity:.85,dashArray:profilo==='foot'?'1 8':null,lineCap:'round'}
     }).addTo(mappa);
+    // marcatori temporanei delle tappe: A partenza, B arrivo (C, D... se di piu)
+    marcatoriRotta=L.layerGroup(punti.map((p,i)=>
+      L.marker([p.lat,p.lng],{icon:L.divIcon({
+        className:'',
+        html:'<div class="pin-tappa">'+String.fromCharCode(65+i)+'</div>',
+        iconSize:[24,24],iconAnchor:[12,12]
+      }),keyboard:false}).bindTooltip(p.nome)
+    )).addTo(mappa);
     mappa.flyToBounds(lineaRotta.getBounds(),{padding:[50,50],duration:.6});
     const km=(rotta.distance/1000).toFixed(rotta.distance<10000?2:1);
     const min=Math.round(rotta.duration/60);
@@ -2065,6 +2096,8 @@ btnCalcola.onclick=async()=>{
     }
     esitoRotta.innerHTML=html;
     btnPulisci.style.display='block';
+    btnRottaFab.classList.add('annulla');   // il FAB diventa X finche il percorso e sulla mappa
+    chiudiVista();                          // il risultato e visibile sulla mappa
   }catch(e){
     esitoRotta.innerHTML='Calcolo non riuscito: controlla la connessione e riprova.';
   }
