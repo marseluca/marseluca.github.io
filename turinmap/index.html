@@ -29,7 +29,17 @@ body{
   height:100dvh;font-family:'Archivo',sans-serif;color:var(--inchiostro);
   display:flex;flex-direction:column;overflow:hidden;background:var(--carta);
 }
-#mappa{flex:1;min-height:0;position:relative;z-index:1}
+#mappa{flex:1;min-height:0;position:relative;z-index:1;overflow:hidden}
+/* contenitore interno di Leaflet: ruotabile senza trascinarsi dietro
+   FAB, toast e legende (che restano figli di #mappa) */
+#tela{position:absolute;inset:0}
+#tela.ruotata{
+  /* quadrato piu grande della diagonale del viewport, centrato: ruotando
+     non si vedono gli angoli vuoti */
+  inset:auto;left:50%;top:50%;
+  width:145vmax;height:145vmax;
+  margin:-72.5vmax 0 0 -72.5vmax;
+}
 .leaflet-container{background:#e8e4da;font-family:'Archivo',sans-serif}
 .mappa-crosshair .leaflet-container{cursor:crosshair}
 
@@ -73,6 +83,12 @@ body{
 }
 .btn-gps-flottante svg{width:23px;height:23px}
 .btn-gps-flottante.attivo{background:var(--giallo);color:var(--blu-scuro)}
+/* stati del bottone posizione: 1 posizione (icona base), 2 bussola, 3 nord */
+.btn-gps-flottante .ico-bussola,.btn-gps-flottante .ico-nord{display:none}
+.btn-gps-flottante.stato-bussola .ico-pos,.btn-gps-flottante.stato-nord .ico-pos{display:none}
+.btn-gps-flottante.stato-bussola .ico-bussola{display:block}
+.btn-gps-flottante.stato-nord .ico-nord{display:block}
+.btn-gps-flottante .ico-nord{font-weight:700;font-size:1.1rem;line-height:1}
 .btn-rotta-flottante{bottom:82px}
 .btn-rotta-flottante .ico-x{display:none}
 .btn-rotta-flottante.annulla .ico-rotta{display:none}
@@ -285,6 +301,13 @@ select{
   padding:8px 14px;font-size:.8rem;line-height:1.5;display:none;max-width:74vw;
 }
 .carta-meteo strong{color:var(--blu);font-variant-numeric:tabular-nums}
+.etichetta-tappa{
+  font-family:'Archivo',sans-serif;font-size:.68rem;font-weight:600;
+  color:var(--inchiostro);background:var(--bianco);
+  border:1px solid var(--bordo);border-radius:8px;padding:3px 8px;
+  box-shadow:0 1px 4px rgba(13,36,64,.25);text-align:center;
+}
+.etichetta-tappa .indirizzo-tappa{font-weight:400;color:var(--grigio)}
 .etichetta-rotta{
   background:var(--blu-scuro);color:#fff;border:0;border-radius:16px;
   padding:5px 12px;font-family:'Archivo',sans-serif;font-size:.75rem;font-weight:600;
@@ -392,6 +415,7 @@ select{
 </head>
 <body>
 <div id="mappa">
+  <div id="tela"></div>
   <div class="pannello-info" id="info"><h2></h2><p></p></div>
   <div class="carta-meteo" id="cartaMeteo"></div>
   <div id="pilaLegende">
@@ -405,7 +429,7 @@ select{
   <button class="pill-annulla" id="pillAnnulla" type="button">Tocca la mappa per il luogo &middot; Annulla</button>
   <div class="toast" id="toast"></div>
   <button class="btn-gps-flottante btn-rotta-flottante" id="btnRottaFab" type="button" aria-label="Calcola un percorso"><svg class="ico-rotta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="19" r="3"></circle><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"></path><circle cx="18" cy="5" r="3"></circle></svg><svg class="ico-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></button>
-  <button class="btn-gps-flottante" id="btnGps" type="button" aria-label="La mia posizione"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"></circle><line x1="12" y1="2" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="22"></line><line x1="2" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="22" y2="12"></line></svg></button>
+  <button class="btn-gps-flottante" id="btnGps" type="button" aria-label="Posizione, orientamento e nord"><svg class="ico-pos" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"></circle><line x1="12" y1="2" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="22"></line><line x1="2" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="22" y2="12"></line></svg><svg class="ico-bussola" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><polygon points="12 6 15 15 12 13 9 15" fill="currentColor" stroke="none"></polygon></svg><span class="ico-nord" aria-hidden="true">N</span></button>
 </div>
 
 <div class="scheda" id="menu">
@@ -727,7 +751,7 @@ const PALETTE = ['#4a6fa5','#c9803a','#6f8f5a','#a05a6e','#5a8f8a','#8a7a4a',
                  '#4a8aa5','#c99a3a','#7f6f55','#8a5a5a','#5a6f8f','#9a8a6a',
                  '#6a8aa0','#a5764a','#5f8f6f','#8f6a9a','#4f7a8f'];
 
-const mappa = L.map('mappa',{zoomSnap:.25,zoomDelta:.5,wheelPxPerZoomLevel:90,maxZoom:20,zoomControl:false});
+const mappa = L.map('tela',{zoomSnap:.25,zoomDelta:.5,wheelPxPerZoomLevel:90,maxZoom:20,zoomControl:false});
 const BASEMAPS={
   chiaro:{nome:'Chiara',url:'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
     opt:{attribution:'&copy; OpenStreetMap &copy; CARTO',maxZoom:20,maxNativeZoom:19,updateWhenZooming:true,keepBuffer:4},scura:false},
@@ -1368,38 +1392,123 @@ async function cercaIndirizzo(){
 btnCerca.onclick=cercaIndirizzo;
 campoInd.addEventListener('keydown',e=>{ if(e.key==='Enter') cercaIndirizzo(); });
 
-// ---------- GPS ----------
+// ---------- GPS: posizione live + bussola (bottone a 4 stati) ----------
+// 0 spento -> 1 posizione in tempo reale (watchPosition, aggiornamenti
+// continui ~1/s) -> 2 orientamento (la mappa ruota con la bussola del
+// telefono) -> 3 nord (rotazione azzerata, posizione ancora live) -> 0
 const btnGps=document.getElementById('btnGps');
-let gpsAttivo=false,gpsMarker=null,gpsCerchio=null;
+const tela=document.getElementById('tela');
+let statoGps=0,gpsWatchId=null,gpsMarker=null,gpsCerchio=null,primoFix=true;
+let bussolaHandler=null,eventoBussola=null,rotAttiva=false,headingCorrente=0,frameRot=null;
+
 function rimuoviGps(){
   if(gpsMarker){mappa.removeLayer(gpsMarker);gpsMarker=null;}
   if(gpsCerchio){mappa.removeLayer(gpsCerchio);gpsCerchio=null;}
-  gpsAttivo=false;btnGps.classList.remove('attivo');
+}
+function fermaWatch(){
+  if(gpsWatchId!==null){ navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId=null; }
+}
+function avviaWatch(){
+  primoFix=true;
+  mostraToast('Posizione in tempo reale attiva.');
+  gpsWatchId=navigator.geolocation.watchPosition(p=>{
+    const ll=[p.coords.latitude,p.coords.longitude];
+    if(gpsCerchio){ gpsCerchio.setLatLng(ll); gpsCerchio.setRadius(p.coords.accuracy/2); }
+    else gpsCerchio=L.circle(ll,{radius:p.coords.accuracy/2,color:'#2a6fdb',weight:1,fillColor:'#2a6fdb',fillOpacity:.12,interactive:false}).addTo(mappa);
+    if(gpsMarker) gpsMarker.setLatLng(ll);
+    else gpsMarker=L.marker(ll,{icon:L.divIcon({className:'punto-gps',iconSize:[16,16],iconAnchor:[8,8]})})
+      .addTo(mappa).bindTooltip('La tua posizione',{direction:'top'});
+    if(primoFix){ primoFix=false; mappa.flyTo(ll,Math.max(mappa.getZoom(),15),{duration:.6}); }
+  },err=>{
+    impostaStatoGps(0);
+    mostraToast(err.code===1
+      ? 'Permesso negato: consenti l\u2019accesso alla posizione nelle impostazioni del browser.'
+      : 'Posizione non rilevata. Nota: serve HTTPS o localhost (su file locale Chrome la blocca).');
+  },{enableHighAccuracy:true,maximumAge:0,timeout:15000});
+}
+
+// rotazione della mappa: CSS sul contenitore #tela (Leaflet non ruota
+// nativamente); la vista resta centrata perche il quadrato e centrato
+function applicaRotazione(){
+  frameRot=null;
+  if(rotAttiva) tela.style.transform='rotate('+(-headingCorrente)+'deg)';
+}
+function aggiornaRotazione(h){
+  headingCorrente=h;
+  if(rotAttiva&&!frameRot) frameRot=requestAnimationFrame(applicaRotazione);
+}
+function attivaRotazione(){
+  if(rotAttiva) return;
+  const c=mappa.getCenter(),z=mappa.getZoom();
+  rotAttiva=true;
+  tela.classList.add('ruotata');
+  mappa.invalidateSize({animate:false});
+  mappa.setView(c,z,{animate:false});
+  applicaRotazione();
+}
+function disattivaRotazione(){
+  if(!rotAttiva) return;
+  const c=mappa.getCenter(),z=mappa.getZoom();
+  rotAttiva=false;
+  tela.style.transform='';
+  tela.classList.remove('ruotata');
+  mappa.invalidateSize({animate:false});
+  mappa.setView(c,z,{animate:false});
+}
+
+// bussola: webkitCompassHeading su iOS (serve un permesso da gesto utente),
+// deviceorientationabsolute su Android; alpha va invertito (0=nord, antiorario)
+function avviaBussola(){
+  if(bussolaHandler) return;
+  bussolaHandler=e=>{
+    const h=(typeof e.webkitCompassHeading==='number')?e.webkitCompassHeading
+      :(typeof e.alpha==='number'?(360-e.alpha)%360:null);
+    if(h!==null) aggiornaRotazione(h);
+  };
+  const attacca=()=>{
+    eventoBussola=('ondeviceorientationabsolute' in window)?'deviceorientationabsolute':'deviceorientation';
+    window.addEventListener(eventoBussola,bussolaHandler,true);
+  };
+  if(window.DeviceOrientationEvent&&typeof DeviceOrientationEvent.requestPermission==='function'){
+    DeviceOrientationEvent.requestPermission()
+      .then(s=>{ if(s==='granted') attacca(); else { mostraToast('Bussola: permesso negato.'); impostaStatoGps(3); } })
+      .catch(()=>{ mostraToast('Bussola non disponibile su questo dispositivo.'); impostaStatoGps(3); });
+  }else if(window.DeviceOrientationEvent){
+    attacca();
+  }else{
+    mostraToast('Bussola non disponibile su questo dispositivo.');
+    impostaStatoGps(3);
+  }
+}
+function fermaBussola(){
+  if(bussolaHandler&&eventoBussola) window.removeEventListener(eventoBussola,bussolaHandler,true);
+  bussolaHandler=null;eventoBussola=null;
+}
+
+function impostaStatoGps(n){
+  statoGps=n;
+  btnGps.classList.toggle('attivo',n>0);
+  btnGps.classList.toggle('stato-bussola',n===2);
+  btnGps.classList.toggle('stato-nord',n===3);
+  if(n===2){ avviaBussola(); attivaRotazione(); }
+  else { fermaBussola(); disattivaRotazione(); }
+  if(n===3) mostraToast('Mappa orientata a nord.');
+  if(n===0){ fermaWatch(); rimuoviGps(); }
 }
 btnGps.onclick=()=>{
-  if(gpsAttivo){ rimuoviGps(); return; }
-  if(!('geolocation' in navigator)){
-    mostraToast('Geolocalizzazione non disponibile in questo browser.');
+  if(statoGps===0){
+    if(!('geolocation' in navigator)){
+      mostraToast('Geolocalizzazione non disponibile in questo browser.');
+      return;
+    }
+    avviaWatch();
+    impostaStatoGps(1);
     return;
   }
-  mostraToast('Rilevo la posizione\u2026');
-  mappa.locate({setView:false,enableHighAccuracy:true,timeout:12000});
+  const prossimo=(statoGps+1)%4;
+  if(prossimo===0) mostraToast('Posizione rimossa.');
+  impostaStatoGps(prossimo);
 };
-mappa.on('locationfound',e=>{
-  rimuoviGps();
-  gpsAttivo=true;btnGps.classList.add('attivo');
-  gpsCerchio=L.circle(e.latlng,{radius:e.accuracy/2,color:'#2a6fdb',weight:1,fillColor:'#2a6fdb',fillOpacity:.12,interactive:false}).addTo(mappa);
-  gpsMarker=L.marker(e.latlng,{icon:L.divIcon({className:'punto-gps',iconSize:[16,16],iconAnchor:[8,8]})})
-    .addTo(mappa).bindTooltip('La tua posizione',{direction:'top'});
-  mappa.flyTo(e.latlng,Math.max(mappa.getZoom(),15),{duration:.6});
-  toast.style.display='none';
-});
-mappa.on('locationerror',e=>{
-  gpsAttivo=false;btnGps.classList.remove('attivo');
-  mostraToast(e.code===1
-    ? 'Permesso negato: consenti l\u2019accesso alla posizione nelle impostazioni del browser.'
-    : 'Posizione non rilevata. Nota: serve HTTPS o localhost (su file locale Chrome la blocca).');
-});
 
 // ---------- livelli OpenStreetMap (Overpass) ----------
 // loader generico con cache locale di 30 giorni
@@ -2002,6 +2111,36 @@ function pulisciRotta(){
 }
 btnPulisci.onclick=()=>{ pulisciRotta(); esitoRotta.innerHTML=''; };
 
+// indirizzi dei marcatori tappa: reverse geocoding Nominatim, una
+// richiesta al secondo (usage policy) e cache di sessione per coordinate
+const cacheIndirizzi={};
+async function indirizzoDi(lat,lng){
+  const k=lat.toFixed(4)+','+lng.toFixed(4);
+  if(cacheIndirizzi[k]) return cacheIndirizzi[k];
+  const r=await fetch('https://nominatim.openstreetmap.org/reverse?format=json&zoom=18&lat='+lat+'&lon='+lng,
+    {headers:{'Accept-Language':'it'}});
+  const j=await r.json();
+  const a=j.address||{};
+  const via=a.road||a.pedestrian||a.square||a.footway||a.cycleway||'';
+  const ind=via
+    ? via+(a.house_number?' '+a.house_number:'')
+    : ((j.display_name||'').split(',').slice(0,2).join(',').trim());
+  if(ind) cacheIndirizzi[k]=ind;
+  return ind;
+}
+async function aggiungiIndirizziTappe(punti,gruppo){
+  const mks=gruppo.getLayers();
+  for(let i=0;i<punti.length;i++){
+    try{
+      const ind=await indirizzoDi(punti[i].lat,punti[i].lng);
+      if(marcatoriRotta!==gruppo) return;   // percorso sostituito nel frattempo
+      if(ind&&mks[i]) mks[i].setTooltipContent(
+        punti[i].nome+'<br><span class="indirizzo-tappa">'+ind.replace(/</g,'&lt;')+'</span>');
+    }catch(e){}
+    if(i<punti.length-1) await new Promise(ok=>setTimeout(ok,1100));
+  }
+}
+
 function risolviPunto(val){
   if(val!=='gps'){
     return Promise.resolve(luoghi.find(x=>String(x.id)===val));
@@ -2069,8 +2208,10 @@ btnCalcola.onclick=async()=>{
         className:'',
         html:'<div class="pin-tappa">'+String.fromCharCode(65+i)+'</div>',
         iconSize:[24,24],iconAnchor:[12,12]
-      }),keyboard:false}).bindTooltip(p.nome)
+      }),keyboard:false})
+        .bindTooltip(p.nome,{permanent:true,direction:'bottom',offset:[0,10],className:'etichetta-tappa'})
     )).addTo(mappa);
+    aggiungiIndirizziTappe(punti,marcatoriRotta);
     mappa.flyToBounds(lineaRotta.getBounds(),{padding:[50,50],duration:.6});
     const km=(rotta.distance/1000).toFixed(rotta.distance<10000?2:1);
     const min=Math.round(rotta.duration/60);
