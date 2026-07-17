@@ -1456,6 +1456,34 @@ function disattivaRotazione(){
   mappa.setView(c,z,{animate:false});
 }
 
+// con la tela ruotata i gesti arrivano in coordinate schermo ma Leaflet
+// lavora in coordinate locali del contenitore: senza correzione il
+// trascinamento va per assi ruotati e pinch/tocchi mancano il bersaglio.
+// u = R(heading) · d riporta un vettore schermo nel sistema locale
+// (la tela e ruotata di -heading attorno al proprio centro).
+function versoLocale(dx,dy){
+  const rad=headingCorrente*Math.PI/180;
+  const cos=Math.cos(rad),sin=Math.sin(rad);
+  return [dx*cos-dy*sin,dx*sin+dy*cos];
+}
+// 1) direzione del drag: corregge lo spostamento prima che venga applicato
+mappa.dragging._draggable.on('predrag',function(){
+  if(!rotAttiva) return;
+  const off=this._newPos.subtract(this._startPos);
+  const [x,y]=versoLocale(off.x,off.y);
+  this._newPos=this._startPos.add(new L.Point(x,y));
+});
+// 2) conversione schermo -> contenitore (pinch, doppio tocco, click sulla mappa)
+const getMousePositionOrig=L.DomEvent.getMousePosition;
+L.DomEvent.getMousePosition=function(e,container){
+  if(rotAttiva&&container===tela){
+    const r=tela.getBoundingClientRect();       // AABB: il centro coincide col centro reale
+    const [x,y]=versoLocale(e.clientX-(r.left+r.width/2),e.clientY-(r.top+r.height/2));
+    return new L.Point(tela.clientWidth/2+x,tela.clientHeight/2+y);
+  }
+  return getMousePositionOrig.call(this,e,container);
+};
+
 // bussola: webkitCompassHeading su iOS (serve un permesso da gesto utente),
 // deviceorientationabsolute su Android; alpha va invertito (0=nord, antiorario)
 function avviaBussola(){
