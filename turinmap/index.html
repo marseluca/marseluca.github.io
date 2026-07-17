@@ -367,6 +367,34 @@ select{
   background:#2a6fdb;border:3px solid #fff;
   box-shadow:0 0 0 2px rgba(42,111,219,.4),0 1px 4px rgba(13,36,64,.4);
 }
+/* marker GPS: pallino + freccia di direzione (visibile solo in stato nord) */
+.gps-wrap{position:relative}
+.gps-wrap .punto-gps{position:absolute;left:50%;top:50%;margin:-8px 0 0 -8px}
+.gps-freccia{position:absolute;inset:0;display:none}
+body.gps-nord .gps-freccia{display:block}
+.gps-freccia::before{
+  content:'';position:absolute;left:50%;top:0;transform:translateX(-50%);
+  border-left:6px solid transparent;border-right:6px solid transparent;
+  border-bottom:9px solid rgba(42,111,219,.75);
+}
+/* puntatore verso nord lungo i bordi (solo in modalita orientamento) */
+.punta-nord{
+  position:absolute;z-index:1000;display:none;pointer-events:none;
+  width:26px;height:26px;
+  transform:translate(-50%,-50%) rotate(var(--rot,0deg));
+}
+.punta-nord::before{
+  content:'';position:absolute;left:50%;top:-6px;transform:translateX(-50%);
+  border-left:5px solid transparent;border-right:5px solid transparent;
+  border-bottom:6px solid rgba(192,57,43,.85);
+}
+.punta-nord span{
+  display:flex;width:100%;height:100%;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.82);border:1px solid var(--bordo);border-radius:50%;
+  font-family:'Archivo',sans-serif;font-size:.7rem;font-weight:700;color:var(--blu);
+  transform:rotate(calc(var(--rot,0deg)*-1));
+  box-shadow:0 1px 4px rgba(13,36,64,.25);
+}
 .popup-luogo input{
   font-family:'Archivo',sans-serif;font-size:16px;padding:5px 8px;
   border:1px solid var(--bordo);border-radius:4px;width:160px;
@@ -428,6 +456,7 @@ select{
   </div>
   <button class="pill-annulla" id="pillAnnulla" type="button">Tocca la mappa per il luogo &middot; Annulla</button>
   <div class="toast" id="toast"></div>
+  <div class="punta-nord" id="puntaNord" aria-hidden="true"><span>N</span></div>
   <button class="btn-gps-flottante btn-rotta-flottante" id="btnRottaFab" type="button" aria-label="Calcola un percorso"><svg class="ico-rotta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="19" r="3"></circle><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"></path><circle cx="18" cy="5" r="3"></circle></svg><svg class="ico-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></button>
   <button class="btn-gps-flottante" id="btnGps" type="button" aria-label="Posizione, orientamento e nord"><svg class="ico-pos" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"></circle><line x1="12" y1="2" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="22"></line><line x1="2" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="22" y2="12"></line></svg><svg class="ico-bussola" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><polygon points="12 6 15 15 12 13 9 15" fill="currentColor" stroke="none"></polygon></svg><span class="ico-nord" aria-hidden="true">N</span></button>
 </div>
@@ -1416,8 +1445,11 @@ function avviaWatch(){
     if(gpsCerchio){ gpsCerchio.setLatLng(ll); gpsCerchio.setRadius(p.coords.accuracy/2); }
     else gpsCerchio=L.circle(ll,{radius:p.coords.accuracy/2,color:'#2a6fdb',weight:1,fillColor:'#2a6fdb',fillOpacity:.12,interactive:false}).addTo(mappa);
     if(gpsMarker) gpsMarker.setLatLng(ll);
-    else gpsMarker=L.marker(ll,{icon:L.divIcon({className:'punto-gps',iconSize:[16,16],iconAnchor:[8,8]})})
-      .addTo(mappa).bindTooltip('La tua posizione',{direction:'top'});
+    else gpsMarker=L.marker(ll,{icon:L.divIcon({
+        className:'gps-wrap',
+        html:'<div class="gps-freccia"></div><div class="punto-gps"></div>',
+        iconSize:[40,40],iconAnchor:[20,20]
+      })}).addTo(mappa).bindTooltip('La tua posizione',{direction:'top'});
     if(primoFix){ primoFix=false; mappa.flyTo(ll,Math.max(mappa.getZoom(),15),{duration:.6}); }
   },err=>{
     impostaStatoGps(0);
@@ -1429,13 +1461,37 @@ function avviaWatch(){
 
 // rotazione della mappa: CSS sul contenitore #tela (Leaflet non ruota
 // nativamente); la vista resta centrata perche il quadrato e centrato
+const puntaNord=document.getElementById('puntaNord');
+// badge "N" lungo i bordi: intersezione tra il raggio dal centro verso
+// nord (in coordinate schermo) e il rettangolo del viewport
+function aggiornaPuntaNord(){
+  const w=document.getElementById('mappa').clientWidth;
+  const h=document.getElementById('mappa').clientHeight;
+  const rad=headingCorrente*Math.PI/180;
+  const dx=-Math.sin(rad),dy=-Math.cos(rad);
+  const margine=26;
+  const t=Math.min(
+    dx?(w/2-margine)/Math.abs(dx):Infinity,
+    dy?(h/2-margine)/Math.abs(dy):Infinity
+  );
+  puntaNord.style.left=(w/2+dx*t)+'px';
+  puntaNord.style.top=(h/2+dy*t)+'px';
+  puntaNord.style.setProperty('--rot',(-headingCorrente)+'deg');
+}
 function applicaRotazione(){
   frameRot=null;
-  if(rotAttiva) tela.style.transform='rotate('+(-headingCorrente)+'deg)';
+  if(rotAttiva){
+    tela.style.transform='rotate('+(-headingCorrente)+'deg)';
+    aggiornaPuntaNord();
+  }else if(statoGps===3&&gpsMarker&&gpsMarker.getElement){
+    // stato nord: la mappa non ruota, la freccia sul punto blu segue il telefono
+    const fr=gpsMarker.getElement()&&gpsMarker.getElement().querySelector('.gps-freccia');
+    if(fr) fr.style.transform='rotate('+headingCorrente+'deg)';
+  }
 }
 function aggiornaRotazione(h){
   headingCorrente=h;
-  if(rotAttiva&&!frameRot) frameRot=requestAnimationFrame(applicaRotazione);
+  if((rotAttiva||statoGps===3)&&!frameRot) frameRot=requestAnimationFrame(applicaRotazione);
 }
 function attivaRotazione(){
   if(rotAttiva) return;
@@ -1518,9 +1574,13 @@ function impostaStatoGps(n){
   btnGps.classList.toggle('attivo',n>0);
   btnGps.classList.toggle('stato-bussola',n===2);
   btnGps.classList.toggle('stato-nord',n===3);
-  if(n===2){ avviaBussola(); attivaRotazione(); }
-  else { fermaBussola(); disattivaRotazione(); }
-  if(n===3) mostraToast('Mappa orientata a nord.');
+  // bussola attiva in orientamento E in nord (per la freccia sul punto blu)
+  if(n===2||n===3) avviaBussola(); else fermaBussola();
+  if(n===2) attivaRotazione(); else disattivaRotazione();
+  puntaNord.style.display = n===2 ? 'block' : 'none';
+  if(n===2) aggiornaPuntaNord();
+  document.body.classList.toggle('gps-nord',n===3);
+  if(n===3){ mostraToast('Mappa orientata a nord.'); applicaRotazione(); }
   if(n===0){ fermaWatch(); rimuoviGps(); }
 }
 btnGps.onclick=()=>{
