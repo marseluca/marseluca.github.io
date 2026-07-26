@@ -33,6 +33,10 @@ body{
 /* contenitore interno di Leaflet: ruotabile senza trascinarsi dietro
    FAB, toast e legende (che restano figli di #mappa) */
 #tela{position:absolute;inset:0}
+/* testo leggibile con la mappa sottosopra: si capovolge una volta sola,
+   oltre i 90 gradi di rotazione, invece di ruotare di continuo */
+.gira{display:inline-block}
+#tela.capovolta .gira{transform:rotate(180deg)}
 #tela.ruotata{
   /* quadrato piu grande della diagonale del viewport, centrato: ruotando
      non si vedono gli angoli vuoti */
@@ -83,12 +87,13 @@ body{
 }
 .btn-gps-flottante svg{width:23px;height:23px}
 .btn-gps-flottante.attivo{background:var(--giallo);color:var(--blu-scuro)}
-/* stati del bottone posizione: 1 posizione (icona base), 2 bussola, 3 nord */
-.btn-gps-flottante .ico-bussola,.btn-gps-flottante .ico-nord{display:none}
-.btn-gps-flottante.stato-bussola .ico-pos,.btn-gps-flottante.stato-nord .ico-pos{display:none}
-.btn-gps-flottante.stato-bussola .ico-bussola{display:block}
-.btn-gps-flottante.stato-nord .ico-nord{display:block}
-.btn-gps-flottante .ico-nord{font-weight:700;font-size:1.1rem;line-height:1}
+/* bottone orientamento (in alto a destra): N = mappa a nord, ago = direzione */
+.btn-orienta{top:12px;right:12px;bottom:auto}
+.btn-orienta .ico-bussola{display:none}
+.btn-orienta.stato-bussola .ico-nord{display:none}
+.btn-orienta.stato-bussola .ico-bussola{display:block}
+.btn-orienta.stato-bussola{background:var(--giallo);color:var(--blu-scuro)}
+.btn-orienta .ico-nord{font-weight:700;font-size:1.1rem;line-height:1}
 .btn-rotta-flottante{bottom:82px}
 .btn-reg-flottante{bottom:140px}
 .btn-reg-flottante .ico-stop{display:none}
@@ -464,7 +469,8 @@ select{
   <div class="punta-nord" id="puntaNord" aria-hidden="true"><span>N</span></div>
   <button class="btn-gps-flottante btn-reg-flottante" id="btnRegistra" type="button" aria-label="Registra il percorso"><svg class="ico-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="8 5 19 12 8 19"></polygon></svg><svg class="ico-stop" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5"></rect></svg></button>
   <button class="btn-gps-flottante btn-rotta-flottante" id="btnRottaFab" type="button" aria-label="Calcola un percorso"><svg class="ico-rotta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="19" r="3"></circle><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"></path><circle cx="18" cy="5" r="3"></circle></svg><svg class="ico-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></button>
-  <button class="btn-gps-flottante" id="btnGps" type="button" aria-label="Posizione, orientamento e nord"><svg class="ico-pos" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"></circle><line x1="12" y1="2" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="22"></line><line x1="2" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="22" y2="12"></line></svg><svg class="ico-bussola" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><polygon points="12 6 15 15 12 13 9 15" fill="currentColor" stroke="none"></polygon></svg><span class="ico-nord" aria-hidden="true">N</span></button>
+  <button class="btn-gps-flottante" id="btnGps" type="button" aria-label="La mia posizione"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"></circle><line x1="12" y1="2" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="22"></line><line x1="2" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="22" y2="12"></line></svg></button>
+  <button class="btn-gps-flottante btn-orienta" id="btnOrienta" type="button" aria-label="Orientamento della mappa: nord o direzione"><span class="ico-nord" aria-hidden="true">N</span><svg class="ico-bussola" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><polygon points="12 6 15 15 12 13 9 15" fill="currentColor" stroke="none"></polygon></svg></button>
 </div>
 
 <div class="scheda" id="menu">
@@ -786,6 +792,15 @@ const PALETTE = ['#4a6fa5','#c9803a','#6f8f5a','#a05a6e','#5a8f8a','#8a7a4a',
                  '#4a8aa5','#c99a3a','#7f6f55','#8a5a5a','#5a6f8f','#9a8a6a',
                  '#6a8aa0','#a5764a','#5f8f6f','#8f6a9a','#4f7a8f'];
 
+// i tooltip ricevono un wrapper interno .gira: il contenitore esterno e
+// posizionato da Leaflet via transform, quindi il capovolgimento del
+// testo (mappa sottosopra) deve stare su un figlio, non sull'elemento
+const initLayoutTooltip=L.Tooltip.prototype._initLayout;
+L.Tooltip.prototype._initLayout=function(){
+  initLayoutTooltip.call(this);
+  this._contentNode=L.DomUtil.create('span','gira',this._container);
+};
+
 const mappa = L.map('tela',{zoomSnap:.25,zoomDelta:.5,wheelPxPerZoomLevel:90,maxZoom:20,zoomControl:false});
 const BASEMAPS={
   chiaro:{nome:'Chiara',url:'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
@@ -948,7 +963,7 @@ mappa.on('zoomend',()=>{
 DATI.features.forEach(f=>{
   const b=layers[f.properties.id].getBounds();
   etichette[f.properties.id]=L.marker(b.getCenter(),{
-    icon:L.divIcon({className:'etichetta',html:f.properties.nome,iconSize:null}),interactive:false
+    icon:L.divIcon({className:'etichetta',html:'<span class="gira">'+f.properties.nome+'</span>',iconSize:null}),interactive:false
   }).addTo(mappa);
 });
 
@@ -958,7 +973,7 @@ const menu=document.getElementById('menu');
 
 // i pannelli sono sovrapposti alla mappa: senza questo, rotella e trascinamento
 // arrivano a Leaflet (zoom/pan della mappa) invece di scorrere il pannello
-['menu','info','btnGps','btnRottaFab','btnRegistra','toast','pillAnnulla','cartaMeteo','pilaLegende']
+['menu','info','btnGps','btnOrienta','btnRottaFab','btnRegistra','toast','pillAnnulla','cartaMeteo','pilaLegende']
   .forEach(id=>{
     const el=document.getElementById(id);
     if(!el) return;
@@ -1151,7 +1166,7 @@ function disegnaLuogo(l){
     iconSize:[26,26],iconAnchor:[13,22],popupAnchor:[0,-20]
   });
   const m=L.marker([l.lat,l.lng],{icon:icona,riseOnHover:true}).addTo(gruppoLuoghi);
-  L.marker([l.lat,l.lng],{icon:L.divIcon({className:'etichetta-luogo',html:l.nome,iconSize:null,iconAnchor:[-6,6]}),interactive:false}).addTo(gruppoLuoghi);
+  L.marker([l.lat,l.lng],{icon:L.divIcon({className:'etichetta-luogo',html:'<span class="gira">'+l.nome+'</span>',iconSize:null,iconAnchor:[-6,6]}),interactive:false}).addTo(gruppoLuoghi);
   m.bindPopup(()=>{
     const div=document.createElement('div');
     div.className='popup-luogo';
@@ -1300,7 +1315,7 @@ document.getElementById('btnCondividi').onclick=async()=>{
         })}).addTo(gruppo)
           .bindPopup('<strong>'+nome.replace(/</g,'&lt;')+'</strong>'
             +(li?'<br><span style="color:var(--grigio)">'+String(li.nome).replace(/</g,'&lt;')+'</span>':''));
-        L.marker([l.lat,l.lng],{icon:L.divIcon({className:'etichetta-luogo',html:nome.replace(/</g,'&lt;'),iconSize:null,iconAnchor:[-6,6]}),interactive:false}).addTo(gruppo);
+        L.marker([l.lat,l.lng],{icon:L.divIcon({className:'etichetta-luogo',html:'<span class="gira">'+nome.replace(/</g,'&lt;')+'</span>',iconSize:null,iconAnchor:[-6,6]}),interactive:false}).addTo(gruppo);
       });
       mappa.fitBounds(L.featureGroup(gruppo.getLayers()).getBounds(),{padding:[60,60],maxZoom:16});
       mostraToast(arr.length+' luoghi da un link condiviso: solo in visualizzazione, non vengono salvati.');
@@ -1427,13 +1442,15 @@ async function cercaIndirizzo(){
 btnCerca.onclick=cercaIndirizzo;
 campoInd.addEventListener('keydown',e=>{ if(e.key==='Enter') cercaIndirizzo(); });
 
-// ---------- GPS: posizione live + bussola (bottone a 3 stati) ----------
-// 0 spento -> 1 nord (posizione in tempo reale via watchPosition, mappa
-// a nord, freccia sul punto blu che segue il telefono) -> 2 direzione
-// (la mappa ruota con la bussola, badge N sui bordi) -> 0 rimuovi
+// ---------- GPS e orientamento (due comandi indipendenti) ----------
+// btnGps (in basso a destra): accende la posizione live e centra la
+// mappa sul punto; se e gia attiva, ricentra e basta.
+// btnOrienta (in alto a destra): alterna nord <-> direzione (bussola).
 const btnGps=document.getElementById('btnGps');
+const btnOrienta=document.getElementById('btnOrienta');
 const tela=document.getElementById('tela');
-let statoGps=0,gpsWatchId=null,gpsMarker=null,gpsCerchio=null,primoFix=true;
+let gpsAttivo=false,modoDirezione=false;
+let gpsWatchId=null,gpsMarker=null,gpsCerchio=null,primoFix=true;
 let bussolaHandler=null,eventoBussola=null,rotAttiva=false,headingCorrente=0,frameRot=null,rotManuale=0;
 
 function rimuoviGps(){
@@ -1457,8 +1474,9 @@ function avviaWatch(){
         iconSize:[40,40],iconAnchor:[20,20]
       })}).addTo(mappa).bindTooltip('La tua posizione',{direction:'top'});
     if(primoFix){ primoFix=false; mappa.flyTo(ll,Math.max(mappa.getZoom(),15),{duration:.6}); }
+    applicaRotazione();   // orienta subito la freccia sul punto
   },err=>{
-    impostaStatoGps(0);
+    spegniGps();
     mostraToast(err.code===1
       ? 'Permesso negato: consenti l\u2019accesso alla posizione nelle impostazioni del browser.'
       : 'Posizione non rilevata. Nota: serve HTTPS o localhost (su file locale Chrome la blocca).');
@@ -1473,7 +1491,7 @@ const puntaNord=document.getElementById('puntaNord');
 // angolo CSS applicato alla tela: in modalita direzione la bussola porta
 // in alto la direzione del telefono, sommata alla rotazione a due dita
 function angoloMappa(){
-  return statoGps===2 ? rotManuale-headingCorrente : rotManuale;
+  return modoDirezione ? rotManuale-headingCorrente : rotManuale;
 }
 function aggiornaPuntaNord(){
   const w=document.getElementById('mappa').clientWidth;
@@ -1496,6 +1514,10 @@ function applicaRotazione(){
     tela.style.transform='rotate('+angoloMappa()+'deg)';
     aggiornaPuntaNord();
   }
+  // oltre il quarto di giro il testo sarebbe a testa in giu: si capovolge
+  // (fuori dal ramo ruotato, cosi tornando dritti la classe si toglie)
+  const n=rotAttiva?((angoloMappa()%360)+360)%360:0;
+  tela.classList.toggle('capovolta',n>90&&n<270);
   // la freccia vive dentro la tela, dove il nord e sempre in alto:
   // basta ruotarla dell'heading, in qualunque modalita
   if(gpsMarker&&gpsMarker.getElement&&gpsMarker.getElement()){
@@ -1509,7 +1531,7 @@ function aggiornaRotazione(h){
 }
 // la tela ruotata serve in modalita direzione o con una rotazione manuale
 function sincronizzaTela(){
-  const serve = statoGps===2 || Math.abs(rotManuale%360)>0.01;
+  const serve = modoDirezione || Math.abs(rotManuale%360)>0.01;
   if(serve===rotAttiva){ if(rotAttiva) applicaRotazione(); return; }
   const c=mappa.getCenter(),z=mappa.getZoom();
   rotAttiva=serve;
@@ -1522,24 +1544,42 @@ function sincronizzaTela(){
 function attivaRotazione(){ sincronizzaTela(); }
 function disattivaRotazione(){ sincronizzaTela(); }
 
-// ---------- rotazione della mappa con due dita ----------
+// ---------- gesto a due dita: o zoom o rotazione, mai insieme ----------
+// il primo movimento che supera la sua soglia decide il modo per tutto
+// il gesto: pizzicare non fa piu ruotare la mappa e viceversa
 (function(){
-  let angolo0=null,rot0=0;
-  const angoloTocchi=t=>Math.atan2(t[1].clientY-t[0].clientY,t[1].clientX-t[0].clientX)*180/Math.PI;
+  const SOGLIA_PIZZICO=28,SOGLIA_ANGOLO=11;   // px e gradi
+  let attivo=false,modo=null,angolo0=0,dist0=0,rot0=0;
+  const ang=t=>Math.atan2(t[1].clientY-t[0].clientY,t[1].clientX-t[0].clientX)*180/Math.PI;
+  const dist=t=>Math.hypot(t[1].clientX-t[0].clientX,t[1].clientY-t[0].clientY);
+  const diffAngolo=(a,b)=>{ let d=(a-b)%360; if(d>180)d-=360; if(d<-180)d+=360; return d; };
   tela.addEventListener('touchstart',e=>{
-    if(e.touches.length!==2) return;
-    angolo0=angoloTocchi(e.touches); rot0=rotManuale;
+    if(e.touches.length!==2){ attivo=false; return; }
+    attivo=true;modo=null;
+    angolo0=ang(e.touches);dist0=dist(e.touches);rot0=rotManuale;
   },{passive:true});
   tela.addEventListener('touchmove',e=>{
-    if(angolo0===null||e.touches.length!==2) return;
-    rotManuale=rot0+(angoloTocchi(e.touches)-angolo0);
+    if(!attivo||e.touches.length!==2) return;
+    const dA=diffAngolo(ang(e.touches),angolo0), dD=dist(e.touches)-dist0;
+    if(!modo){
+      // vince la soglia superata per prima
+      if(Math.abs(dD)>SOGLIA_PIZZICO) modo='zoom';
+      else if(Math.abs(dA)>SOGLIA_ANGOLO) modo='rotazione';
+      else return;
+    }
+    if(modo==='zoom') return;               // lo zoom lo fa Leaflet
+    // rotazione: si toglie di mezzo il pizzico di Leaflet gia avviato
+    if(mappa.touchZoom&&mappa.touchZoom._zooming) mappa.touchZoom._zooming=false;
+    rotManuale=rot0+dA;
     if(!rotAttiva) sincronizzaTela();       // prima rotazione: passa a tela ruotata
     else if(!frameRot) frameRot=requestAnimationFrame(applicaRotazione);
   },{passive:true});
   tela.addEventListener('touchend',e=>{
-    if(e.touches.length<2) angolo0=null;
+    if(e.touches.length>=2) return;
+    const eraRotazione=modo==='rotazione';
+    attivo=false;modo=null;
     // vicino allo zero si riaggancia al nord, cosi si torna facilmente dritti
-    if(angolo0===null&&statoGps!==2){
+    if(eraRotazione&&!modoDirezione){
       const n=((rotManuale%360)+360)%360;
       if(n<6||n>354){ rotManuale=0; sincronizzaTela(); }
     }
@@ -1587,12 +1627,11 @@ function avviaBussola(){
     eventoBussola=('ondeviceorientationabsolute' in window)?'deviceorientationabsolute':'deviceorientation';
     window.addEventListener(eventoBussola,bussolaHandler,true);
   };
-  // senza bussola: lo stato nord resta utile (posizione senza freccia),
-  // la modalita direzione no -> si torna a nord
+  // senza bussola la modalita direzione non ha senso: si torna a nord
   const fallita=msg=>{
     mostraToast(msg);
     fermaBussola();
-    if(statoGps===2) impostaStatoGps(1);
+    if(modoDirezione) impostaOrientamento(false);
   };
   if(window.DeviceOrientationEvent&&typeof DeviceOrientationEvent.requestPermission==='function'){
     DeviceOrientationEvent.requestPermission()
@@ -1609,33 +1648,55 @@ function fermaBussola(){
   bussolaHandler=null;eventoBussola=null;
 }
 
-function impostaStatoGps(n){
-  statoGps=n;
-  btnGps.classList.toggle('attivo',n>0);
-  btnGps.classList.toggle('stato-nord',n===1);
-  btnGps.classList.toggle('stato-bussola',n===2);
-  // bussola attiva in entrambi gli stati (freccia sul punto o rotazione mappa)
-  if(n===1||n===2) avviaBussola(); else fermaBussola();
-  if(n===2) attivaRotazione(); else disattivaRotazione();
-  puntaNord.style.display = n===2 ? 'block' : 'none';
-  if(n===2) aggiornaPuntaNord();
-  if(n>0) applicaRotazione();   // freccia subito con l'heading corrente
-  if(n===0){ fermaWatch(); rimuoviGps(); }
+// la bussola serve per ruotare la mappa (direzione) e per la freccia sul
+// punto blu (posizione attiva): resta accesa se almeno uno dei due lo e
+function sincronizzaBussola(){
+  if(modoDirezione||gpsAttivo) avviaBussola(); else fermaBussola();
+}
+function spegniGps(){
+  gpsAttivo=false;
+  fermaWatch(); rimuoviGps();
+  btnGps.classList.remove('attivo');
+  sincronizzaBussola();
 }
 btnGps.onclick=()=>{
-  if(statoGps===0){
-    if(!('geolocation' in navigator)){
-      mostraToast('Geolocalizzazione non disponibile in questo browser.');
-      return;
-    }
-    avviaWatch();
-    impostaStatoGps(1);
+  if(gpsAttivo){
+    // gia attiva: la mappa torna sul punto
+    if(gpsMarker) mappa.flyTo(gpsMarker.getLatLng(),Math.max(mappa.getZoom(),15),{duration:.6});
+    else mostraToast('Attendo il primo rilevamento…');
     return;
   }
-  const prossimo=(statoGps+1)%3;
-  if(prossimo===0) mostraToast('Posizione rimossa.');
-  else if(prossimo===2) mostraToast('Mappa orientata nella direzione del telefono.');
-  impostaStatoGps(prossimo);
+  if(!('geolocation' in navigator)){
+    mostraToast('Geolocalizzazione non disponibile in questo browser.');
+    return;
+  }
+  gpsAttivo=true;
+  btnGps.classList.add('attivo');
+  primoFix=true;          // il primo fix centra la mappa
+  avviaWatch();
+  sincronizzaBussola();
+};
+// tocco lungo sul bottone posizione: spegne il rilevamento
+btnGps.addEventListener('contextmenu',e=>{
+  e.preventDefault();
+  if(gpsAttivo){ spegniGps(); mostraToast('Posizione disattivata.'); }
+});
+
+function impostaOrientamento(direzione){
+  modoDirezione=direzione;
+  btnOrienta.classList.toggle('stato-bussola',direzione);
+  if(direzione) rotManuale=0;   // si parte allineati alla bussola
+  sincronizzaBussola();
+  sincronizzaTela();
+  puntaNord.style.display = direzione ? 'block' : 'none';
+  if(direzione) aggiornaPuntaNord();
+  applicaRotazione();
+}
+btnOrienta.onclick=()=>{
+  const nuovo=!modoDirezione;
+  if(!nuovo){ rotManuale=0; }   // torna a nord anche dopo una rotazione manuale
+  impostaOrientamento(nuovo);
+  mostraToast(nuovo?'Mappa orientata nella direzione del telefono.':'Mappa orientata a nord.');
 };
 
 // ---------- livelli OpenStreetMap (Overpass) ----------
@@ -2334,7 +2395,7 @@ btnCalcola.onclick=async()=>{
     marcatoriRotta=L.layerGroup(punti.map((p,i)=>
       L.marker([p.lat,p.lng],{icon:L.divIcon({
         className:'',
-        html:'<div class="pin-tappa">'+String.fromCharCode(65+i)+'</div>',
+        html:'<div class="pin-tappa gira">'+String.fromCharCode(65+i)+'</div>',
         iconSize:[24,24],iconAnchor:[12,12]
       }),keyboard:false})
         .bindTooltip(p.nome,{permanent:true,direction:'bottom',offset:[0,10],className:'etichetta-tappa'})
