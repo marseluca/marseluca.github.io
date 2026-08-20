@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Luca — Fantacalcio</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .eyebrow { color: var(--c-fanta); }
+    .btn-accent { background: var(--c-fanta); border-color: var(--c-fanta); }
+    .nav a[aria-current="page"] { border-bottom-color: var(--c-fanta); }
+
+    .setup { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.9rem; align-items: end; margin-bottom: 1.5rem; }
+    .setup .full { grid-column: 1 / -1; }
+
+    .pick-form { display: grid; grid-template-columns: 2fr 1.4fr 0.9fr 0.9fr 1.4fr; gap: 0.9rem; align-items: end; margin-bottom: 1.5rem; }
+    .pick-form .full { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
+
+    .alert {
+      font-size: 0.88rem; border-radius: 10px; padding: 0.55rem 0.8rem;
+      background: #fdf1ec; color: #b04a2a; border: 1px solid #f4d9cd;
+    }
+    .alert[hidden] { display: none; }
+
+    .filters { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin-bottom: 1.5rem; }
+    .chip {
+      border: 1px solid var(--line); background: var(--surface); color: var(--muted);
+      border-radius: 999px; padding: 0.35rem 0.8rem; font-size: 0.85rem; font-weight: 500; cursor: pointer;
+    }
+    .chip[aria-pressed="true"] { background: var(--c-fanta); border-color: var(--c-fanta); color: #fff; }
+    .filters .field { flex: 1 1 200px; }
+
+    .badge.r-P { background: #fdf0da; color: #a8761a; }
+    .badge.r-D { background: #e7f3ee; color: var(--c-allenamenti); }
+    .badge.r-C { background: #eef0f8; color: var(--c-libri); }
+    .badge.r-A { background: #fbe9e7; color: #c0392b; }
+
+    .teams { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.9rem; }
+    .team { display: flex; flex-direction: column; gap: 0.75rem; }
+    .team-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
+    .team-head h3 { font-family: var(--display); font-size: 1.1rem; margin: 0; }
+    .team-head .rest { font-family: var(--display); font-weight: 700; font-size: 1.2rem; white-space: nowrap; }
+    .team-head .rest small { font-family: var(--body); font-weight: 500; font-size: 0.72rem; color: var(--muted); display: block; text-align: right; }
+
+    .bar { height: 6px; border-radius: 999px; background: var(--line); overflow: hidden; }
+    .bar span { display: block; height: 100%; background: var(--c-fanta); }
+
+    .slots { display: flex; flex-wrap: wrap; gap: 0.35rem; font-size: 0.78rem; color: var(--muted); }
+    .slots b { color: var(--ink); font-weight: 600; }
+    .slots .done { color: var(--c-allenamenti); }
+
+    .roster { list-style: none; margin: 0; padding: 0; font-size: 0.92rem; }
+    .roster li {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.35rem 0; border-top: 1px solid var(--line);
+    }
+    .roster li .who { flex: 1; min-width: 0; }
+    .roster li .who .club { color: var(--muted); font-size: 0.8rem; }
+    .roster li .price { font-family: var(--display); font-weight: 600; white-space: nowrap; }
+    .roster .none { color: var(--muted); font-size: 0.85rem; padding: 0.35rem 0; border-top: 1px solid var(--line); }
+
+    .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.75rem; }
+
+    @media (max-width: 700px) {
+      .setup, .pick-form { grid-template-columns: 1fr 1fr; }
+      .teams { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      .setup, .pick-form { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="index.html">Luca</a>
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="ricette.html">Ricette</a></li>
+      <li><a href="bitcoin.html">Bitcoin</a></li>
+      <li><a href="allenamenti.html">Allenamenti</a></li>
+      <li><a href="libri.html">Libri</a></li>
+      <li><a href="modellazione3d.html">Modellazione 3D</a></li>
+      <li><a href="fantacalcio.html" aria-current="page">Fantacalcio</a></li>
+    </ul>
+  </nav>
+
+  <main class="wrap">
+    <header class="page-head">
+      <p class="eyebrow">Asta</p>
+      <h1 class="title">Fantacalcio</h1>
+      <p class="lead">Tieni il conto dei crediti, degli slot e di chi si prende chi durante l'asta.</p>
+    </header>
+
+    <div class="stats">
+      <div class="stat"><div class="n" id="s-teams">0</div><div class="l">Squadre</div></div>
+      <div class="stat"><div class="n" id="s-picks">0</div><div class="l">Giocatori assegnati</div></div>
+      <div class="stat"><div class="n" id="s-spent">0</div><div class="l">Crediti spesi</div></div>
+      <div class="stat"><div class="n" id="s-avg">0</div><div class="l">Prezzo medio</div></div>
+    </div>
+
+    <p class="section-divider">Impostazioni asta</p>
+
+    <div class="card setup">
+      <div class="field">
+        <label for="budget">Crediti</label>
+        <input id="budget" type="number" min="1" step="1" value="500" />
+      </div>
+      <div class="field">
+        <label for="slot-P">Portieri</label>
+        <input id="slot-P" type="number" min="0" step="1" value="3" />
+      </div>
+      <div class="field">
+        <label for="slot-D">Difensori</label>
+        <input id="slot-D" type="number" min="0" step="1" value="8" />
+      </div>
+      <div class="field">
+        <label for="slot-C">Centrocampisti</label>
+        <input id="slot-C" type="number" min="0" step="1" value="8" />
+      </div>
+      <div class="field">
+        <label for="slot-A">Attaccanti</label>
+        <input id="slot-A" type="number" min="0" step="1" value="6" />
+      </div>
+      <div class="full field">
+        <label for="team-name">Aggiungi una squadra</label>
+        <div style="display:flex; gap:0.6rem; flex-wrap:wrap">
+          <input id="team-name" type="text" placeholder="Nome della squadra" style="flex:1 1 220px" />
+          <button class="btn btn-accent" id="add-team">Aggiungi squadra</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="section-divider">Assegna un giocatore</p>
+
+    <div class="card pick-form">
+      <div class="field">
+        <label for="p-name">Giocatore</label>
+        <input id="p-name" type="text" placeholder="Es. Lautaro" />
+      </div>
+      <div class="field">
+        <label for="p-club">Club</label>
+        <input id="p-club" type="text" placeholder="Es. Inter" />
+      </div>
+      <div class="field">
+        <label for="p-role">Ruolo</label>
+        <select id="p-role">
+          <option value="P">P</option>
+          <option value="D">D</option>
+          <option value="C" selected>C</option>
+          <option value="A">A</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="p-price">Prezzo</label>
+        <input id="p-price" type="number" min="1" step="1" value="1" />
+      </div>
+      <div class="field">
+        <label for="p-team">Acquirente</label>
+        <select id="p-team"></select>
+      </div>
+      <div class="full">
+        <button class="btn btn-accent" id="assign">Assegna</button>
+        <span class="meta" id="hint"></span>
+      </div>
+      <div class="full"><div class="alert" id="alert" hidden></div></div>
+    </div>
+
+    <p class="section-divider">Rose</p>
+
+    <div class="filters">
+      <div class="field">
+        <input id="search" type="search" placeholder="Cerca giocatore o squadra…" aria-label="Cerca giocatore" />
+      </div>
+      <button class="chip" data-role="" aria-pressed="true">Tutti</button>
+      <button class="chip" data-role="P" aria-pressed="false">P</button>
+      <button class="chip" data-role="D" aria-pressed="false">D</button>
+      <button class="chip" data-role="C" aria-pressed="false">C</button>
+      <button class="chip" data-role="A" aria-pressed="false">A</button>
+    </div>
+
+    <div class="teams" id="teams"></div>
+    <div class="empty" id="empty" hidden>Nessuna squadra: aggiungine una qui sopra per iniziare l'asta.</div>
+
+    <div class="actions">
+      <button class="btn" id="export">Esporta JSON</button>
+      <button class="btn" id="reset">Azzera asta</button>
+    </div>
+
+    <p class="note">Tutto resta salvato nel browser (localStorage): puoi chiudere la pagina e riprendere l'asta da dove eri.</p>
+  </main>
+
+  <footer class="site">&copy; <span id="y"></span> Luca</footer>
+
+  <script>
+    const KEY = "luca_fantacalcio";
+    const ROLES = ["P", "D", "C", "A"];
+    const ROLE_LABEL = { P: "Portieri", D: "Difensori", C: "Centrocampisti", A: "Attaccanti" };
+
+    const emptyState = () => ({
+      budget: 500,
+      slots: { P: 3, D: 8, C: 8, A: 6 },
+      teams: [],
+      picks: []
+    });
+
+    // Storage con fallback in memoria (così funziona anche dove localStorage è bloccato)
+    const store = {
+      mem: null,
+      load() {
+        try { return JSON.parse(localStorage.getItem(KEY)) || emptyState(); }
+        catch { return this.mem || emptyState(); }
+      },
+      save(data) {
+        this.mem = data;
+        try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {}
+      }
+    };
+
+    let state = Object.assign(emptyState(), store.load());
+    let filterRole = "";
+    let query = "";
+
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+    const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+    const picksOf = teamId => state.picks.filter(p => p.teamId === teamId);
+    const slotsTotal = () => ROLES.reduce((n, r) => n + state.slots[r], 0);
+    const spentBy = teamId => picksOf(teamId).reduce((n, p) => n + p.price, 0);
+    const restOf = teamId => state.budget - spentBy(teamId);
+    // con l'ultimo slot devi comunque poter coprire gli altri a 1 credito
+    const maxBid = teamId => Math.max(0, restOf(teamId) - (slotsTotal() - picksOf(teamId).length - 1));
+
+    function showAlert(msg) {
+      const box = $("alert");
+      box.textContent = msg;
+      box.hidden = !msg;
+    }
+
+    function syncSetupInputs() {
+      $("budget").value = state.budget;
+      ROLES.forEach(r => { $("slot-" + r).value = state.slots[r]; });
+    }
+
+    function renderTeamSelect() {
+      const sel = $("p-team");
+      const prev = sel.value;
+      sel.innerHTML = state.teams.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join("");
+      if (state.teams.some(t => t.id === prev)) sel.value = prev;
+      updateHint();
+    }
+
+    function updateHint() {
+      const id = $("p-team").value;
+      if (!id) { $("hint").textContent = ""; return; }
+      const left = slotsTotal() - picksOf(id).length;
+      $("hint").textContent = `Residuo ${restOf(id)} · offerta max ${maxBid(id)} · ${left} slot da riempire`;
+    }
+
+    function updateStats() {
+      $("s-teams").textContent = state.teams.length;
+      $("s-picks").textContent = state.picks.length;
+      const spent = state.picks.reduce((n, p) => n + p.price, 0);
+      $("s-spent").textContent = spent;
+      $("s-avg").textContent = state.picks.length ? (spent / state.picks.length).toFixed(1) : "0";
+    }
+
+    function matches(p) {
+      if (filterRole && p.role !== filterRole) return false;
+      if (!query) return true;
+      return (p.name + " " + (p.club || "")).toLowerCase().includes(query);
+    }
+
+    function render() {
+      $("empty").hidden = state.teams.length > 0;
+
+      $("teams").innerHTML = state.teams.map(t => {
+        const mine = picksOf(t.id);
+        const spent = spentBy(t.id);
+        const pct = state.budget > 0 ? Math.min(100, Math.round(spent / state.budget * 100)) : 0;
+        const shown = mine.filter(matches).sort((a, b) => ROLES.indexOf(a.role) - ROLES.indexOf(b.role) || b.price - a.price);
+
+        const slots = ROLES.map(r => {
+          const n = mine.filter(p => p.role === r).length;
+          const full = n >= state.slots[r];
+          return `<span class="${full ? "done" : ""}">${r} <b>${n}</b>/${state.slots[r]}</span>`;
+        }).join(" · ");
+
+        const rows = shown.length ? shown.map(p => `
+          <li>
+            <span class="badge r-${p.role}">${p.role}</span>
+            <span class="who">${esc(p.name)}${p.club ? ` <span class="club">${esc(p.club)}</span>` : ""}</span>
+            <span class="price">${p.price}</span>
+            <button class="btn-ghost" data-pick="${p.id}" title="Rimuovi giocatore">×</button>
+          </li>
+        `).join("") : `<li class="none">${mine.length ? "Nessun giocatore con questo filtro." : "Rosa ancora vuota."}</li>`;
+
+        return `
+          <div class="card team">
+            <div class="team-head">
+              <h3>${esc(t.name)}</h3>
+              <div class="rest">${restOf(t.id)}<small>crediti · max ${maxBid(t.id)}</small></div>
+            </div>
+            <div class="bar"><span style="width:${pct}%"></span></div>
+            <div class="slots">${slots}</div>
+            <ul class="roster">${rows}</ul>
+            <div><button class="btn-ghost" data-team="${t.id}">elimina squadra</button></div>
+          </div>
+        `;
+      }).join("");
+
+      updateStats();
+      updateHint();
+    }
+
+    function save() { store.save(state); }
+
+    // ---- impostazioni ----
+    $("budget").addEventListener("change", e => {
+      state.budget = Math.max(1, parseInt(e.target.value, 10) || 1);
+      e.target.value = state.budget;
+      save(); render();
+    });
+    ROLES.forEach(r => {
+      $("slot-" + r).addEventListener("change", e => {
+        state.slots[r] = Math.max(0, parseInt(e.target.value, 10) || 0);
+        e.target.value = state.slots[r];
+        save(); render();
+      });
+    });
+
+    $("add-team").addEventListener("click", () => {
+      const input = $("team-name");
+      const name = input.value.trim();
+      if (!name) { input.focus(); return; }
+      if (state.teams.some(t => t.name.toLowerCase() === name.toLowerCase())) {
+        showAlert("C'è già una squadra con questo nome.");
+        return;
+      }
+      state.teams.push({ id: uid(), name });
+      input.value = "";
+      showAlert("");
+      save(); renderTeamSelect(); render();
+    });
+    $("team-name").addEventListener("keydown", e => { if (e.key === "Enter") $("add-team").click(); });
+
+    // ---- assegnazione ----
+    $("assign").addEventListener("click", () => {
+      const name = $("p-name").value.trim();
+      const club = $("p-club").value.trim();
+      const role = $("p-role").value;
+      const price = parseInt($("p-price").value, 10);
+      const teamId = $("p-team").value;
+
+      if (!state.teams.length) { showAlert("Aggiungi almeno una squadra prima di assegnare."); return; }
+      if (!name) { showAlert("Manca il nome del giocatore."); $("p-name").focus(); return; }
+      if (!Number.isFinite(price) || price < 1) { showAlert("Il prezzo deve essere almeno 1 credito."); return; }
+
+      const mine = picksOf(teamId);
+      if (mine.filter(p => p.role === role).length >= state.slots[role]) {
+        showAlert(`${ROLE_LABEL[role]}: slot già pieni per questa squadra.`);
+        return;
+      }
+      if (price > maxBid(teamId)) {
+        showAlert(`Offerta troppo alta: con gli slot rimasti il massimo è ${maxBid(teamId)} crediti.`);
+        return;
+      }
+      if (state.picks.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+        showAlert(`${name} è già stato assegnato: controlla le rose.`);
+        return;
+      }
+
+      state.picks.push({ id: uid(), name, club, role, price, teamId });
+      $("p-name").value = "";
+      $("p-club").value = "";
+      $("p-price").value = 1;
+      $("p-name").focus();
+      showAlert("");
+      save(); render();
+    });
+    ["p-name", "p-club", "p-price"].forEach(id => {
+      $(id).addEventListener("keydown", e => { if (e.key === "Enter") $("assign").click(); });
+    });
+    $("p-team").addEventListener("change", updateHint);
+
+    // ---- lista rose ----
+    $("teams").addEventListener("click", e => {
+      const pick = e.target.closest("[data-pick]");
+      if (pick) {
+        state.picks = state.picks.filter(p => p.id !== pick.dataset.pick);
+        save(); render();
+        return;
+      }
+      const team = e.target.closest("[data-team]");
+      if (team) {
+        const t = state.teams.find(x => x.id === team.dataset.team);
+        if (!t || !confirm(`Eliminare "${t.name}" e la sua rosa?`)) return;
+        state.teams = state.teams.filter(x => x.id !== t.id);
+        state.picks = state.picks.filter(p => p.teamId !== t.id);
+        save(); renderTeamSelect(); render();
+      }
+    });
+
+    // ---- filtri ----
+    $("search").addEventListener("input", e => { query = e.target.value.trim().toLowerCase(); render(); });
+    document.querySelectorAll(".chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        filterRole = chip.dataset.role;
+        document.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", String(c === chip)));
+        render();
+      });
+    });
+
+    // ---- azioni ----
+    $("export").addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "asta-fantacalcio.json";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    $("reset").addEventListener("click", () => {
+      if (!confirm("Azzerare squadre e giocatori assegnati?")) return;
+      state = emptyState();
+      showAlert("");
+      save(); syncSetupInputs(); renderTeamSelect(); render();
+    });
+
+    syncSetupInputs();
+    renderTeamSelect();
+    render();
+    $("y").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
