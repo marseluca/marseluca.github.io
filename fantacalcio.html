@@ -26,16 +26,12 @@
       --brand:   #0e7c8a;
       --brand-2: #0f9b6c;
       --deep:    #15507e;
+      --gold:    #e8a70c;
 
       --p: #e8930c;
       --d: #10a171;
       --c: #3b74e8;
       --a: #e0453c;
-
-      --p-soft: #fdf2dd;
-      --d-soft: #dff5ec;
-      --c-soft: #e4ecfd;
-      --a-soft: #fce8e6;
 
       --display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
       --body: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -47,21 +43,16 @@
     * { box-sizing: border-box; }
     html { -webkit-text-size-adjust: 100%; }
     body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--ink);
-      font-family: var(--body);
-      font-size: 17px;
-      line-height: 1.6;
+      margin: 0; background: var(--bg); color: var(--ink);
+      font-family: var(--body); font-size: 17px; line-height: 1.6;
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ---------- testata dell'app ---------- */
+    /* ---------- testata ---------- */
     .app-head {
       background: linear-gradient(135deg, var(--brand-2) 0%, var(--brand) 52%, var(--deep) 100%);
       color: #fff;
-      padding: calc(1.3rem + env(safe-area-inset-top)) clamp(1.1rem, 5vw, 1.8rem) 2.6rem;
-      border-radius: 0 0 26px 26px;
+      padding: calc(1.2rem + env(safe-area-inset-top)) clamp(1.1rem, 5vw, 1.8rem) 1.4rem;
     }
     .app-head .top {
       max-width: var(--maxw); margin: 0 auto;
@@ -71,67 +62,92 @@
     .logo svg { width: 34px; height: 34px; flex: none; }
     .logo h1 {
       font-family: var(--display); font-weight: 700; letter-spacing: -0.02em;
-      font-size: clamp(1.3rem, 5vw, 1.7rem); margin: 0; line-height: 1.1;
+      font-size: clamp(1.25rem, 5vw, 1.6rem); margin: 0; line-height: 1.1;
     }
-    .season {
-      display: inline-block; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em;
-      text-transform: uppercase; opacity: 0.85;
-    }
+    .season { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.85; }
     .btn-install {
-      font-family: var(--body); font-weight: 600; font-size: 0.85rem;
-      color: #fff; background: rgba(255,255,255,0.18);
-      border: 1px solid rgba(255,255,255,0.45); border-radius: 999px;
-      padding: 0.45rem 0.95rem; cursor: pointer; white-space: nowrap;
-      backdrop-filter: blur(4px);
+      font-family: var(--body); font-weight: 600; font-size: 0.85rem; color: #fff;
+      background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.45);
+      border-radius: 999px; padding: 0.45rem 0.95rem; cursor: pointer; white-space: nowrap;
     }
     .btn-install:hover { background: rgba(255,255,255,0.28); }
     .btn-install[hidden] { display: none; }
 
-    /* ---------- riquadri ---------- */
-    .wrap { max-width: var(--maxw); margin: 0 auto;
-            padding: 0 clamp(1.1rem, 5vw, 1.8rem) calc(6.5rem + env(safe-area-inset-bottom)); }
-
-    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; margin-top: -1.8rem; }
-    .stat {
-      border-radius: var(--radius); padding: 1rem 1.1rem; color: #fff;
-      box-shadow: var(--shadow);
+    /* ---------- barra di ricerca, sempre in cima ---------- */
+    .searchbar {
+      position: sticky; top: 0; z-index: 35;
+      background: linear-gradient(180deg, rgba(238,243,246,0.98), rgba(238,243,246,0.94));
+      backdrop-filter: blur(8px);
+      padding: 0.75rem clamp(1.1rem, 5vw, 1.8rem);
+      border-bottom: 1px solid var(--line);
     }
+    .searchbar .in { position: relative; max-width: var(--maxw); margin: 0 auto; }
+    .searchbar .lens {
+      position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%);
+      width: 18px; height: 18px; color: var(--muted); pointer-events: none;
+    }
+    .searchbar input {
+      padding-left: 2.55rem; padding-right: 2.4rem;
+      background: #fff; box-shadow: var(--shadow); border-color: transparent;
+    }
+    .searchbar .clear {
+      position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%);
+      border: none; background: #eef3f6; color: var(--muted); cursor: pointer;
+      width: 28px; height: 28px; border-radius: 50%; font-size: 1.1rem; line-height: 1;
+    }
+    .searchbar .clear[hidden] { display: none; }
+
+    .suggest {
+      position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; right: 0;
+      background: #fff; border: 1px solid var(--line); border-radius: 14px;
+      box-shadow: 0 16px 38px rgba(16, 36, 46, 0.18);
+      max-height: min(60vh, 380px); overflow-y: auto; padding: 0.3rem; margin: 0; list-style: none;
+    }
+    .suggest[hidden] { display: none; }
+    .suggest li {
+      display: flex; align-items: center; gap: 0.55rem;
+      padding: 0.5rem; border-radius: 10px; cursor: pointer; font-size: 0.95rem;
+    }
+    .suggest li[aria-selected="true"] { background: #edf5f7; }
+    .suggest .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .suggest .cl { color: var(--muted); font-size: 0.82rem; }
+    .suggest .qt { font-family: var(--display); font-weight: 700; white-space: nowrap; }
+    .suggest .star { color: var(--gold); }
+    .suggest .manual { color: var(--muted); font-size: 0.9rem; }
+
+    /* ---------- contenuto ---------- */
+    .wrap { max-width: var(--maxw); margin: 0 auto;
+            padding: 1.2rem clamp(1.1rem, 5vw, 1.8rem) calc(3rem + env(safe-area-inset-bottom)); }
+
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+    .stat { border-radius: var(--radius); padding: 1rem 1.1rem; color: #fff; box-shadow: var(--shadow); }
     .stat.rosa  { background: linear-gradient(135deg, #6d4bd8, #9b4bd8); }
     .stat.offer { background: linear-gradient(135deg, #0f9b6c, #12b3a0); }
     .stat .n { font-family: var(--display); font-weight: 700; font-size: 1.85rem; line-height: 1; }
     .stat .l { font-size: 0.8rem; opacity: 0.92; margin-top: 0.3rem; }
 
-    .meter { margin: 1.1rem 0 1.9rem; }
+    .meter { margin: 1.1rem 0 0.5rem; }
     .meter .track { height: 10px; border-radius: 999px; background: #dde6ea; overflow: hidden; }
     .meter .fill { height: 100%; width: 0; border-radius: 999px; transition: width 0.25s ease, background 0.25s ease; }
     .meter .cap { display: flex; justify-content: space-between; font-size: 0.76rem; color: var(--muted); margin-top: 0.4rem; }
 
-    .card {
-      background: var(--card); border: 1px solid var(--line);
-      border-radius: var(--radius); padding: 1.2rem; box-shadow: var(--shadow);
-    }
+    .card { background: var(--card); border: 1px solid var(--line);
+            border-radius: var(--radius); padding: 1.2rem; box-shadow: var(--shadow); }
 
-    .sec {
-      font-family: var(--display); font-size: 0.76rem; font-weight: 600;
-      letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
-      margin: 2rem 0 0.9rem;
-    }
+    .sec { font-family: var(--display); font-size: 0.76rem; font-weight: 600;
+           letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+           margin: 1.8rem 0 0.8rem; }
 
-    /* ---------- modulo ---------- */
     label { font-size: 0.76rem; font-weight: 600; color: var(--muted); }
     .field { display: flex; flex-direction: column; gap: 0.3rem; }
     input, select {
       font-family: var(--body); font-size: 1rem; color: var(--ink);
       background: #fbfdfe; border: 1.5px solid var(--line); border-radius: 12px;
-      padding: 0.62rem 0.72rem; width: 100%;
+      padding: 0.65rem 0.75rem; width: 100%;
     }
     input:focus, select:focus {
-      outline: none; border-color: var(--brand);
-      box-shadow: 0 0 0 3px rgba(14, 124, 138, 0.16);
+      outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(14, 124, 138, 0.16);
     }
-    .buy { display: grid; grid-template-columns: 1.4fr 0.8fr; gap: 0.8rem; align-items: end; }
-    .buy .full, .buy .ac { grid-column: 1 / -1; }
-    .btn-block { width: 100%; padding: 0.75rem 1.1rem; font-size: 1rem; }
 
     .btn {
       font-family: var(--body); font-weight: 600; font-size: 0.95rem;
@@ -139,83 +155,63 @@
       border-radius: 12px; padding: 0.62rem 1.1rem; cursor: pointer;
     }
     .btn:hover { border-color: var(--muted); }
+    .btn-block { width: 100%; padding: 0.8rem 1.1rem; font-size: 1rem; }
     .btn-go {
-      border: none; color: #fff;
-      background: linear-gradient(135deg, var(--brand-2), var(--brand));
+      border: none; color: #fff; background: linear-gradient(135deg, var(--brand-2), var(--brand));
       box-shadow: 0 6px 16px rgba(14, 124, 138, 0.28);
     }
     .btn-go:hover { filter: brightness(1.06); }
+    .btn-out {
+      border: none; color: #fff; background: linear-gradient(135deg, #e0453c, #f0675a);
+      box-shadow: 0 6px 16px rgba(224, 69, 60, 0.28);
+    }
+    .btn-fav { border: 1.5px solid #f0d9a2; background: #fdf6e6; color: #9a6c05; }
+    .btn-fav:hover { background: #fbefd4; border-color: #e8c274; }
+    .btn-fav.on { background: var(--gold); border-color: var(--gold); color: #fff; }
     .btn-ghost {
       border: none; background: none; color: #b9c5cb; cursor: pointer;
-      font-size: 1.15rem; line-height: 1; padding: 0.2rem 0.35rem;
+      font-size: 1.15rem; line-height: 1; padding: 0.2rem 0.4rem;
     }
     .btn-ghost:hover { color: var(--a); }
 
-    /* ---------- suggerimenti dal listone ---------- */
-    .ac { position: relative; }
-    .suggest {
-      position: absolute; z-index: 30; top: calc(100% + 5px); left: 0;
-      width: max(100%, min(360px, 86vw));
-      background: #fff; border: 1px solid var(--line); border-radius: 14px;
-      box-shadow: 0 16px 38px rgba(16, 36, 46, 0.18);
-      max-height: 310px; overflow-y: auto; padding: 0.3rem; margin: 0; list-style: none;
-    }
-    .suggest[hidden] { display: none; }
-    .suggest li {
-      display: flex; align-items: center; gap: 0.55rem;
-      padding: 0.45rem 0.5rem; border-radius: 10px; cursor: pointer; font-size: 0.94rem;
-    }
-    .suggest li[aria-selected="true"] { background: #edf5f7; }
-    .suggest .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .suggest .cl { color: var(--muted); font-size: 0.82rem; }
-    .suggest .qt { font-family: var(--display); font-weight: 700; white-space: nowrap; }
-
-    /* dentro al pannello l'elenco sta nel flusso: spinge i campi in basso invece di coprirli */
-    .sheet-card .suggest {
-      position: static; width: auto; max-height: 260px;
-      margin-top: 0.4rem; box-shadow: none; background: #f7fafb;
-    }
-
-    .picked {
-      display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem;
-      font-size: 0.86rem; color: var(--muted);
-      background: #f2f9fa; border: 1px solid #d7ebee; border-radius: 12px; padding: 0.5rem 0.7rem;
-    }
-    .picked[hidden] { display: none; }
-
-    .alert {
-      font-size: 0.88rem; border-radius: 12px; padding: 0.55rem 0.8rem;
-      background: #fdece9; color: #b23a30; border: 1px solid #f6cfc9;
-    }
+    .alert { font-size: 0.88rem; border-radius: 12px; padding: 0.55rem 0.8rem;
+             background: #fdece9; color: #b23a30; border: 1px solid #f6cfc9; }
     .alert[hidden] { display: none; }
 
     /* ---------- ruoli ---------- */
-    .dot {
-      flex: none; width: 26px; height: 26px; border-radius: 50%;
-      display: grid; place-items: center; color: #fff;
-      font-family: var(--display); font-weight: 700; font-size: 0.78rem;
-    }
+    .dot { flex: none; width: 26px; height: 26px; border-radius: 50%;
+           display: grid; place-items: center; color: #fff;
+           font-family: var(--display); font-weight: 700; font-size: 0.78rem; }
+    .dot.big { width: 46px; height: 46px; font-size: 1.15rem; }
     .dot.P { background: var(--p); } .dot.D { background: var(--d); }
     .dot.C { background: var(--c); } .dot.A { background: var(--a); }
 
+    /* ---------- preferiti ---------- */
+    #fav-box[hidden] { display: none; }
+    .fav-list { padding: 0.4rem 1rem; }
+    .fav-list ul { list-style: none; margin: 0; padding: 0; }
+    .fav-list li { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0; cursor: pointer; }
+    .fav-list li + li { border-top: 1px solid var(--line); }
+    .fav-list .who { flex: 1; min-width: 0; font-weight: 500; }
+    .fav-list .who .cl { color: var(--muted); font-size: 0.8rem; font-weight: 400; }
+    .fav-list .qt { font-family: var(--display); font-weight: 700; color: var(--gold); white-space: nowrap; }
+    .fav-list .qt small { display: block; font-family: var(--body); font-weight: 500; font-size: 0.7rem; color: var(--muted); }
+
+    /* ---------- rosa ---------- */
     .reparto { border-radius: var(--radius); background: var(--card); border: 1px solid var(--line);
                box-shadow: var(--shadow); overflow: hidden; }
     .reparto + .reparto { margin-top: 0.9rem; }
-    .reparto-head {
-      display: flex; align-items: center; gap: 0.6rem;
-      padding: 0.75rem 1rem; color: #fff;
-    }
+    .reparto-head { display: flex; align-items: center; gap: 0.6rem; padding: 0.75rem 1rem; color: #fff; }
     .reparto.P .reparto-head { background: linear-gradient(120deg, #e8930c, #f2ae3d); }
     .reparto.D .reparto-head { background: linear-gradient(120deg, #10a171, #2bbd8c); }
     .reparto.C .reparto-head { background: linear-gradient(120deg, #3b74e8, #5b93f5); }
     .reparto.A .reparto-head { background: linear-gradient(120deg, #e0453c, #f0675a); }
     .reparto-head h2 { font-family: var(--display); font-size: 1rem; margin: 0; flex: 1; }
-    .reparto-head .conto {
-      font-size: 0.78rem; font-weight: 600; background: rgba(255,255,255,0.22);
-      border-radius: 999px; padding: 0.15rem 0.6rem; white-space: nowrap;
-    }
+    .reparto-head .conto { font-size: 0.78rem; font-weight: 600; background: rgba(255,255,255,0.22);
+                           border-radius: 999px; padding: 0.15rem 0.6rem; white-space: nowrap; }
     .reparto ul { list-style: none; margin: 0; padding: 0.35rem 1rem 0.6rem; }
     .reparto li { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0; }
+    .reparto li[data-open] { cursor: pointer; }
     .reparto li + li { border-top: 1px solid var(--line); }
     .reparto .who { flex: 1; min-width: 0; font-weight: 500; }
     .reparto .who .cl { color: var(--muted); font-size: 0.8rem; font-weight: 400; }
@@ -225,64 +221,59 @@
     .reparto.P .price { color: var(--p); } .reparto.D .price { color: var(--d); }
     .reparto.C .price { color: var(--c); } .reparto.A .price { color: var(--a); }
 
-    /* ---------- fondo pagina ---------- */
-
-    /* ---------- pulsante + e pannello di aggiunta ---------- */
-    .fab {
-      position: fixed; z-index: 40;
-      right: clamp(1rem, 4vw, 1.6rem);
-      bottom: calc(clamp(1rem, 4vw, 1.6rem) + env(safe-area-inset-bottom));
-      width: 62px; height: 62px; border-radius: 50%; border: none; cursor: pointer;
-      background: linear-gradient(135deg, var(--brand-2), var(--brand));
-      color: #fff; font-size: 2.1rem; font-weight: 300; line-height: 1;
-      display: grid; place-items: center; padding-bottom: 4px;
-      box-shadow: 0 10px 26px rgba(14, 124, 138, 0.42);
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-    }
-    .fab:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(14, 124, 138, 0.5); }
-    .fab:active { transform: scale(0.95); }
-
+    /* ---------- pannello del giocatore ---------- */
     .sheet { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
     .sheet[hidden] { display: none; }
     .sheet-bg { position: absolute; inset: 0; background: rgba(12, 34, 44, 0.5); backdrop-filter: blur(2px); }
     .sheet-card {
-      position: relative; width: min(560px, 100%);
+      position: relative; width: min(520px, 100%);
       background: var(--card); border-radius: 22px 22px 0 0;
-      padding: 1.1rem clamp(1.1rem, 5vw, 1.5rem) calc(1.4rem + env(safe-area-inset-bottom));
+      padding: 1.2rem clamp(1.1rem, 5vw, 1.5rem) calc(1.4rem + env(safe-area-inset-bottom));
       box-shadow: 0 -12px 40px rgba(12, 34, 44, 0.28);
       max-height: 92vh; overflow-y: auto;
     }
-    .sheet-head { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
-    .sheet-head h2 {
-      flex: 1; margin: 0; font-family: var(--display); font-size: 1.15rem; letter-spacing: -0.01em;
-    }
     .sheet-x {
+      position: absolute; top: 1rem; right: 1rem;
       border: none; background: #eef3f6; color: var(--muted); cursor: pointer;
       width: 34px; height: 34px; border-radius: 50%; font-size: 1.35rem; line-height: 1;
     }
     .sheet-x:hover { background: #e2eaee; color: var(--ink); }
 
+    .pl-head { display: flex; align-items: center; gap: 0.8rem; padding-right: 2.5rem; }
+    .pl-head h2 { font-family: var(--display); font-size: 1.35rem; margin: 0; line-height: 1.15; }
+    .pl-head p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+    .pl-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.8rem; }
+    .pl-tags span {
+      font-size: 0.74rem; font-weight: 600; border-radius: 999px; padding: 0.2rem 0.6rem;
+    }
+    .pl-tags .in-rosa { background: #e4f4ec; color: #0b7a52; }
+    .pl-tags .in-fav { background: #fdf3dc; color: #9a6c05; }
+
+    .pl-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin: 1rem 0; }
+    .pl-nums div { background: #f5f9fb; border: 1px solid var(--line); border-radius: 12px;
+                   padding: 0.6rem 0.5rem; text-align: center; }
+    .pl-nums b { display: block; font-family: var(--display); font-size: 1.3rem; line-height: 1.1; }
+    .pl-nums small { font-size: 0.7rem; color: var(--muted); }
+    .pl-nums .qt b  { color: var(--brand); }
+    .pl-nums .fvm b { color: #6d4bd8; }
+    .pl-nums .max b { color: var(--brand-2); }
+
+    .pl-manual { display: grid; grid-template-columns: 0.8fr 1.4fr; gap: 0.7rem; margin-bottom: 0.9rem; }
+    .pl-manual[hidden] { display: none; }
+    .pl-price { margin-bottom: 0.9rem; }
+    .pl-price[hidden] { display: none; }
+    .pl-actions { display: grid; gap: 0.6rem; margin-top: 0.9rem; }
+
     .toast {
       position: fixed; z-index: 60; left: 50%; transform: translateX(-50%);
-      bottom: calc(6.2rem + env(safe-area-inset-bottom));
+      bottom: calc(1.6rem + env(safe-area-inset-bottom));
       background: #12324a; color: #fff; font-size: 0.9rem; font-weight: 500;
       padding: 0.6rem 1rem; border-radius: 999px; box-shadow: 0 10px 26px rgba(12, 34, 44, 0.35);
       max-width: min(92vw, 420px); text-align: center;
     }
     .toast[hidden] { display: none; }
 
-    @media (min-width: 700px) {
-      .sheet { align-items: center; }
-      .sheet-card { border-radius: 22px; }
-    }
-    @media (prefers-reduced-motion: no-preference) {
-      .sheet-card { animation: slide-up 0.22s ease both; }
-      .sheet-bg { animation: fade-in 0.22s ease both; }
-      .toast { animation: fade-in 0.18s ease both; }
-      @keyframes slide-up { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
-      @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-    }
-
+    /* ---------- fondo pagina ---------- */
     .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.6rem; }
     details.setup { margin-top: 1.6rem; }
     details.setup summary {
@@ -291,12 +282,20 @@
     }
     .setup-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.8rem; align-items: end; margin-top: 0.8rem; }
 
+    @media (min-width: 700px) {
+      .sheet { align-items: center; }
+      .sheet-card { border-radius: 22px; }
+    }
     @media (max-width: 700px) {
       .setup-grid { grid-template-columns: 1fr 1fr; }
     }
     @media (prefers-reduced-motion: no-preference) {
       .stats, .meter, .card, .reparto { animation: rise 0.45s ease both; }
+      .sheet-card { animation: slide-up 0.22s ease both; }
+      .sheet-bg, .toast { animation: fade-in 0.2s ease both; }
       @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+      @keyframes slide-up { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+      @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
     }
   </style>
 </head>
@@ -324,6 +323,19 @@
     </div>
   </header>
 
+  <div class="searchbar">
+    <div class="in">
+      <svg class="lens" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5" stroke-linecap="round"/>
+      </svg>
+      <input id="q" type="search" autocomplete="off" role="combobox" aria-expanded="false"
+             aria-controls="suggest" aria-label="Cerca un giocatore"
+             placeholder="Cerca un giocatore o una squadra…" />
+      <button class="clear" id="q-clear" aria-label="Cancella la ricerca" hidden>&times;</button>
+      <ul class="suggest" id="suggest" role="listbox" hidden></ul>
+    </div>
+  </div>
+
   <main class="wrap">
     <div class="stats">
       <div class="stat rosa"><div class="n" id="s-count">0/25</div><div class="l">Giocatori in rosa</div></div>
@@ -334,6 +346,11 @@
       <div class="track"><div class="fill" id="bar"></div></div>
       <div class="cap"><span>Budget usato</span><span id="bar-pct">0%</span></div>
     </div>
+
+    <section id="fav-box" hidden>
+      <p class="sec">Preferiti</p>
+      <div class="card fav-list" id="fav-list"></div>
+    </section>
 
     <p class="sec">La rosa</p>
     <div id="rosa"></div>
@@ -368,25 +385,30 @@
         </div>
       </div>
     </details>
-
   </main>
-
-  <button class="fab" id="fab" aria-label="Aggiungi un calciatore" aria-haspopup="dialog">+</button>
 
   <div class="sheet" id="sheet" hidden>
     <div class="sheet-bg" id="sheet-bg"></div>
-    <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
-      <div class="sheet-head">
-        <h2 id="sheet-title">Prendi un giocatore</h2>
-        <button class="sheet-x" id="sheet-close" aria-label="Chiudi">&times;</button>
-      </div>
-      <div class="buy">
-        <div class="field ac">
-          <label for="p-name">Giocatore</label>
-          <input id="p-name" type="text" autocomplete="off" role="combobox" aria-expanded="false"
-                 aria-controls="suggest" placeholder="Cerca nel listone: nome o squadra…" />
-          <ul class="suggest" id="suggest" role="listbox" hidden></ul>
+    <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="pl-name">
+      <button class="sheet-x" id="sheet-close" aria-label="Chiudi">&times;</button>
+
+      <div class="pl-head">
+        <span class="dot big" id="pl-dot"></span>
+        <div>
+          <h2 id="pl-name"></h2>
+          <p id="pl-meta"></p>
         </div>
+      </div>
+
+      <div class="pl-tags" id="pl-tags"></div>
+
+      <div class="pl-nums">
+        <div class="qt"><b id="pl-qt">—</b><small>Quotazione</small></div>
+        <div class="fvm"><b id="pl-fvm">—</b><small>FVM</small></div>
+        <div class="max"><b id="pl-max">—</b><small>Puoi offrire</small></div>
+      </div>
+
+      <div class="pl-manual" id="pl-manual" hidden>
         <div class="field">
           <label for="p-role">Ruolo</label>
           <select id="p-role">
@@ -400,15 +422,18 @@
           <label for="p-club">Squadra</label>
           <input id="p-club" type="text" placeholder="Es. Inter" />
         </div>
-        <div class="field">
-          <label for="p-price">Pagato</label>
-          <input id="p-price" type="number" min="1" step="1" value="1" />
-        </div>
-        <div class="full picked" id="picked" hidden></div>
-        <div class="full"><div class="alert" id="alert" hidden></div></div>
-        <div class="full">
-          <button class="btn btn-go btn-block" id="add">Aggiungi alla rosa</button>
-        </div>
+      </div>
+
+      <div class="field pl-price" id="pl-price">
+        <label for="p-price">Pagato</label>
+        <input id="p-price" type="number" min="1" step="1" value="1" />
+      </div>
+
+      <div class="alert" id="alert" hidden></div>
+
+      <div class="pl-actions">
+        <button class="btn btn-go btn-block" id="add">Aggiungi alla squadra</button>
+        <button class="btn btn-fav btn-block" id="fav">Aggiungi ai preferiti</button>
       </div>
     </div>
   </div>
@@ -422,8 +447,9 @@
     const ROLE_LABEL = { P: "Portieri", D: "Difensori", C: "Centrocampisti", A: "Attaccanti" };
     const ROLE_ONE = { P: "portiere", D: "difensore", C: "centrocampista", A: "attaccante" };
     const listone = typeof LISTONE !== "undefined" ? LISTONE : [];
+    const byId = new Map(listone.map(p => [p[0], p]));
 
-    const emptyState = () => ({ budget: 500, slots: { P: 3, D: 8, C: 8, A: 6 }, rosa: [] });
+    const emptyState = () => ({ budget: 500, slots: { P: 3, D: 8, C: 8, A: 6 }, rosa: [], fav: [] });
 
     // Storage con fallback in memoria (così funziona anche dove localStorage è bloccato)
     const store = {
@@ -439,9 +465,11 @@
     };
 
     let state = Object.assign(emptyState(), store.load());
-    let picked = null;   // giocatore scelto dal listone
-    let active = -1;     // suggerimento evidenziato
-    let matches = [];
+    if (!Array.isArray(state.fav)) state.fav = [];
+
+    let matches = [];    // suggerimenti mostrati
+    let active = -1;      // suggerimento evidenziato
+    let current = null;   // giocatore aperto nel pannello
 
     const $ = id => document.getElementById(id);
     const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
@@ -455,66 +483,133 @@
     // con l'ultimo slot devi comunque poter coprire gli altri a 1 credito
     const maxBid = () => Math.max(0, rest() - (slotsTotal() - state.rosa.length - 1));
 
+    const inRosa = pl => state.rosa.find(p =>
+      (pl.id && p.id === pl.id) || norm(p.name) === norm(pl.name));
+    const isFav = pl => !!pl.id && state.fav.includes(pl.id);
+
+    const fromListone = p => ({ id: p[0], role: p[1], name: p[2], club: p[3], qt: p[4], fvm: p[5] });
+
     function alertMsg(msg) {
       $("alert").textContent = msg;
       $("alert").hidden = !msg;
     }
 
-    // ---------- listone: suggerimenti ----------
+    let toastTimer = null;
+    function toast(msg) {
+      clearTimeout(toastTimer);
+      $("toast").textContent = msg;
+      $("toast").hidden = false;
+      toastTimer = setTimeout(() => { $("toast").hidden = true; }, 3200);
+    }
+
+    // ---------- ricerca nel listone ----------
     function search(q) {
       const n = norm(q);
       if (!n) return [];
-      const inRosa = new Set(state.rosa.map(p => p.id).filter(Boolean));
       const hits = [];
       for (const p of listone) {
-        if (inRosa.has(p[0])) continue;
         const name = norm(p[2]), club = norm(p[3]);
-        const rank = name.startsWith(n) ? 0 : name.includes(n) ? 1 : club.startsWith(n) ? 2 : club.includes(n) ? 3 : -1;
+        // prima i nomi che iniziano così, poi le squadre, poi le corrispondenze in mezzo alla parola
+        const rank = name.startsWith(n) ? 0 : club.startsWith(n) ? 1 : name.includes(n) ? 2 : club.includes(n) ? 3 : -1;
         if (rank >= 0) hits.push({ rank, p });
       }
       hits.sort((a, b) => a.rank - b.rank || b.p[4] - a.p[4] || a.p[2].localeCompare(b.p[2]));
-      return hits.slice(0, 8).map(h => h.p);
+      return hits.slice(0, 10).map(h => h.p);
     }
 
     function renderSuggest() {
       const box = $("suggest");
-      if (!matches.length) {
+      const q = $("q").value.trim();
+      if (!q) {
         box.innerHTML = "";
         box.hidden = true;
-        $("p-name").setAttribute("aria-expanded", "false");
+        $("q").setAttribute("aria-expanded", "false");
         return;
       }
-      box.innerHTML = matches.map((p, i) => `
+      const rows = matches.map((p, i) => {
+        const preso = state.rosa.some(x => x.id === p[0]);
+        const pref = state.fav.includes(p[0]);
+        return `
         <li role="option" data-i="${i}" aria-selected="${i === active}">
           <span class="dot ${p[1]}">${p[1]}</span>
-          <span class="nm">${esc(p[2])} <span class="cl">${esc(p[3])}</span></span>
+          <span class="nm">${esc(p[2])} <span class="cl">${esc(p[3])}</span>${preso ? ' <span class="cl">· in rosa</span>' : ""}</span>
+          ${pref ? '<span class="star">&#9733;</span>' : ""}
           <span class="qt">${p[4]}</span>
-        </li>
-      `).join("");
+        </li>`;
+      });
+      // niente nel listone: si può aggiungere lo stesso, a mano
+      rows.push(`<li role="option" data-manual="1" aria-selected="${active === matches.length}">
+          <span class="dot" style="background:var(--muted)">+</span>
+          <span class="nm manual">Aggiungi «${esc(q)}» a mano</span>
+        </li>`);
+      box.innerHTML = rows.join("");
       box.hidden = false;
-      $("p-name").setAttribute("aria-expanded", "true");
+      $("q").setAttribute("aria-expanded", "true");
     }
 
     function closeSuggest() {
       matches = []; active = -1;
-      renderSuggest();
+      $("suggest").innerHTML = "";
+      $("suggest").hidden = true;
+      $("q").setAttribute("aria-expanded", "false");
     }
 
-    function choose(p) {
-      picked = { id: p[0], role: p[1], name: p[2], club: p[3], qt: p[4], fvm: p[5] };
-      $("p-name").value = p[2];
-      $("p-role").value = p[1];
-      $("p-club").value = p[3];
-      $("p-price").value = p[4] || 1;
-      $("picked").hidden = false;
-      $("picked").innerHTML = `<span class="dot ${p[1]}">${p[1]}</span> <b>${esc(p[2])}</b> · ${esc(p[3])} · quotazione <b>${p[4]}</b> · FVM ${p[5]}`;
-      closeSuggest();
+    // ---------- pannello del giocatore ----------
+    function openPlayer(pl) {
+      current = pl;
+      const preso = inRosa(pl);
+      const manuale = !pl.id;
+
+      $("pl-dot").className = "dot big " + pl.role;
+      $("pl-dot").textContent = pl.role;
+      $("pl-name").textContent = pl.name;
+      $("pl-meta").textContent = manuale && !pl.club
+        ? "Fuori listone"
+        : ROLE_ONE[pl.role].replace(/^./, c => c.toUpperCase()) + (pl.club ? " · " + pl.club : "");
+
+      $("pl-qt").textContent = pl.qt != null ? pl.qt : "—";
+      $("pl-fvm").textContent = pl.fvm != null ? pl.fvm : "—";
+      $("pl-max").textContent = maxBid();
+
+      $("pl-tags").innerHTML =
+        (preso ? `<span class="in-rosa">In rosa a ${preso.price}</span>` : "") +
+        (isFav(pl) ? '<span class="in-fav">&#9733; Nei preferiti</span>' : "");
+
+      $("pl-manual").hidden = !manuale;
+      if (manuale) {
+        $("p-role").value = pl.role;
+        $("p-club").value = pl.club || "";
+      }
+
+      $("pl-price").hidden = !!preso;
+      $("p-price").value = preso ? preso.price : (pl.qt || 1);
+
+      $("add").textContent = preso ? "Togli dalla squadra" : "Aggiungi alla squadra";
+      $("add").className = "btn btn-block " + (preso ? "btn-out" : "btn-go");
+
+      $("fav").hidden = manuale;
+      $("fav").textContent = isFav(pl) ? "★ Togli dai preferiti" : "Aggiungi ai preferiti";
+      $("fav").className = "btn btn-fav btn-block" + (isFav(pl) ? " on" : "");
+
       alertMsg("");
-      $("p-price").focus();
-      $("p-price").select();
+      $("sheet").hidden = false;
+      document.body.style.overflow = "hidden";
+      if (!preso) { $("p-price").focus(); $("p-price").select(); }
     }
 
-    // ---------- rosa ----------
+    function openById(id) {
+      const p = byId.get(Number(id));
+      if (p) openPlayer(fromListone(p));
+    }
+
+    function closeSheet() {
+      $("sheet").hidden = true;
+      document.body.style.overflow = "";
+      current = null;
+      alertMsg("");
+    }
+
+    // ---------- rosa e preferiti ----------
     function updateStats() {
       $("s-count").textContent = state.rosa.length + "/" + slotsTotal();
       $("s-max").textContent = maxBid();
@@ -527,16 +622,31 @@
       $("bar-pct").textContent = pct + "%";
     }
 
+    function renderFav() {
+      const men = state.fav.map(id => byId.get(id)).filter(Boolean)
+        .sort((a, b) => ROLES.indexOf(a[1]) - ROLES.indexOf(b[1]) || b[4] - a[4]);
+      $("fav-box").hidden = men.length === 0;
+      if (!men.length) return;
+      $("fav-list").innerHTML = "<ul>" + men.map(p => `
+        <li data-open="${p[0]}">
+          <span class="dot ${p[1]}">${p[1]}</span>
+          <span class="who">${esc(p[2])} <span class="cl">${esc(p[3])}</span></span>
+          <span class="qt">${p[4]}<small>quotazione</small></span>
+          <button class="btn-ghost" data-unfav="${p[0]}" title="Togli dai preferiti" aria-label="Togli ${esc(p[2])} dai preferiti">&times;</button>
+        </li>
+      `).join("") + "</ul>";
+    }
+
     function render() {
       $("rosa").innerHTML = ROLES.map(r => {
         const men = state.rosa.filter(p => p.role === r)
           .sort((a, b) => b.price - a.price || a.name.localeCompare(b.name));
         const rows = men.length ? men.map(p => `
-          <li>
+          <li${p.id ? ` data-open="${p.id}"` : ""}>
             <span class="dot ${r}">${r}</span>
             <span class="who">${esc(p.name)}${p.club ? ` <span class="cl">${esc(p.club)}</span>` : ""}</span>
             <span class="price">${p.price}${p.qt ? `<small>qt. ${p.qt}</small>` : ""}</span>
-            <button class="btn-ghost" data-id="${p.key}" title="Togli dalla rosa" aria-label="Togli ${esc(p.name)}">×</button>
+            <button class="btn-ghost" data-del="${p.key}" title="Togli dalla rosa" aria-label="Togli ${esc(p.name)}">&times;</button>
           </li>
         `).join("") : `<li class="vuoto">Ancora nessun ${ROLE_ONE[r]}.</li>`;
 
@@ -547,96 +657,146 @@
               <span class="conto">${men.length}/${state.slots[r]}</span>
             </div>
             <ul>${rows}</ul>
-          </section>
-        `;
+          </section>`;
       }).join("");
 
+      renderFav();
       updateStats();
+      if (!$("suggest").hidden) renderSuggest();
     }
 
     function save() { store.save(state); }
 
-    function addPlayer() {
-      const name = $("p-name").value.trim();
-      const club = $("p-club").value.trim();
-      const role = $("p-role").value;
+    // ---------- azioni del pannello ----------
+    function addOrRemove() {
+      if (!current) return;
+      const preso = inRosa(current);
+
+      if (preso) {
+        state.rosa = state.rosa.filter(p => p.key !== preso.key);
+        save(); render();
+        toast(`${preso.name} tolto dalla rosa`);
+        closeSheet();
+        return;
+      }
+
+      const manuale = !current.id;
+      const role = manuale ? $("p-role").value : current.role;
+      const club = manuale ? $("p-club").value.trim() : current.club;
       const price = parseInt($("p-price").value, 10);
 
-      if (!name) { alertMsg("Manca il nome del giocatore."); $("p-name").focus(); return; }
       if (!Number.isFinite(price) || price < 1) { alertMsg("Il prezzo deve essere almeno 1 credito."); return; }
       if (taken(role) >= state.slots[role]) { alertMsg(`${ROLE_LABEL[role]}: slot già pieni.`); return; }
-      if (state.rosa.some(p => norm(p.name) === norm(name))) { alertMsg(`${name} è già in rosa.`); return; }
       if (price > maxBid()) {
         alertMsg(`Offerta troppo alta: con gli slot rimasti puoi arrivare a ${maxBid()} crediti.`);
         return;
       }
 
-      const fromList = picked && norm(picked.name) === norm(name) ? picked : null;
       state.rosa.push({
-        key: uid(),
-        id: fromList ? fromList.id : null,
-        name: fromList ? fromList.name : name,
-        club: fromList ? fromList.club : club,
-        role, price,
-        qt: fromList ? fromList.qt : null
+        key: uid(), id: current.id || null, name: current.name,
+        club, role, price, qt: current.qt != null ? current.qt : null
       });
+      state.fav = state.fav.filter(id => id !== current.id);
 
       save(); render();
-      toast(`Preso ${name} per ${price} ${price === 1 ? "credito" : "crediti"}`);
+      toast(`Preso ${current.name} per ${price} ${price === 1 ? "credito" : "crediti"}`);
       closeSheet();
+      $("q").value = "";
+      $("q-clear").hidden = true;
+    }
+
+    function toggleFav() {
+      if (!current || !current.id) return;
+      if (isFav(current)) {
+        state.fav = state.fav.filter(id => id !== current.id);
+        toast(`${current.name} tolto dai preferiti`);
+      } else {
+        state.fav.push(current.id);
+        toast(`${current.name} messo tra i preferiti`);
+      }
+      save(); render();
+      openPlayer(current);   // ridisegna il pannello aggiornato
     }
 
     // ---------- eventi ----------
-    $("p-name").addEventListener("input", e => {
-      picked = null;
-      $("picked").hidden = true;
-      matches = search(e.target.value);
+    $("q").addEventListener("input", e => {
+      const q = e.target.value;
+      $("q-clear").hidden = !q;
+      matches = search(q);
       active = matches.length ? 0 : -1;
       renderSuggest();
     });
 
-    $("p-name").addEventListener("keydown", e => {
-      if (matches.length && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+    $("q").addEventListener("keydown", e => {
+      const opzioni = $("suggest").hidden ? 0 : matches.length + 1;   // +1 per l'inserimento a mano
+      if (opzioni && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
         e.preventDefault();
-        active = (active + (e.key === "ArrowDown" ? 1 : matches.length - 1)) % matches.length;
+        active = (active + (e.key === "ArrowDown" ? 1 : opzioni - 1)) % opzioni;
         renderSuggest();
         return;
       }
-      // il primo Escape chiude i suggerimenti, il secondo il pannello
       if (e.key === "Escape") {
-        const aperti = matches.length > 0;
-        closeSuggest();
-        if (aperti) e.stopPropagation();
+        if (!$("suggest").hidden) { closeSuggest(); e.stopPropagation(); }
         return;
       }
-      if (e.key === "Enter") {
+      if (e.key === "Enter" && opzioni) {
         e.preventDefault();
-        if (matches.length && active >= 0) choose(matches[active]);
-        else addPlayer();
+        if (active >= 0 && active < matches.length) openPlayer(fromListone(matches[active]));
+        else openPlayer({ id: null, role: "C", name: $("q").value.trim(), club: "", qt: null, fvm: null });
+        closeSuggest();
       }
     });
 
     $("suggest").addEventListener("mousedown", e => {
-      const li = e.target.closest("[data-i]");
+      const li = e.target.closest("li");
       if (!li) return;
       e.preventDefault();
-      choose(matches[Number(li.dataset.i)]);
+      if (li.dataset.manual) openPlayer({ id: null, role: "C", name: $("q").value.trim(), club: "", qt: null, fvm: null });
+      else openPlayer(fromListone(matches[Number(li.dataset.i)]));
+      closeSuggest();
+    });
+
+    $("q-clear").addEventListener("click", () => {
+      $("q").value = "";
+      $("q-clear").hidden = true;
+      closeSuggest();
+      $("q").focus();
     });
 
     document.addEventListener("click", e => {
-      if (!e.target.closest(".ac")) closeSuggest();
+      if (!e.target.closest(".searchbar")) closeSuggest();
     });
 
-    ["p-club", "p-price"].forEach(id => {
-      $(id).addEventListener("keydown", e => { if (e.key === "Enter") addPlayer(); });
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape" && !$("sheet").hidden) closeSheet();
     });
-    $("add").addEventListener("click", addPlayer);
+
+    $("sheet-close").addEventListener("click", closeSheet);
+    $("sheet-bg").addEventListener("click", closeSheet);
+    $("add").addEventListener("click", addOrRemove);
+    $("fav").addEventListener("click", toggleFav);
+    $("p-price").addEventListener("keydown", e => { if (e.key === "Enter") addOrRemove(); });
 
     $("rosa").addEventListener("click", e => {
-      const btn = e.target.closest("[data-id]");
-      if (!btn) return;
-      state.rosa = state.rosa.filter(p => p.key !== btn.dataset.id);
-      save(); render();
+      const del = e.target.closest("[data-del]");
+      if (del) {
+        state.rosa = state.rosa.filter(p => p.key !== del.dataset.del);
+        save(); render();
+        return;
+      }
+      const row = e.target.closest("[data-open]");
+      if (row) openById(row.dataset.open);
+    });
+
+    $("fav-list").addEventListener("click", e => {
+      const un = e.target.closest("[data-unfav]");
+      if (un) {
+        state.fav = state.fav.filter(id => id !== Number(un.dataset.unfav));
+        save(); render();
+        return;
+      }
+      const row = e.target.closest("[data-open]");
+      if (row) openById(row.dataset.open);
     });
 
     $("budget").addEventListener("change", e => {
@@ -664,49 +824,7 @@
     $("reset").addEventListener("click", () => {
       if (!confirm("Svuotare la rosa e ripartire da zero?")) return;
       state.rosa = [];
-      picked = null;
-      $("picked").hidden = true;
-      alertMsg("");
       save(); render();
-    });
-
-
-    // ---------- pannello di aggiunta ----------
-    let toastTimer = null;
-    function toast(msg) {
-      clearTimeout(toastTimer);
-      $("toast").textContent = msg;
-      $("toast").hidden = false;
-      toastTimer = setTimeout(() => { $("toast").hidden = true; }, 3200);
-    }
-
-    const sheetOpen = () => !$("sheet").hidden;
-
-    function openSheet() {
-      $("sheet").hidden = false;
-      document.body.style.overflow = "hidden";
-      alertMsg("");
-      $("p-name").focus();
-    }
-
-    function closeSheet() {
-      closeSuggest();
-      $("sheet").hidden = true;
-      document.body.style.overflow = "";
-      picked = null;
-      $("picked").hidden = true;
-      $("p-name").value = "";
-      $("p-club").value = "";
-      $("p-price").value = 1;
-      alertMsg("");
-      $("fab").focus();
-    }
-
-    $("fab").addEventListener("click", openSheet);
-    $("sheet-close").addEventListener("click", closeSheet);
-    $("sheet-bg").addEventListener("click", closeSheet);
-    document.addEventListener("keydown", e => {
-      if (e.key === "Escape" && sheetOpen() && !matches.length) closeSheet();
     });
 
     // ---------- installazione dell'app ----------
