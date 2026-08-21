@@ -10,63 +10,75 @@
     .btn-accent { background: var(--c-fanta); border-color: var(--c-fanta); }
     .nav a[aria-current="page"] { border-bottom-color: var(--c-fanta); }
 
+    .budget-bar { height: 8px; border-radius: 999px; background: var(--line); overflow: hidden; margin-bottom: 1.75rem; }
+    .budget-bar span { display: block; height: 100%; background: var(--c-fanta); transition: width 0.2s ease; }
+
     .setup { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.9rem; align-items: end; margin-bottom: 1.5rem; }
-    .setup .full { grid-column: 1 / -1; }
 
-    .pick-form { display: grid; grid-template-columns: 2fr 1.4fr 0.9fr 0.9fr 1.4fr; gap: 0.9rem; align-items: end; margin-bottom: 1.5rem; }
-    .pick-form .full { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
+    .buy { display: grid; grid-template-columns: 2fr 0.9fr 1.4fr 0.9fr auto; gap: 0.9rem; align-items: end; margin-bottom: 1.5rem; }
+    .buy .full { grid-column: 1 / -1; }
 
-    .alert {
-      font-size: 0.88rem; border-radius: 10px; padding: 0.55rem 0.8rem;
-      background: #fdf1ec; color: #b04a2a; border: 1px solid #f4d9cd;
+    /* campo con suggerimenti dal listone */
+    .ac { position: relative; }
+    .suggest {
+      position: absolute; z-index: 20; top: calc(100% + 4px); left: 0;
+      width: max(100%, min(360px, 86vw));
+      background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+      box-shadow: 0 10px 28px rgba(24,32,36,0.12);
+      max-height: 300px; overflow-y: auto; padding: 0.3rem;
+      list-style: none; margin: 0;
     }
+    .suggest[hidden] { display: none; }
+    .suggest li {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.45rem 0.55rem; border-radius: 8px; cursor: pointer; font-size: 0.93rem;
+    }
+    .suggest li[aria-selected="true"] { background: #eef4f7; }
+    .suggest .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .suggest .cl { color: var(--muted); font-size: 0.82rem; }
+    .suggest .qt { font-family: var(--display); font-weight: 600; white-space: nowrap; }
+    .suggest .none { color: var(--muted); cursor: default; font-size: 0.88rem; }
+
+    .picked { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; font-size: 0.88rem; color: var(--muted); }
+    .picked[hidden] { display: none; }
+
+    .alert { font-size: 0.88rem; border-radius: 10px; padding: 0.55rem 0.8rem;
+             background: #fdf1ec; color: #b04a2a; border: 1px solid #f4d9cd; }
     .alert[hidden] { display: none; }
-
-    .filters { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin-bottom: 1.5rem; }
-    .chip {
-      border: 1px solid var(--line); background: var(--surface); color: var(--muted);
-      border-radius: 999px; padding: 0.35rem 0.8rem; font-size: 0.85rem; font-weight: 500; cursor: pointer;
-    }
-    .chip[aria-pressed="true"] { background: var(--c-fanta); border-color: var(--c-fanta); color: #fff; }
-    .filters .field { flex: 1 1 200px; }
 
     .badge.r-P { background: #fdf0da; color: #a8761a; }
     .badge.r-D { background: #e7f3ee; color: var(--c-allenamenti); }
     .badge.r-C { background: #eef0f8; color: var(--c-libri); }
     .badge.r-A { background: #fbe9e7; color: #c0392b; }
 
-    .teams { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.9rem; }
-    .team { display: flex; flex-direction: column; gap: 0.75rem; }
-    .team-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
-    .team-head h3 { font-family: var(--display); font-size: 1.1rem; margin: 0; }
-    .team-head .rest { font-family: var(--display); font-weight: 700; font-size: 1.2rem; white-space: nowrap; }
-    .team-head .rest small { font-family: var(--body); font-weight: 500; font-size: 0.72rem; color: var(--muted); display: block; text-align: right; }
-
-    .bar { height: 6px; border-radius: 999px; background: var(--line); overflow: hidden; }
-    .bar span { display: block; height: 100%; background: var(--c-fanta); }
-
-    .slots { display: flex; flex-wrap: wrap; gap: 0.35rem; font-size: 0.78rem; color: var(--muted); }
-    .slots b { color: var(--ink); font-weight: 600; }
-    .slots .done { color: var(--c-allenamenti); }
-
-    .roster { list-style: none; margin: 0; padding: 0; font-size: 0.92rem; }
-    .roster li {
-      display: flex; align-items: center; gap: 0.5rem;
-      padding: 0.35rem 0; border-top: 1px solid var(--line);
+    .reparto + .reparto { margin-top: 1.1rem; }
+    .reparto-head {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 1rem;
+      margin-bottom: 0.5rem;
     }
-    .roster li .who { flex: 1; min-width: 0; }
-    .roster li .who .club { color: var(--muted); font-size: 0.8rem; }
-    .roster li .price { font-family: var(--display); font-weight: 600; white-space: nowrap; }
-    .roster .none { color: var(--muted); font-size: 0.85rem; padding: 0.35rem 0; border-top: 1px solid var(--line); }
+    .reparto-head h2 { font-family: var(--display); font-size: 1rem; margin: 0; }
+    .reparto-head .conto { font-size: 0.85rem; color: var(--muted); }
+    .reparto-head .conto.done { color: var(--c-allenamenti); font-weight: 600; }
+
+    .roster { list-style: none; margin: 0; padding: 0; }
+    .roster li { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0; }
+    .roster li + li { border-top: 1px solid var(--line); }
+    .roster .who { flex: 1; min-width: 0; }
+    .roster .who .cl { color: var(--muted); font-size: 0.82rem; }
+    .roster .price { font-family: var(--display); font-weight: 700; white-space: nowrap; text-align: right; }
+    .roster .price small { display: block; font-family: var(--body); font-weight: 500; font-size: 0.72rem; color: var(--muted); }
+    .roster .vuoto { color: var(--muted); font-size: 0.88rem; padding: 0.5rem 0; }
 
     .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.75rem; }
 
     @media (max-width: 700px) {
-      .setup, .pick-form { grid-template-columns: 1fr 1fr; }
-      .teams { grid-template-columns: 1fr; }
+      .setup { grid-template-columns: 1fr 1fr; }
+      .buy { grid-template-columns: 1fr 1fr; }
+      .buy .ac, .buy .go { grid-column: 1 / -1; }
+      .buy .go .btn { width: 100%; }
     }
     @media (max-width: 480px) {
-      .setup, .pick-form { grid-template-columns: 1fr; }
+      .setup { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -88,17 +100,66 @@
     <header class="page-head">
       <p class="eyebrow">Asta</p>
       <h1 class="title">Fantacalcio</h1>
-      <p class="lead">Tieni il conto dei crediti, degli slot e di chi si prende chi durante l'asta.</p>
+      <p class="lead">La mia rosa all'asta: crediti, slot per reparto e giocatori presi dal listone 2026/27.</p>
     </header>
 
     <div class="stats">
-      <div class="stat"><div class="n" id="s-teams">0</div><div class="l">Squadre</div></div>
-      <div class="stat"><div class="n" id="s-picks">0</div><div class="l">Giocatori assegnati</div></div>
+      <div class="stat"><div class="n" id="s-rest">500</div><div class="l">Crediti residui</div></div>
+      <div class="stat"><div class="n" id="s-count">0</div><div class="l">Giocatori in rosa</div></div>
       <div class="stat"><div class="n" id="s-spent">0</div><div class="l">Crediti spesi</div></div>
-      <div class="stat"><div class="n" id="s-avg">0</div><div class="l">Prezzo medio</div></div>
+      <div class="stat"><div class="n" id="s-max">0</div><div class="l">Offerta massima</div></div>
     </div>
 
-    <p class="section-divider">Impostazioni asta</p>
+    <div class="budget-bar"><span id="bar" style="width:0%"></span></div>
+
+    <p class="section-divider">Prendi un giocatore</p>
+
+    <div class="card buy">
+      <div class="field ac">
+        <label for="p-name">Giocatore</label>
+        <input id="p-name" type="text" autocomplete="off" role="combobox" aria-expanded="false"
+               aria-controls="suggest" placeholder="Cerca nel listone: nome o squadra…" />
+        <ul class="suggest" id="suggest" role="listbox" hidden></ul>
+      </div>
+      <div class="field">
+        <label for="p-role">Ruolo</label>
+        <select id="p-role">
+          <option value="P">P</option>
+          <option value="D">D</option>
+          <option value="C" selected>C</option>
+          <option value="A">A</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="p-club">Squadra</label>
+        <input id="p-club" type="text" placeholder="Es. Inter" />
+      </div>
+      <div class="field">
+        <label for="p-price">Pagato</label>
+        <input id="p-price" type="number" min="1" step="1" value="1" />
+      </div>
+      <div class="field go">
+        <button class="btn btn-accent" id="add">Aggiungi</button>
+      </div>
+      <div class="full picked" id="picked" hidden></div>
+      <div class="full"><div class="alert" id="alert" hidden></div></div>
+    </div>
+
+    <p class="section-divider">La rosa</p>
+
+    <div class="card" id="rosa"></div>
+
+    <div class="actions">
+      <button class="btn" id="export">Esporta JSON</button>
+      <button class="btn" id="reset">Azzera rosa</button>
+    </div>
+
+    <p class="note">
+      Quotazioni dal listone ufficiale 2026/27 (509 giocatori, file <code>listone.js</code>).
+      La rosa resta salvata nel browser: puoi chiudere la pagina e riprendere l'asta da dove eri.
+    </p>
+
+    <p class="section-divider">Impostazioni</p>
 
     <div class="card setup">
       <div class="field">
@@ -121,87 +182,20 @@
         <label for="slot-A">Attaccanti</label>
         <input id="slot-A" type="number" min="0" step="1" value="6" />
       </div>
-      <div class="full field">
-        <label for="team-name">Aggiungi una squadra</label>
-        <div style="display:flex; gap:0.6rem; flex-wrap:wrap">
-          <input id="team-name" type="text" placeholder="Nome della squadra" style="flex:1 1 220px" />
-          <button class="btn btn-accent" id="add-team">Aggiungi squadra</button>
-        </div>
-      </div>
     </div>
-
-    <p class="section-divider">Assegna un giocatore</p>
-
-    <div class="card pick-form">
-      <div class="field">
-        <label for="p-name">Giocatore</label>
-        <input id="p-name" type="text" placeholder="Es. Lautaro" />
-      </div>
-      <div class="field">
-        <label for="p-club">Club</label>
-        <input id="p-club" type="text" placeholder="Es. Inter" />
-      </div>
-      <div class="field">
-        <label for="p-role">Ruolo</label>
-        <select id="p-role">
-          <option value="P">P</option>
-          <option value="D">D</option>
-          <option value="C" selected>C</option>
-          <option value="A">A</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="p-price">Prezzo</label>
-        <input id="p-price" type="number" min="1" step="1" value="1" />
-      </div>
-      <div class="field">
-        <label for="p-team">Acquirente</label>
-        <select id="p-team"></select>
-      </div>
-      <div class="full">
-        <button class="btn btn-accent" id="assign">Assegna</button>
-        <span class="meta" id="hint"></span>
-      </div>
-      <div class="full"><div class="alert" id="alert" hidden></div></div>
-    </div>
-
-    <p class="section-divider">Rose</p>
-
-    <div class="filters">
-      <div class="field">
-        <input id="search" type="search" placeholder="Cerca giocatore o squadra…" aria-label="Cerca giocatore" />
-      </div>
-      <button class="chip" data-role="" aria-pressed="true">Tutti</button>
-      <button class="chip" data-role="P" aria-pressed="false">P</button>
-      <button class="chip" data-role="D" aria-pressed="false">D</button>
-      <button class="chip" data-role="C" aria-pressed="false">C</button>
-      <button class="chip" data-role="A" aria-pressed="false">A</button>
-    </div>
-
-    <div class="teams" id="teams"></div>
-    <div class="empty" id="empty" hidden>Nessuna squadra: aggiungine una qui sopra per iniziare l'asta.</div>
-
-    <div class="actions">
-      <button class="btn" id="export">Esporta JSON</button>
-      <button class="btn" id="reset">Azzera asta</button>
-    </div>
-
-    <p class="note">Tutto resta salvato nel browser (localStorage): puoi chiudere la pagina e riprendere l'asta da dove eri.</p>
   </main>
 
   <footer class="site">&copy; <span id="y"></span> Luca</footer>
 
+  <script src="listone.js"></script>
   <script>
-    const KEY = "luca_fantacalcio";
+    const KEY = "luca_fantacalcio_rosa";
     const ROLES = ["P", "D", "C", "A"];
     const ROLE_LABEL = { P: "Portieri", D: "Difensori", C: "Centrocampisti", A: "Attaccanti" };
+    const ROLE_ONE = { P: "portiere", D: "difensore", C: "centrocampista", A: "attaccante" };
+    const listone = typeof LISTONE !== "undefined" ? LISTONE : [];
 
-    const emptyState = () => ({
-      budget: 500,
-      slots: { P: 3, D: 8, C: 8, A: 6 },
-      teams: [],
-      picks: []
-    });
+    const emptyState = () => ({ budget: 500, slots: { P: 3, D: 8, C: 8, A: 6 }, rosa: [] });
 
     // Storage con fallback in memoria (così funziona anche dove localStorage è bloccato)
     const store = {
@@ -218,104 +212,202 @@
 
     let state = Object.assign(emptyState(), store.load());
     let filterRole = "";
-    let query = "";
+    let picked = null;   // giocatore scelto dal listone
+    let active = -1;     // suggerimento evidenziato
+    let matches = [];
 
     const $ = id => document.getElementById(id);
     const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+    const norm = s => String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
-    const picksOf = teamId => state.picks.filter(p => p.teamId === teamId);
+    const spent = () => state.rosa.reduce((n, p) => n + p.price, 0);
+    const rest = () => state.budget - spent();
     const slotsTotal = () => ROLES.reduce((n, r) => n + state.slots[r], 0);
-    const spentBy = teamId => picksOf(teamId).reduce((n, p) => n + p.price, 0);
-    const restOf = teamId => state.budget - spentBy(teamId);
+    const taken = role => state.rosa.filter(p => p.role === role).length;
     // con l'ultimo slot devi comunque poter coprire gli altri a 1 credito
-    const maxBid = teamId => Math.max(0, restOf(teamId) - (slotsTotal() - picksOf(teamId).length - 1));
+    const maxBid = () => Math.max(0, rest() - (slotsTotal() - state.rosa.length - 1));
 
-    function showAlert(msg) {
-      const box = $("alert");
-      box.textContent = msg;
-      box.hidden = !msg;
+    function alertMsg(msg) {
+      $("alert").textContent = msg;
+      $("alert").hidden = !msg;
     }
 
-    function syncSetupInputs() {
-      $("budget").value = state.budget;
-      ROLES.forEach(r => { $("slot-" + r).value = state.slots[r]; });
+    // ---------- listone: suggerimenti ----------
+    function search(q) {
+      const n = norm(q);
+      if (!n) return [];
+      const inRosa = new Set(state.rosa.map(p => p.id).filter(Boolean));
+      const hits = [];
+      for (const p of listone) {
+        if (inRosa.has(p[0])) continue;
+        const name = norm(p[2]), club = norm(p[3]);
+        const rank = name.startsWith(n) ? 0 : name.includes(n) ? 1 : club.startsWith(n) ? 2 : club.includes(n) ? 3 : -1;
+        if (rank >= 0) hits.push({ rank, p });
+      }
+      hits.sort((a, b) => a.rank - b.rank || b.p[4] - a.p[4] || a.p[2].localeCompare(b.p[2]));
+      return hits.slice(0, 8).map(h => h.p);
     }
 
-    function renderTeamSelect() {
-      const sel = $("p-team");
-      const prev = sel.value;
-      sel.innerHTML = state.teams.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join("");
-      if (state.teams.some(t => t.id === prev)) sel.value = prev;
-      updateHint();
+    function renderSuggest() {
+      const box = $("suggest");
+      if (!matches.length) {
+        box.innerHTML = "";
+        box.hidden = true;
+        $("p-name").setAttribute("aria-expanded", "false");
+        return;
+      }
+      box.innerHTML = matches.map((p, i) => `
+        <li role="option" data-i="${i}" aria-selected="${i === active}">
+          <span class="badge r-${p[1]}">${p[1]}</span>
+          <span class="nm">${esc(p[2])} <span class="cl">${esc(p[3])}</span></span>
+          <span class="qt">${p[4]}</span>
+        </li>
+      `).join("");
+      box.hidden = false;
+      $("p-name").setAttribute("aria-expanded", "true");
     }
 
-    function updateHint() {
-      const id = $("p-team").value;
-      if (!id) { $("hint").textContent = ""; return; }
-      const left = slotsTotal() - picksOf(id).length;
-      $("hint").textContent = `Residuo ${restOf(id)} · offerta max ${maxBid(id)} · ${left} slot da riempire`;
+    function closeSuggest() {
+      matches = []; active = -1;
+      renderSuggest();
     }
 
+    function choose(p) {
+      picked = { id: p[0], role: p[1], name: p[2], club: p[3], qt: p[4], fvm: p[5] };
+      $("p-name").value = p[2];
+      $("p-role").value = p[1];
+      $("p-club").value = p[3];
+      $("p-price").value = p[4] || 1;
+      $("picked").hidden = false;
+      $("picked").innerHTML = `Dal listone: <span class="badge r-${p[1]}">${p[1]}</span> <b>${esc(p[2])}</b> · ${esc(p[3])} · quotazione <b>${p[4]}</b> · FVM ${p[5]}`;
+      closeSuggest();
+      alertMsg("");
+      $("p-price").focus();
+      $("p-price").select();
+    }
+
+    // ---------- rosa ----------
     function updateStats() {
-      $("s-teams").textContent = state.teams.length;
-      $("s-picks").textContent = state.picks.length;
-      const spent = state.picks.reduce((n, p) => n + p.price, 0);
-      $("s-spent").textContent = spent;
-      $("s-avg").textContent = state.picks.length ? (spent / state.picks.length).toFixed(1) : "0";
-    }
-
-    function matches(p) {
-      if (filterRole && p.role !== filterRole) return false;
-      if (!query) return true;
-      return (p.name + " " + (p.club || "")).toLowerCase().includes(query);
+      $("s-rest").textContent = rest();
+      $("s-count").textContent = state.rosa.length + "/" + slotsTotal();
+      $("s-spent").textContent = spent();
+      $("s-max").textContent = maxBid();
+      $("bar").style.width = (state.budget > 0 ? Math.min(100, spent() / state.budget * 100) : 0) + "%";
     }
 
     function render() {
-      $("empty").hidden = state.teams.length > 0;
-
-      $("teams").innerHTML = state.teams.map(t => {
-        const mine = picksOf(t.id);
-        const spent = spentBy(t.id);
-        const pct = state.budget > 0 ? Math.min(100, Math.round(spent / state.budget * 100)) : 0;
-        const shown = mine.filter(matches).sort((a, b) => ROLES.indexOf(a.role) - ROLES.indexOf(b.role) || b.price - a.price);
-
-        const slots = ROLES.map(r => {
-          const n = mine.filter(p => p.role === r).length;
-          const full = n >= state.slots[r];
-          return `<span class="${full ? "done" : ""}">${r} <b>${n}</b>/${state.slots[r]}</span>`;
-        }).join(" · ");
-
-        const rows = shown.length ? shown.map(p => `
+      $("rosa").innerHTML = ROLES.map(r => {
+        const men = state.rosa.filter(p => p.role === r)
+          .sort((a, b) => b.price - a.price || a.name.localeCompare(b.name));
+        const full = men.length >= state.slots[r];
+        const rows = men.length ? men.map(p => `
           <li>
-            <span class="badge r-${p.role}">${p.role}</span>
-            <span class="who">${esc(p.name)}${p.club ? ` <span class="club">${esc(p.club)}</span>` : ""}</span>
-            <span class="price">${p.price}</span>
-            <button class="btn-ghost" data-pick="${p.id}" title="Rimuovi giocatore">×</button>
+            <span class="badge r-${r}">${r}</span>
+            <span class="who">${esc(p.name)}${p.club ? ` <span class="cl">${esc(p.club)}</span>` : ""}</span>
+            <span class="price">${p.price}${p.qt ? `<small>qt. ${p.qt}</small>` : ""}</span>
+            <button class="btn-ghost" data-id="${p.key}" title="Togli dalla rosa">×</button>
           </li>
-        `).join("") : `<li class="none">${mine.length ? "Nessun giocatore con questo filtro." : "Rosa ancora vuota."}</li>`;
+        `).join("") : `<li class="vuoto">Ancora nessun ${ROLE_ONE[r]}.</li>`;
 
         return `
-          <div class="card team">
-            <div class="team-head">
-              <h3>${esc(t.name)}</h3>
-              <div class="rest">${restOf(t.id)}<small>crediti · max ${maxBid(t.id)}</small></div>
+          <div class="reparto">
+            <div class="reparto-head">
+              <h2>${ROLE_LABEL[r]}</h2>
+              <span class="conto${full ? " done" : ""}">${men.length}/${state.slots[r]} · ${men.reduce((n, p) => n + p.price, 0)} crediti</span>
             </div>
-            <div class="bar"><span style="width:${pct}%"></span></div>
-            <div class="slots">${slots}</div>
             <ul class="roster">${rows}</ul>
-            <div><button class="btn-ghost" data-team="${t.id}">elimina squadra</button></div>
           </div>
         `;
       }).join("");
 
       updateStats();
-      updateHint();
     }
 
     function save() { store.save(state); }
 
-    // ---- impostazioni ----
+    function addPlayer() {
+      const name = $("p-name").value.trim();
+      const club = $("p-club").value.trim();
+      const role = $("p-role").value;
+      const price = parseInt($("p-price").value, 10);
+
+      if (!name) { alertMsg("Manca il nome del giocatore."); $("p-name").focus(); return; }
+      if (!Number.isFinite(price) || price < 1) { alertMsg("Il prezzo deve essere almeno 1 credito."); return; }
+      if (taken(role) >= state.slots[role]) { alertMsg(`${ROLE_LABEL[role]}: slot già pieni.`); return; }
+      if (state.rosa.some(p => norm(p.name) === norm(name))) { alertMsg(`${name} è già in rosa.`); return; }
+      if (price > maxBid()) {
+        alertMsg(`Offerta troppo alta: con gli slot rimasti puoi arrivare a ${maxBid()} crediti.`);
+        return;
+      }
+
+      const fromList = picked && norm(picked.name) === norm(name) ? picked : null;
+      state.rosa.push({
+        key: uid(),
+        id: fromList ? fromList.id : null,
+        name: fromList ? fromList.name : name,
+        club: fromList ? fromList.club : club,
+        role, price,
+        qt: fromList ? fromList.qt : null
+      });
+
+      picked = null;
+      $("picked").hidden = true;
+      $("p-name").value = "";
+      $("p-club").value = "";
+      $("p-price").value = 1;
+      alertMsg("");
+      $("p-name").focus();
+      save(); render();
+    }
+
+    // ---------- eventi ----------
+    $("p-name").addEventListener("input", e => {
+      picked = null;
+      $("picked").hidden = true;
+      matches = search(e.target.value);
+      active = matches.length ? 0 : -1;
+      renderSuggest();
+    });
+
+    $("p-name").addEventListener("keydown", e => {
+      if (matches.length && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+        e.preventDefault();
+        active = (active + (e.key === "ArrowDown" ? 1 : matches.length - 1)) % matches.length;
+        renderSuggest();
+        return;
+      }
+      if (e.key === "Escape") { closeSuggest(); return; }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (matches.length && active >= 0) choose(matches[active]);
+        else addPlayer();
+      }
+    });
+
+    $("suggest").addEventListener("mousedown", e => {
+      const li = e.target.closest("[data-i]");
+      if (!li) return;
+      e.preventDefault();
+      choose(matches[Number(li.dataset.i)]);
+    });
+
+    document.addEventListener("click", e => {
+      if (!e.target.closest(".ac")) closeSuggest();
+    });
+
+    ["p-club", "p-price"].forEach(id => {
+      $(id).addEventListener("keydown", e => { if (e.key === "Enter") addPlayer(); });
+    });
+    $("add").addEventListener("click", addPlayer);
+
+    $("rosa").addEventListener("click", e => {
+      const btn = e.target.closest("[data-id]");
+      if (!btn) return;
+      state.rosa = state.rosa.filter(p => p.key !== btn.dataset.id);
+      save(); render();
+    });
+
     $("budget").addEventListener("change", e => {
       state.budget = Math.max(1, parseInt(e.target.value, 10) || 1);
       e.target.value = state.budget;
@@ -329,107 +421,26 @@
       });
     });
 
-    $("add-team").addEventListener("click", () => {
-      const input = $("team-name");
-      const name = input.value.trim();
-      if (!name) { input.focus(); return; }
-      if (state.teams.some(t => t.name.toLowerCase() === name.toLowerCase())) {
-        showAlert("C'è già una squadra con questo nome.");
-        return;
-      }
-      state.teams.push({ id: uid(), name });
-      input.value = "";
-      showAlert("");
-      save(); renderTeamSelect(); render();
-    });
-    $("team-name").addEventListener("keydown", e => { if (e.key === "Enter") $("add-team").click(); });
-
-    // ---- assegnazione ----
-    $("assign").addEventListener("click", () => {
-      const name = $("p-name").value.trim();
-      const club = $("p-club").value.trim();
-      const role = $("p-role").value;
-      const price = parseInt($("p-price").value, 10);
-      const teamId = $("p-team").value;
-
-      if (!state.teams.length) { showAlert("Aggiungi almeno una squadra prima di assegnare."); return; }
-      if (!name) { showAlert("Manca il nome del giocatore."); $("p-name").focus(); return; }
-      if (!Number.isFinite(price) || price < 1) { showAlert("Il prezzo deve essere almeno 1 credito."); return; }
-
-      const mine = picksOf(teamId);
-      if (mine.filter(p => p.role === role).length >= state.slots[role]) {
-        showAlert(`${ROLE_LABEL[role]}: slot già pieni per questa squadra.`);
-        return;
-      }
-      if (price > maxBid(teamId)) {
-        showAlert(`Offerta troppo alta: con gli slot rimasti il massimo è ${maxBid(teamId)} crediti.`);
-        return;
-      }
-      if (state.picks.some(p => p.name.toLowerCase() === name.toLowerCase())) {
-        showAlert(`${name} è già stato assegnato: controlla le rose.`);
-        return;
-      }
-
-      state.picks.push({ id: uid(), name, club, role, price, teamId });
-      $("p-name").value = "";
-      $("p-club").value = "";
-      $("p-price").value = 1;
-      $("p-name").focus();
-      showAlert("");
-      save(); render();
-    });
-    ["p-name", "p-club", "p-price"].forEach(id => {
-      $(id).addEventListener("keydown", e => { if (e.key === "Enter") $("assign").click(); });
-    });
-    $("p-team").addEventListener("change", updateHint);
-
-    // ---- lista rose ----
-    $("teams").addEventListener("click", e => {
-      const pick = e.target.closest("[data-pick]");
-      if (pick) {
-        state.picks = state.picks.filter(p => p.id !== pick.dataset.pick);
-        save(); render();
-        return;
-      }
-      const team = e.target.closest("[data-team]");
-      if (team) {
-        const t = state.teams.find(x => x.id === team.dataset.team);
-        if (!t || !confirm(`Eliminare "${t.name}" e la sua rosa?`)) return;
-        state.teams = state.teams.filter(x => x.id !== t.id);
-        state.picks = state.picks.filter(p => p.teamId !== t.id);
-        save(); renderTeamSelect(); render();
-      }
-    });
-
-    // ---- filtri ----
-    $("search").addEventListener("input", e => { query = e.target.value.trim().toLowerCase(); render(); });
-    document.querySelectorAll(".chip").forEach(chip => {
-      chip.addEventListener("click", () => {
-        filterRole = chip.dataset.role;
-        document.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", String(c === chip)));
-        render();
-      });
-    });
-
-    // ---- azioni ----
     $("export").addEventListener("click", () => {
       const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = "asta-fantacalcio.json";
+      a.download = "rosa-fantacalcio.json";
       a.click();
       URL.revokeObjectURL(a.href);
     });
 
     $("reset").addEventListener("click", () => {
-      if (!confirm("Azzerare squadre e giocatori assegnati?")) return;
-      state = emptyState();
-      showAlert("");
-      save(); syncSetupInputs(); renderTeamSelect(); render();
+      if (!confirm("Svuotare la rosa e ripartire da zero?")) return;
+      state.rosa = [];
+      picked = null;
+      $("picked").hidden = true;
+      alertMsg("");
+      save(); render();
     });
 
-    syncSetupInputs();
-    renderTeamSelect();
+    $("budget").value = state.budget;
+    ROLES.forEach(r => { $("slot-" + r).value = state.slots[r]; });
     render();
     $("y").textContent = new Date().getFullYear();
   </script>
