@@ -2,117 +2,283 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Luca — Fantacalcio</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Asta Fantacalcio</title>
+  <meta name="description" content="Gestione dell'asta del fantacalcio: crediti, slot per reparto e rosa dal listone ufficiale 2026/27." />
+  <link rel="manifest" href="fantacalcio.webmanifest" />
+  <meta name="theme-color" content="#0e7c8a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Asta" />
+  <link rel="apple-touch-icon" href="fantacalcio-icons/apple-touch-icon.png" />
+  <link rel="icon" href="fantacalcio-icons/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" />
   <style>
-    .eyebrow { color: var(--c-fanta); }
-    .btn-accent { background: var(--c-fanta); border-color: var(--c-fanta); }
-    .nav a[aria-current="page"] { border-bottom-color: var(--c-fanta); }
+    :root {
+      --bg:      #eef3f6;
+      --card:    #ffffff;
+      --ink:     #10242e;
+      --muted:   #5d727d;
+      --line:    #e0e8ec;
 
-    .budget-bar { height: 8px; border-radius: 999px; background: var(--line); overflow: hidden; margin-bottom: 1.75rem; }
-    .budget-bar span { display: block; height: 100%; background: var(--c-fanta); transition: width 0.2s ease; }
+      --brand:   #0e7c8a;
+      --brand-2: #0f9b6c;
+      --deep:    #15507e;
 
-    .setup { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.9rem; align-items: end; margin-bottom: 1.5rem; }
+      --p: #e8930c;
+      --d: #10a171;
+      --c: #3b74e8;
+      --a: #e0453c;
 
-    .buy { display: grid; grid-template-columns: 2fr 0.9fr 1.4fr 0.9fr auto; gap: 0.9rem; align-items: end; margin-bottom: 1.5rem; }
+      --p-soft: #fdf2dd;
+      --d-soft: #dff5ec;
+      --c-soft: #e4ecfd;
+      --a-soft: #fce8e6;
+
+      --display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+      --body: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      --radius: 16px;
+      --maxw: 720px;
+      --shadow: 0 10px 30px rgba(16, 36, 46, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--body);
+      font-size: 17px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---------- testata dell'app ---------- */
+    .app-head {
+      background: linear-gradient(135deg, var(--brand-2) 0%, var(--brand) 52%, var(--deep) 100%);
+      color: #fff;
+      padding: calc(1.3rem + env(safe-area-inset-top)) clamp(1.1rem, 5vw, 1.8rem) 2.6rem;
+      border-radius: 0 0 26px 26px;
+    }
+    .app-head .top {
+      max-width: var(--maxw); margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .logo { display: flex; align-items: center; gap: 0.6rem; }
+    .logo svg { width: 34px; height: 34px; flex: none; }
+    .logo h1 {
+      font-family: var(--display); font-weight: 700; letter-spacing: -0.02em;
+      font-size: clamp(1.3rem, 5vw, 1.7rem); margin: 0; line-height: 1.1;
+    }
+    .season {
+      display: inline-block; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; opacity: 0.85;
+    }
+    .btn-install {
+      font-family: var(--body); font-weight: 600; font-size: 0.85rem;
+      color: #fff; background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.45); border-radius: 999px;
+      padding: 0.45rem 0.95rem; cursor: pointer; white-space: nowrap;
+      backdrop-filter: blur(4px);
+    }
+    .btn-install:hover { background: rgba(255,255,255,0.28); }
+    .btn-install[hidden] { display: none; }
+
+    /* ---------- riquadri ---------- */
+    .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 clamp(1.1rem, 5vw, 1.8rem) 3rem; }
+
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; margin-top: -1.8rem; }
+    .stat {
+      border-radius: var(--radius); padding: 1rem 1.1rem; color: #fff;
+      box-shadow: var(--shadow);
+    }
+    .stat.rosa  { background: linear-gradient(135deg, #6d4bd8, #9b4bd8); }
+    .stat.offer { background: linear-gradient(135deg, #0f9b6c, #12b3a0); }
+    .stat .n { font-family: var(--display); font-weight: 700; font-size: 1.85rem; line-height: 1; }
+    .stat .l { font-size: 0.8rem; opacity: 0.92; margin-top: 0.3rem; }
+
+    .meter { margin: 1.1rem 0 1.9rem; }
+    .meter .track { height: 10px; border-radius: 999px; background: #dde6ea; overflow: hidden; }
+    .meter .fill { height: 100%; width: 0; border-radius: 999px; transition: width 0.25s ease, background 0.25s ease; }
+    .meter .cap { display: flex; justify-content: space-between; font-size: 0.76rem; color: var(--muted); margin-top: 0.4rem; }
+
+    .card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 1.2rem; box-shadow: var(--shadow);
+    }
+
+    .sec {
+      font-family: var(--display); font-size: 0.76rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+      margin: 2rem 0 0.9rem;
+    }
+
+    /* ---------- modulo ---------- */
+    label { font-size: 0.76rem; font-weight: 600; color: var(--muted); }
+    .field { display: flex; flex-direction: column; gap: 0.3rem; }
+    input, select {
+      font-family: var(--body); font-size: 1rem; color: var(--ink);
+      background: #fbfdfe; border: 1.5px solid var(--line); border-radius: 12px;
+      padding: 0.62rem 0.72rem; width: 100%;
+    }
+    input:focus, select:focus {
+      outline: none; border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(14, 124, 138, 0.16);
+    }
+    .buy { display: grid; grid-template-columns: 2fr 0.8fr 1.3fr 0.9fr auto; gap: 0.8rem; align-items: end; }
     .buy .full { grid-column: 1 / -1; }
 
-    /* campo con suggerimenti dal listone */
+    .btn {
+      font-family: var(--body); font-weight: 600; font-size: 0.95rem;
+      border: 1px solid var(--line); background: #fff; color: var(--ink);
+      border-radius: 12px; padding: 0.62rem 1.1rem; cursor: pointer;
+    }
+    .btn:hover { border-color: var(--muted); }
+    .btn-go {
+      border: none; color: #fff;
+      background: linear-gradient(135deg, var(--brand-2), var(--brand));
+      box-shadow: 0 6px 16px rgba(14, 124, 138, 0.28);
+    }
+    .btn-go:hover { filter: brightness(1.06); }
+    .btn-ghost {
+      border: none; background: none; color: #b9c5cb; cursor: pointer;
+      font-size: 1.15rem; line-height: 1; padding: 0.2rem 0.35rem;
+    }
+    .btn-ghost:hover { color: var(--a); }
+
+    /* ---------- suggerimenti dal listone ---------- */
     .ac { position: relative; }
     .suggest {
-      position: absolute; z-index: 20; top: calc(100% + 4px); left: 0;
+      position: absolute; z-index: 30; top: calc(100% + 5px); left: 0;
       width: max(100%, min(360px, 86vw));
-      background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
-      box-shadow: 0 10px 28px rgba(24,32,36,0.12);
-      max-height: 300px; overflow-y: auto; padding: 0.3rem;
-      list-style: none; margin: 0;
+      background: #fff; border: 1px solid var(--line); border-radius: 14px;
+      box-shadow: 0 16px 38px rgba(16, 36, 46, 0.18);
+      max-height: 310px; overflow-y: auto; padding: 0.3rem; margin: 0; list-style: none;
     }
     .suggest[hidden] { display: none; }
     .suggest li {
-      display: flex; align-items: center; gap: 0.5rem;
-      padding: 0.45rem 0.55rem; border-radius: 8px; cursor: pointer; font-size: 0.93rem;
+      display: flex; align-items: center; gap: 0.55rem;
+      padding: 0.45rem 0.5rem; border-radius: 10px; cursor: pointer; font-size: 0.94rem;
     }
-    .suggest li[aria-selected="true"] { background: #eef4f7; }
+    .suggest li[aria-selected="true"] { background: #edf5f7; }
     .suggest .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .suggest .cl { color: var(--muted); font-size: 0.82rem; }
-    .suggest .qt { font-family: var(--display); font-weight: 600; white-space: nowrap; }
-    .suggest .none { color: var(--muted); cursor: default; font-size: 0.88rem; }
+    .suggest .qt { font-family: var(--display); font-weight: 700; white-space: nowrap; }
 
-    .picked { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; font-size: 0.88rem; color: var(--muted); }
+    .picked {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem;
+      font-size: 0.86rem; color: var(--muted);
+      background: #f2f9fa; border: 1px solid #d7ebee; border-radius: 12px; padding: 0.5rem 0.7rem;
+    }
     .picked[hidden] { display: none; }
 
-    .alert { font-size: 0.88rem; border-radius: 10px; padding: 0.55rem 0.8rem;
-             background: #fdf1ec; color: #b04a2a; border: 1px solid #f4d9cd; }
+    .alert {
+      font-size: 0.88rem; border-radius: 12px; padding: 0.55rem 0.8rem;
+      background: #fdece9; color: #b23a30; border: 1px solid #f6cfc9;
+    }
     .alert[hidden] { display: none; }
 
-    .badge.r-P { background: #fdf0da; color: #a8761a; }
-    .badge.r-D { background: #e7f3ee; color: var(--c-allenamenti); }
-    .badge.r-C { background: #eef0f8; color: var(--c-libri); }
-    .badge.r-A { background: #fbe9e7; color: #c0392b; }
-
-    .reparto + .reparto { margin-top: 1.1rem; }
-    .reparto-head {
-      display: flex; align-items: baseline; justify-content: space-between; gap: 1rem;
-      margin-bottom: 0.5rem;
+    /* ---------- ruoli ---------- */
+    .dot {
+      flex: none; width: 26px; height: 26px; border-radius: 50%;
+      display: grid; place-items: center; color: #fff;
+      font-family: var(--display); font-weight: 700; font-size: 0.78rem;
     }
-    .reparto-head h2 { font-family: var(--display); font-size: 1rem; margin: 0; }
-    .reparto-head .conto { font-size: 0.85rem; color: var(--muted); }
-    .reparto-head .conto.done { color: var(--c-allenamenti); font-weight: 600; }
+    .dot.P { background: var(--p); } .dot.D { background: var(--d); }
+    .dot.C { background: var(--c); } .dot.A { background: var(--a); }
 
-    .roster { list-style: none; margin: 0; padding: 0; }
-    .roster li { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0; }
-    .roster li + li { border-top: 1px solid var(--line); }
-    .roster .who { flex: 1; min-width: 0; }
-    .roster .who .cl { color: var(--muted); font-size: 0.82rem; }
-    .roster .price { font-family: var(--display); font-weight: 700; white-space: nowrap; text-align: right; }
-    .roster .price small { display: block; font-family: var(--body); font-weight: 500; font-size: 0.72rem; color: var(--muted); }
-    .roster .vuoto { color: var(--muted); font-size: 0.88rem; padding: 0.5rem 0; }
+    .reparto { border-radius: var(--radius); background: var(--card); border: 1px solid var(--line);
+               box-shadow: var(--shadow); overflow: hidden; }
+    .reparto + .reparto { margin-top: 0.9rem; }
+    .reparto-head {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 0.75rem 1rem; color: #fff;
+    }
+    .reparto.P .reparto-head { background: linear-gradient(120deg, #e8930c, #f2ae3d); }
+    .reparto.D .reparto-head { background: linear-gradient(120deg, #10a171, #2bbd8c); }
+    .reparto.C .reparto-head { background: linear-gradient(120deg, #3b74e8, #5b93f5); }
+    .reparto.A .reparto-head { background: linear-gradient(120deg, #e0453c, #f0675a); }
+    .reparto-head h2 { font-family: var(--display); font-size: 1rem; margin: 0; flex: 1; }
+    .reparto-head .conto {
+      font-size: 0.78rem; font-weight: 600; background: rgba(255,255,255,0.22);
+      border-radius: 999px; padding: 0.15rem 0.6rem; white-space: nowrap;
+    }
+    .reparto ul { list-style: none; margin: 0; padding: 0.35rem 1rem 0.6rem; }
+    .reparto li { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0; }
+    .reparto li + li { border-top: 1px solid var(--line); }
+    .reparto .who { flex: 1; min-width: 0; font-weight: 500; }
+    .reparto .who .cl { color: var(--muted); font-size: 0.8rem; font-weight: 400; }
+    .reparto .price { font-family: var(--display); font-weight: 700; text-align: right; white-space: nowrap; }
+    .reparto .price small { display: block; font-family: var(--body); font-weight: 500; font-size: 0.7rem; color: var(--muted); }
+    .reparto .vuoto { color: var(--muted); font-size: 0.87rem; padding: 0.5rem 0; }
+    .reparto.P .price { color: var(--p); } .reparto.D .price { color: var(--d); }
+    .reparto.C .price { color: var(--c); } .reparto.A .price { color: var(--a); }
 
-    .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.75rem; }
+    /* ---------- fondo pagina ---------- */
+    .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.6rem; }
+    details.setup { margin-top: 1.6rem; }
+    details.setup summary {
+      cursor: pointer; font-family: var(--display); font-weight: 600; font-size: 0.9rem;
+      color: var(--muted); padding: 0.3rem 0;
+    }
+    .setup-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.8rem; align-items: end; margin-top: 0.8rem; }
+    .note {
+      font-size: 0.82rem; color: var(--muted); margin-top: 1.6rem;
+      background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 0.7rem 0.9rem;
+    }
+    .note code { background: #eef3f6; border-radius: 5px; padding: 0.05rem 0.3rem; font-size: 0.9em; }
 
     @media (max-width: 700px) {
-      .setup { grid-template-columns: 1fr 1fr; }
       .buy { grid-template-columns: 1fr 1fr; }
       .buy .ac, .buy .go { grid-column: 1 / -1; }
       .buy .go .btn { width: 100%; }
+      .setup-grid { grid-template-columns: 1fr 1fr; }
     }
-    @media (max-width: 480px) {
-      .setup { grid-template-columns: 1fr; }
+    @media (prefers-reduced-motion: no-preference) {
+      .stats, .meter, .card, .reparto { animation: rise 0.45s ease both; }
+      @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
     }
   </style>
 </head>
 <body>
-  <nav class="nav">
-    <a class="brand" href="index.html">Luca</a>
-    <ul>
-      <li><a href="index.html">Home</a></li>
-      <li><a href="ricette.html">Ricette</a></li>
-      <li><a href="bitcoin.html">Bitcoin</a></li>
-      <li><a href="allenamenti.html">Allenamenti</a></li>
-      <li><a href="libri.html">Libri</a></li>
-      <li><a href="modellazione3d.html">Modellazione 3D</a></li>
-      <li><a href="fantacalcio.html" aria-current="page">Fantacalcio</a></li>
-    </ul>
-  </nav>
+  <header class="app-head">
+    <div class="top">
+      <div class="logo">
+        <svg viewBox="0 0 512 512" aria-hidden="true">
+          <circle cx="256" cy="256" r="248" fill="#fff"/>
+          <g transform="translate(256 256) scale(3.1)">
+            <polygon points="0,-30 28.5,-9.3 17.6,23.8 -17.6,23.8 -28.5,-9.3" fill="#12324a"/>
+            <g stroke="#12324a" stroke-width="11" stroke-linecap="round" fill="none">
+              <path d="M0 -30 L0 -74"/><path d="M28.5 -9.3 L70.4 -22.9"/>
+              <path d="M17.6 23.8 L43.5 59.9"/><path d="M-17.6 23.8 L-43.5 59.9"/>
+              <path d="M-28.5 -9.3 L-70.4 -22.9"/>
+            </g>
+          </g>
+        </svg>
+        <div>
+          <h1>Asta Fantacalcio</h1>
+          <span class="season">Listone 2026/27</span>
+        </div>
+      </div>
+      <button class="btn-install" id="install" hidden>Installa app</button>
+    </div>
+  </header>
 
   <main class="wrap">
-    <header class="page-head">
-      <p class="eyebrow">Asta</p>
-      <h1 class="title">Fantacalcio</h1>
-      <p class="lead">La mia rosa all'asta: crediti, slot per reparto e giocatori presi dal listone 2026/27.</p>
-    </header>
-
     <div class="stats">
-      <div class="stat"><div class="n" id="s-rest">500</div><div class="l">Crediti residui</div></div>
-      <div class="stat"><div class="n" id="s-count">0</div><div class="l">Giocatori in rosa</div></div>
-      <div class="stat"><div class="n" id="s-spent">0</div><div class="l">Crediti spesi</div></div>
-      <div class="stat"><div class="n" id="s-max">0</div><div class="l">Offerta massima</div></div>
+      <div class="stat rosa"><div class="n" id="s-count">0/25</div><div class="l">Giocatori in rosa</div></div>
+      <div class="stat offer"><div class="n" id="s-max">0</div><div class="l">Offerta massima</div></div>
     </div>
 
-    <div class="budget-bar"><span id="bar" style="width:0%"></span></div>
+    <div class="meter">
+      <div class="track"><div class="fill" id="bar"></div></div>
+      <div class="cap"><span>Budget usato</span><span id="bar-pct">0%</span></div>
+    </div>
 
-    <p class="section-divider">Prendi un giocatore</p>
+    <p class="sec">Prendi un giocatore</p>
 
     <div class="card buy">
       <div class="field ac">
@@ -139,53 +305,51 @@
         <input id="p-price" type="number" min="1" step="1" value="1" />
       </div>
       <div class="field go">
-        <button class="btn btn-accent" id="add">Aggiungi</button>
+        <button class="btn btn-go" id="add">Aggiungi</button>
       </div>
       <div class="full picked" id="picked" hidden></div>
       <div class="full"><div class="alert" id="alert" hidden></div></div>
     </div>
 
-    <p class="section-divider">La rosa</p>
-
-    <div class="card" id="rosa"></div>
+    <p class="sec">La rosa</p>
+    <div id="rosa"></div>
 
     <div class="actions">
       <button class="btn" id="export">Esporta JSON</button>
       <button class="btn" id="reset">Azzera rosa</button>
     </div>
 
-    <p class="note">
+    <details class="setup">
+      <summary>Impostazioni asta</summary>
+      <div class="card setup-grid">
+        <div class="field">
+          <label for="budget">Crediti</label>
+          <input id="budget" type="number" min="1" step="1" value="500" />
+        </div>
+        <div class="field">
+          <label for="slot-P">Portieri</label>
+          <input id="slot-P" type="number" min="0" step="1" value="3" />
+        </div>
+        <div class="field">
+          <label for="slot-D">Difensori</label>
+          <input id="slot-D" type="number" min="0" step="1" value="8" />
+        </div>
+        <div class="field">
+          <label for="slot-C">Centrocampisti</label>
+          <input id="slot-C" type="number" min="0" step="1" value="8" />
+        </div>
+        <div class="field">
+          <label for="slot-A">Attaccanti</label>
+          <input id="slot-A" type="number" min="0" step="1" value="6" />
+        </div>
+      </div>
+    </details>
+
+    <p class="note" id="note">
       Quotazioni dal listone ufficiale 2026/27 (509 giocatori, file <code>listone.js</code>).
-      La rosa resta salvata nel browser: puoi chiudere la pagina e riprendere l'asta da dove eri.
+      La rosa resta salvata sul dispositivo e l'app funziona anche senza rete.
     </p>
-
-    <p class="section-divider">Impostazioni</p>
-
-    <div class="card setup">
-      <div class="field">
-        <label for="budget">Crediti</label>
-        <input id="budget" type="number" min="1" step="1" value="500" />
-      </div>
-      <div class="field">
-        <label for="slot-P">Portieri</label>
-        <input id="slot-P" type="number" min="0" step="1" value="3" />
-      </div>
-      <div class="field">
-        <label for="slot-D">Difensori</label>
-        <input id="slot-D" type="number" min="0" step="1" value="8" />
-      </div>
-      <div class="field">
-        <label for="slot-C">Centrocampisti</label>
-        <input id="slot-C" type="number" min="0" step="1" value="8" />
-      </div>
-      <div class="field">
-        <label for="slot-A">Attaccanti</label>
-        <input id="slot-A" type="number" min="0" step="1" value="6" />
-      </div>
-    </div>
   </main>
-
-  <footer class="site">&copy; <span id="y"></span> Luca</footer>
 
   <script src="listone.js"></script>
   <script>
@@ -211,7 +375,6 @@
     };
 
     let state = Object.assign(emptyState(), store.load());
-    let filterRole = "";
     let picked = null;   // giocatore scelto dal listone
     let active = -1;     // suggerimento evidenziato
     let matches = [];
@@ -259,7 +422,7 @@
       }
       box.innerHTML = matches.map((p, i) => `
         <li role="option" data-i="${i}" aria-selected="${i === active}">
-          <span class="badge r-${p[1]}">${p[1]}</span>
+          <span class="dot ${p[1]}">${p[1]}</span>
           <span class="nm">${esc(p[2])} <span class="cl">${esc(p[3])}</span></span>
           <span class="qt">${p[4]}</span>
         </li>
@@ -280,7 +443,7 @@
       $("p-club").value = p[3];
       $("p-price").value = p[4] || 1;
       $("picked").hidden = false;
-      $("picked").innerHTML = `Dal listone: <span class="badge r-${p[1]}">${p[1]}</span> <b>${esc(p[2])}</b> · ${esc(p[3])} · quotazione <b>${p[4]}</b> · FVM ${p[5]}`;
+      $("picked").innerHTML = `<span class="dot ${p[1]}">${p[1]}</span> <b>${esc(p[2])}</b> · ${esc(p[3])} · quotazione <b>${p[4]}</b> · FVM ${p[5]}`;
       closeSuggest();
       alertMsg("");
       $("p-price").focus();
@@ -289,35 +452,38 @@
 
     // ---------- rosa ----------
     function updateStats() {
-      $("s-rest").textContent = rest();
       $("s-count").textContent = state.rosa.length + "/" + slotsTotal();
-      $("s-spent").textContent = spent();
       $("s-max").textContent = maxBid();
-      $("bar").style.width = (state.budget > 0 ? Math.min(100, spent() / state.budget * 100) : 0) + "%";
+      const pct = state.budget > 0 ? Math.min(100, Math.round(spent() / state.budget * 100)) : 0;
+      $("bar").style.width = pct + "%";
+      $("bar").style.background = pct < 60
+        ? "linear-gradient(90deg, #0f9b6c, #12b3a0)"
+        : pct < 88 ? "linear-gradient(90deg, #e8930c, #f2ae3d)"
+                   : "linear-gradient(90deg, #e0453c, #f0675a)";
+      $("bar-pct").textContent = pct + "%";
     }
 
     function render() {
       $("rosa").innerHTML = ROLES.map(r => {
         const men = state.rosa.filter(p => p.role === r)
           .sort((a, b) => b.price - a.price || a.name.localeCompare(b.name));
-        const full = men.length >= state.slots[r];
         const rows = men.length ? men.map(p => `
           <li>
-            <span class="badge r-${r}">${r}</span>
+            <span class="dot ${r}">${r}</span>
             <span class="who">${esc(p.name)}${p.club ? ` <span class="cl">${esc(p.club)}</span>` : ""}</span>
             <span class="price">${p.price}${p.qt ? `<small>qt. ${p.qt}</small>` : ""}</span>
-            <button class="btn-ghost" data-id="${p.key}" title="Togli dalla rosa">×</button>
+            <button class="btn-ghost" data-id="${p.key}" title="Togli dalla rosa" aria-label="Togli ${esc(p.name)}">×</button>
           </li>
         `).join("") : `<li class="vuoto">Ancora nessun ${ROLE_ONE[r]}.</li>`;
 
         return `
-          <div class="reparto">
+          <section class="reparto ${r}">
             <div class="reparto-head">
               <h2>${ROLE_LABEL[r]}</h2>
-              <span class="conto${full ? " done" : ""}">${men.length}/${state.slots[r]} · ${men.reduce((n, p) => n + p.price, 0)} crediti</span>
+              <span class="conto">${men.length}/${state.slots[r]}</span>
             </div>
-            <ul class="roster">${rows}</ul>
-          </div>
+            <ul>${rows}</ul>
+          </section>
         `;
       }).join("");
 
@@ -439,10 +605,45 @@
       save(); render();
     });
 
+    // ---------- installazione dell'app ----------
+    let installEvent = null;
+    const isStandalone = () =>
+      matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+
+    window.addEventListener("beforeinstallprompt", e => {
+      e.preventDefault();
+      installEvent = e;
+      if (!isStandalone()) $("install").hidden = false;
+    });
+
+    $("install").addEventListener("click", async () => {
+      if (installEvent) {
+        installEvent.prompt();
+        const { outcome } = await installEvent.userChoice;
+        installEvent = null;
+        if (outcome === "accepted") $("install").hidden = true;
+        return;
+      }
+      // iPhone e iPad: niente prompt automatico, servono le istruzioni
+      $("note").innerHTML = "Per installarla su iPhone o iPad: tocca <b>Condividi</b> nella barra di Safari, poi <b>Aggiungi a Home</b>.";
+      $("note").scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+
+    window.addEventListener("appinstalled", () => { $("install").hidden = true; });
+
+    // su iOS il bottone va mostrato a mano: non esiste beforeinstallprompt
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    if (isIOS && !isStandalone()) $("install").hidden = false;
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("fantacalcio-sw.js").catch(() => {});
+      });
+    }
+
     $("budget").value = state.budget;
     ROLES.forEach(r => { $("slot-" + r).value = state.slots[r]; });
     render();
-    $("y").textContent = new Date().getFullYear();
   </script>
 </body>
 </html>
