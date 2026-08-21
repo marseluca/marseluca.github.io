@@ -491,10 +491,10 @@
         <label for="p-price">Pagato</label>
         <div class="price-row">
           <button class="pm" id="p-minus" aria-label="Un credito in meno">&minus;</button>
-          <input id="p-price" type="number" min="1" step="1" value="1" inputmode="numeric" aria-label="Crediti pagati" />
+          <input id="p-price" type="number" min="0" step="1" value="0" inputmode="numeric" aria-label="Crediti pagati" />
           <button class="pm" id="p-plus" aria-label="Un credito in più">+</button>
         </div>
-        <input class="slider" id="p-range" type="range" min="1" max="100" step="1" value="1" aria-label="Scegli quanto pagare" />
+        <input class="slider" id="p-range" type="range" min="0" max="100" step="1" value="0" aria-label="Scegli quanto pagare" />
         <div class="quick" id="p-quick">
           <button type="button" data-q="qt">Quotazione</button>
           <button type="button" data-q="5">+5</button>
@@ -657,25 +657,22 @@
     }
 
     // ---------- prezzo: stepper, cursore e scorciatoie ----------
-    let priceMax = 1;   // tetto vero, dato dai crediti
-    let rangeMax = 1;   // tetto del cursore: sta stretto intorno alla quotazione, così è preciso
+    let priceMax = 1;   // tetto: i crediti che puoi ancora impegnare
 
     function setPrice(v, fromInput) {
-      const n = Math.min(priceMax, Math.max(1, Math.round(Number(v) || 1)));
+      const n = Math.min(priceMax, Math.max(0, Math.round(Number(v) || 0)));
       if (!fromInput) $("p-price").value = n;
-      $("p-range").value = Math.min(n, rangeMax);
-      $("p-minus").disabled = n <= 1;
+      $("p-range").value = n;
+      $("p-minus").disabled = n <= 0;
       $("p-plus").disabled = n >= priceMax;
       return n;
     }
 
-    const priceNow = () => Math.min(priceMax, Math.max(1, parseInt($("p-price").value, 10) || 1));
+    const priceNow = () => Math.min(priceMax, Math.max(0, parseInt($("p-price").value, 10) || 0));
 
     function setupPrice(pl, preso) {
       priceMax = preso ? preso.price : maxBid();
-      const qtBase = (pl.id ? qtOf(pl) : 0) || 10;
-      rangeMax = Math.max(1, Math.min(priceMax, Math.max(40, Math.ceil(qtBase * 3))));
-      $("p-range").max = rangeMax;
+      $("p-range").max = priceMax;   // il cursore copre tutto: da 0 all'offerta massima
       const base = preso ? preso.price : Math.min(priceMax, (pl.id ? qtOf(pl) : 0) || 1);
       setPrice(base);
       const qt = pl.id ? qtOf(pl) : null;
@@ -713,6 +710,8 @@
 
     // ---------- pannello del giocatore ----------
     function openPlayer(pl) {
+      // niente campo attivo: sul telefono così la tastiera si chiude
+      if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
       current = pl;
       const preso = inRosa(pl);
       const manuale = !pl.id;
@@ -809,11 +808,12 @@
         const rows = men.length ? men.map(p => {
           const dal = p.id ? byId.get(p.id) : null;
           const tag = dal ? tagOf(dal) : p.role;
+          const fvm = dal ? fvmOf(dal) : p.fvm;
           return `
           <li${p.id ? ` data-open="${p.id}"` : ""}>
             <span class="dot ${r} wide">${esc(tag)}</span>
             <span class="who">${esc(p.name)}${p.club ? ` <span class="cl">${esc(p.club)}</span>` : ""}</span>
-            <span class="price">${p.price}${p.qt ? `<small>qt. ${p.qt}</small>` : ""}</span>
+            <span class="price">${p.price}${fvm ? `<small>fvm ${fvm}</small>` : ""}</span>
             <button class="btn-ghost" data-del="${p.key}" title="Togli dalla rosa" aria-label="Togli ${esc(p.name)}">&times;</button>
           </li>`;
         }).join("") : `<li class="vuoto">Ancora nessun ${ROLE_ONE[r]}.</li>`;
@@ -862,7 +862,9 @@
 
       state.rosa.push({
         key: uid(), id: current.id || null, name: current.name,
-        club, role, price, qt: current.id ? qtOf(current) : null
+        club, role, price,
+        qt: current.id ? qtOf(current) : null,
+        fvm: current.id ? fvmOf(current) : null
       });
       state.fav = state.fav.filter(id => id !== current.id);
 
