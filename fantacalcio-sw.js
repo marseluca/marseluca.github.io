@@ -1,8 +1,8 @@
 /* Service worker dell'app Asta Fantacalcio: tiene tutto offline. */
-const CACHE = "asta-fantacalcio-v4";
+const CACHE = "asta-fantacalcio-v5";
 const ASSETS = [
   "./fantacalcio.html",
-  "./listone.js",
+  "./listone-2026-27.js",
   "./fantacalcio.webmanifest",
   "./fantacalcio-icons/icon-192.png",
   "./fantacalcio-icons/icon-512.png",
@@ -21,35 +21,38 @@ self.addEventListener("activate", e => {
   );
 });
 
+// pagina, script e manifest: prima la rete, così gli aggiornamenti arrivano subito
+// e non capita mai di avere la pagina nuova con i dati vecchi. Le immagini restano
+// prese dalla cache, tanto non cambiano.
+const daRete = url => /\.(html|js|webmanifest|json)$/.test(url.pathname) || url.pathname.endsWith("/");
+
 self.addEventListener("fetch", e => {
   const req = e.request;
-  if (req.method !== "GET" || new URL(req.url).origin !== self.location.origin) return;
+  const url = new URL(req.url);
+  if (req.method !== "GET" || url.origin !== self.location.origin) return;
 
-  // navigazione: prima la rete (per avere gli aggiornamenti), poi la copia salvata
-  if (req.mode === "navigate") {
+  if (req.mode === "navigate" || daRete(url)) {
     e.respondWith(
       fetch(req)
         .then(res => {
-          const copy = res.clone();
-          caches.open(CACHE).then(c => c.put("./fantacalcio.html", copy));
+          if (res && res.status === 200) {
+            const copia = res.clone();
+            caches.open(CACHE).then(c => c.put(req.mode === "navigate" ? "./fantacalcio.html" : req, copia));
+          }
           return res;
         })
-        .catch(() => caches.match("./fantacalcio.html"))
+        .catch(() => caches.match(req.mode === "navigate" ? "./fantacalcio.html" : req))
     );
     return;
   }
 
-  // resto: risposta dalla cache e aggiornamento in sottofondo
   e.respondWith(
-    caches.match(req).then(hit => {
-      const net = fetch(req).then(res => {
-        if (res && res.status === 200) {
-          const copy = res.clone();
-          caches.open(CACHE).then(c => c.put(req, copy));
-        }
-        return res;
-      }).catch(() => hit);
-      return hit || net;
-    })
+    caches.match(req).then(hit => hit || fetch(req).then(res => {
+      if (res && res.status === 200) {
+        const copia = res.clone();
+        caches.open(CACHE).then(c => c.put(req, copia));
+      }
+      return res;
+    }))
   );
 });

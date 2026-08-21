@@ -514,7 +514,7 @@
 
   <div class="toast" id="toast" hidden></div>
 
-  <script src="listone.js"></script>
+  <script src="listone-2026-27.js"></script>
   <script>
     const KEY = "luca_fantacalcio_rosa";
     const ROLES = ["P", "D", "C", "A"];
@@ -528,10 +528,14 @@
     };
 
     // [id, ruolo, ruoli mantra, nome, squadra, qt classic, fvm classic, qt mantra, fvm mantra]
-    const PLAYERS = (typeof LISTONE !== "undefined" ? LISTONE : []).map(p => ({
-      id: p[0], role: p[1], mantra: p[2] ? p[2].split(";") : [],
-      name: p[3], club: p[4], qtC: p[5], fvmC: p[6], qtM: p[7], fvmM: p[8]
-    }));
+    // Il formato vecchio (senza mantra) era [id, ruolo, nome, squadra, qt, fvm]: lo riconosco
+    // dalla lunghezza, così una copia vecchia in cache non manda in tilt tutti i campi.
+    const RIGHE = typeof LISTONE !== "undefined" ? LISTONE : [];
+    const VECCHIO = RIGHE.length > 0 && RIGHE[0].length < 9;
+    const PLAYERS = RIGHE.map(p => VECCHIO
+      ? { id: p[0], role: p[1], mantra: [], name: p[2], club: p[3], qtC: p[4], fvmC: p[5], qtM: p[4], fvmM: p[5] }
+      : { id: p[0], role: p[1], mantra: p[2] ? p[2].split(";") : [],
+          name: p[3], club: p[4], qtC: p[5], fvmC: p[6], qtM: p[7], fvmM: p[8] });
     const byId = new Map(PLAYERS.map(p => [p.id, p]));
 
     const emptyState = () => ({
@@ -1041,7 +1045,16 @@
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("fantacalcio-sw.js").catch(() => {});
       });
+      // quando entra in servizio una versione nuova ricarico, così pagina e dati vanno d'accordo
+      let ricaricato = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (ricaricato) return;
+        ricaricato = true;
+        location.reload();
+      });
     }
+
+    if (VECCHIO) toast("Sto aggiornando il listone: se i ruoli sembrano sbagliati, ricarica la pagina");
 
     $("mode").value = state.mode;
     $("budget").value = state.budget;
