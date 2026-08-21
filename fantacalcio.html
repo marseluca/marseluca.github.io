@@ -88,7 +88,8 @@
     .btn-install[hidden] { display: none; }
 
     /* ---------- riquadri ---------- */
-    .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 clamp(1.1rem, 5vw, 1.8rem) 3rem; }
+    .wrap { max-width: var(--maxw); margin: 0 auto;
+            padding: 0 clamp(1.1rem, 5vw, 1.8rem) calc(6.5rem + env(safe-area-inset-bottom)); }
 
     .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; margin-top: -1.8rem; }
     .stat {
@@ -128,8 +129,9 @@
       outline: none; border-color: var(--brand);
       box-shadow: 0 0 0 3px rgba(14, 124, 138, 0.16);
     }
-    .buy { display: grid; grid-template-columns: 2fr 0.8fr 1.3fr 0.9fr auto; gap: 0.8rem; align-items: end; }
-    .buy .full { grid-column: 1 / -1; }
+    .buy { display: grid; grid-template-columns: 1.4fr 0.8fr; gap: 0.8rem; align-items: end; }
+    .buy .full, .buy .ac { grid-column: 1 / -1; }
+    .btn-block { width: 100%; padding: 0.75rem 1.1rem; font-size: 1rem; }
 
     .btn {
       font-family: var(--body); font-weight: 600; font-size: 0.95rem;
@@ -167,6 +169,12 @@
     .suggest .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .suggest .cl { color: var(--muted); font-size: 0.82rem; }
     .suggest .qt { font-family: var(--display); font-weight: 700; white-space: nowrap; }
+
+    /* dentro al pannello l'elenco sta nel flusso: spinge i campi in basso invece di coprirli */
+    .sheet-card .suggest {
+      position: static; width: auto; max-height: 260px;
+      margin-top: 0.4rem; box-shadow: none; background: #f7fafb;
+    }
 
     .picked {
       display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem;
@@ -218,6 +226,63 @@
     .reparto.C .price { color: var(--c); } .reparto.A .price { color: var(--a); }
 
     /* ---------- fondo pagina ---------- */
+
+    /* ---------- pulsante + e pannello di aggiunta ---------- */
+    .fab {
+      position: fixed; z-index: 40;
+      right: clamp(1rem, 4vw, 1.6rem);
+      bottom: calc(clamp(1rem, 4vw, 1.6rem) + env(safe-area-inset-bottom));
+      width: 62px; height: 62px; border-radius: 50%; border: none; cursor: pointer;
+      background: linear-gradient(135deg, var(--brand-2), var(--brand));
+      color: #fff; font-size: 2.1rem; font-weight: 300; line-height: 1;
+      display: grid; place-items: center; padding-bottom: 4px;
+      box-shadow: 0 10px 26px rgba(14, 124, 138, 0.42);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .fab:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(14, 124, 138, 0.5); }
+    .fab:active { transform: scale(0.95); }
+
+    .sheet { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
+    .sheet[hidden] { display: none; }
+    .sheet-bg { position: absolute; inset: 0; background: rgba(12, 34, 44, 0.5); backdrop-filter: blur(2px); }
+    .sheet-card {
+      position: relative; width: min(560px, 100%);
+      background: var(--card); border-radius: 22px 22px 0 0;
+      padding: 1.1rem clamp(1.1rem, 5vw, 1.5rem) calc(1.4rem + env(safe-area-inset-bottom));
+      box-shadow: 0 -12px 40px rgba(12, 34, 44, 0.28);
+      max-height: 92vh; overflow-y: auto;
+    }
+    .sheet-head { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+    .sheet-head h2 {
+      flex: 1; margin: 0; font-family: var(--display); font-size: 1.15rem; letter-spacing: -0.01em;
+    }
+    .sheet-x {
+      border: none; background: #eef3f6; color: var(--muted); cursor: pointer;
+      width: 34px; height: 34px; border-radius: 50%; font-size: 1.35rem; line-height: 1;
+    }
+    .sheet-x:hover { background: #e2eaee; color: var(--ink); }
+
+    .toast {
+      position: fixed; z-index: 60; left: 50%; transform: translateX(-50%);
+      bottom: calc(6.2rem + env(safe-area-inset-bottom));
+      background: #12324a; color: #fff; font-size: 0.9rem; font-weight: 500;
+      padding: 0.6rem 1rem; border-radius: 999px; box-shadow: 0 10px 26px rgba(12, 34, 44, 0.35);
+      max-width: min(92vw, 420px); text-align: center;
+    }
+    .toast[hidden] { display: none; }
+
+    @media (min-width: 700px) {
+      .sheet { align-items: center; }
+      .sheet-card { border-radius: 22px; }
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .sheet-card { animation: slide-up 0.22s ease both; }
+      .sheet-bg { animation: fade-in 0.22s ease both; }
+      .toast { animation: fade-in 0.18s ease both; }
+      @keyframes slide-up { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+      @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+    }
+
     .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.6rem; }
     details.setup { margin-top: 1.6rem; }
     details.setup summary {
@@ -225,16 +290,8 @@
       color: var(--muted); padding: 0.3rem 0;
     }
     .setup-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.8rem; align-items: end; margin-top: 0.8rem; }
-    .note {
-      font-size: 0.82rem; color: var(--muted); margin-top: 1.6rem;
-      background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 0.7rem 0.9rem;
-    }
-    .note code { background: #eef3f6; border-radius: 5px; padding: 0.05rem 0.3rem; font-size: 0.9em; }
 
     @media (max-width: 700px) {
-      .buy { grid-template-columns: 1fr 1fr; }
-      .buy .ac, .buy .go { grid-column: 1 / -1; }
-      .buy .go .btn { width: 100%; }
       .setup-grid { grid-template-columns: 1fr 1fr; }
     }
     @media (prefers-reduced-motion: no-preference) {
@@ -278,39 +335,6 @@
       <div class="cap"><span>Budget usato</span><span id="bar-pct">0%</span></div>
     </div>
 
-    <p class="sec">Prendi un giocatore</p>
-
-    <div class="card buy">
-      <div class="field ac">
-        <label for="p-name">Giocatore</label>
-        <input id="p-name" type="text" autocomplete="off" role="combobox" aria-expanded="false"
-               aria-controls="suggest" placeholder="Cerca nel listone: nome o squadra…" />
-        <ul class="suggest" id="suggest" role="listbox" hidden></ul>
-      </div>
-      <div class="field">
-        <label for="p-role">Ruolo</label>
-        <select id="p-role">
-          <option value="P">P</option>
-          <option value="D">D</option>
-          <option value="C" selected>C</option>
-          <option value="A">A</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="p-club">Squadra</label>
-        <input id="p-club" type="text" placeholder="Es. Inter" />
-      </div>
-      <div class="field">
-        <label for="p-price">Pagato</label>
-        <input id="p-price" type="number" min="1" step="1" value="1" />
-      </div>
-      <div class="field go">
-        <button class="btn btn-go" id="add">Aggiungi</button>
-      </div>
-      <div class="full picked" id="picked" hidden></div>
-      <div class="full"><div class="alert" id="alert" hidden></div></div>
-    </div>
-
     <p class="sec">La rosa</p>
     <div id="rosa"></div>
 
@@ -345,11 +369,51 @@
       </div>
     </details>
 
-    <p class="note" id="note">
-      Quotazioni dal listone ufficiale 2026/27 (509 giocatori, file <code>listone.js</code>).
-      La rosa resta salvata sul dispositivo e l'app funziona anche senza rete.
-    </p>
   </main>
+
+  <button class="fab" id="fab" aria-label="Aggiungi un calciatore" aria-haspopup="dialog">+</button>
+
+  <div class="sheet" id="sheet" hidden>
+    <div class="sheet-bg" id="sheet-bg"></div>
+    <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+      <div class="sheet-head">
+        <h2 id="sheet-title">Prendi un giocatore</h2>
+        <button class="sheet-x" id="sheet-close" aria-label="Chiudi">&times;</button>
+      </div>
+      <div class="buy">
+        <div class="field ac">
+          <label for="p-name">Giocatore</label>
+          <input id="p-name" type="text" autocomplete="off" role="combobox" aria-expanded="false"
+                 aria-controls="suggest" placeholder="Cerca nel listone: nome o squadra…" />
+          <ul class="suggest" id="suggest" role="listbox" hidden></ul>
+        </div>
+        <div class="field">
+          <label for="p-role">Ruolo</label>
+          <select id="p-role">
+            <option value="P">P</option>
+            <option value="D">D</option>
+            <option value="C" selected>C</option>
+            <option value="A">A</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="p-club">Squadra</label>
+          <input id="p-club" type="text" placeholder="Es. Inter" />
+        </div>
+        <div class="field">
+          <label for="p-price">Pagato</label>
+          <input id="p-price" type="number" min="1" step="1" value="1" />
+        </div>
+        <div class="full picked" id="picked" hidden></div>
+        <div class="full"><div class="alert" id="alert" hidden></div></div>
+        <div class="full">
+          <button class="btn btn-go btn-block" id="add">Aggiungi alla rosa</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
 
   <script src="listone.js"></script>
   <script>
@@ -517,14 +581,9 @@
         qt: fromList ? fromList.qt : null
       });
 
-      picked = null;
-      $("picked").hidden = true;
-      $("p-name").value = "";
-      $("p-club").value = "";
-      $("p-price").value = 1;
-      alertMsg("");
-      $("p-name").focus();
       save(); render();
+      toast(`Preso ${name} per ${price} ${price === 1 ? "credito" : "crediti"}`);
+      closeSheet();
     }
 
     // ---------- eventi ----------
@@ -543,7 +602,13 @@
         renderSuggest();
         return;
       }
-      if (e.key === "Escape") { closeSuggest(); return; }
+      // il primo Escape chiude i suggerimenti, il secondo il pannello
+      if (e.key === "Escape") {
+        const aperti = matches.length > 0;
+        closeSuggest();
+        if (aperti) e.stopPropagation();
+        return;
+      }
       if (e.key === "Enter") {
         e.preventDefault();
         if (matches.length && active >= 0) choose(matches[active]);
@@ -605,6 +670,45 @@
       save(); render();
     });
 
+
+    // ---------- pannello di aggiunta ----------
+    let toastTimer = null;
+    function toast(msg) {
+      clearTimeout(toastTimer);
+      $("toast").textContent = msg;
+      $("toast").hidden = false;
+      toastTimer = setTimeout(() => { $("toast").hidden = true; }, 3200);
+    }
+
+    const sheetOpen = () => !$("sheet").hidden;
+
+    function openSheet() {
+      $("sheet").hidden = false;
+      document.body.style.overflow = "hidden";
+      alertMsg("");
+      $("p-name").focus();
+    }
+
+    function closeSheet() {
+      closeSuggest();
+      $("sheet").hidden = true;
+      document.body.style.overflow = "";
+      picked = null;
+      $("picked").hidden = true;
+      $("p-name").value = "";
+      $("p-club").value = "";
+      $("p-price").value = 1;
+      alertMsg("");
+      $("fab").focus();
+    }
+
+    $("fab").addEventListener("click", openSheet);
+    $("sheet-close").addEventListener("click", closeSheet);
+    $("sheet-bg").addEventListener("click", closeSheet);
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape" && sheetOpen() && !matches.length) closeSheet();
+    });
+
     // ---------- installazione dell'app ----------
     let installEvent = null;
     const isStandalone = () =>
@@ -625,8 +729,7 @@
         return;
       }
       // iPhone e iPad: niente prompt automatico, servono le istruzioni
-      $("note").innerHTML = "Per installarla su iPhone o iPad: tocca <b>Condividi</b> nella barra di Safari, poi <b>Aggiungi a Home</b>.";
-      $("note").scrollIntoView({ behavior: "smooth", block: "center" });
+      toast("Su iPhone: tocca Condividi in Safari, poi Aggiungi a Home");
     });
 
     window.addEventListener("appinstalled", () => { $("install").hidden = true; });
