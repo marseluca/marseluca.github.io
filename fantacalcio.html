@@ -224,6 +224,36 @@
     .reparto.P .price { color: var(--p); } .reparto.D .price { color: var(--d); }
     .reparto.C .price { color: var(--c); } .reparto.A .price { color: var(--a); }
 
+    /* ---------- moduli mantra ---------- */
+    #moduli-box[hidden] { display: none; }
+    .modulo {
+      background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 0.7rem 1rem; margin-bottom: 0.6rem;
+    }
+    .modulo > summary {
+      display: flex; align-items: center; gap: 0.6rem; cursor: pointer; list-style: none;
+    }
+    .modulo > summary::-webkit-details-marker { display: none; }
+    .modulo .nome { font-family: var(--display); font-weight: 700; font-size: 1rem; }
+    .modulo .manca { flex: 1; color: var(--muted); font-size: 0.82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .modulo .quanti {
+      font-family: var(--display); font-weight: 700; font-size: 0.8rem;
+      border-radius: 999px; padding: 0.15rem 0.6rem; background: #eef3f6; color: var(--muted);
+    }
+    .modulo.pieno { border-color: #bfe6d5; }
+    .modulo.pieno .quanti { background: #e4f4ec; color: #0b7a52; }
+    .modulo .undici { list-style: none; margin: 0.8rem 0 0; padding: 0; font-size: 0.9rem; }
+    .modulo .undici li { display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0; }
+    .modulo .undici li + li { border-top: 1px solid var(--line); }
+    .modulo .slot {
+      font-family: var(--display); font-weight: 700; font-size: 0.72rem;
+      background: #eef3f6; color: var(--muted); border-radius: 6px; padding: 0.1rem 0.4rem;
+      min-width: 62px; text-align: center;
+    }
+    .modulo .chi { flex: 1; min-width: 0; }
+    .modulo .chi .cl { color: var(--muted); font-size: 0.8rem; }
+    .modulo .vuoto-slot { color: #b23a30; font-size: 0.85rem; }
+
     /* ---------- pannello del giocatore ---------- */
     .sheet { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
     .sheet[hidden] { display: none; }
@@ -409,6 +439,11 @@
     <p class="sec">La rosa</p>
     <div id="rosa"></div>
 
+    <section id="moduli-box" hidden>
+      <p class="sec">Moduli Mantra</p>
+      <div id="moduli"></div>
+    </section>
+
     <div class="actions">
       <button class="btn" id="export">Esporta JSON</button>
       <button class="btn" id="reset">Azzera rosa</button>
@@ -537,6 +572,21 @@
       : { id: p[0], role: p[1], mantra: p[2] ? p[2].split(";") : [],
           name: p[3], club: p[4], qtC: p[5], fvmC: p[6], qtM: p[7], fvmM: p[8] });
     const byId = new Map(PLAYERS.map(p => [p.id, p]));
+
+    // Moduli Mantra, edizione 2026/27: ogni casella elenca i ruoli che può ospitare.
+    const MODULI = [
+      { nome: "3-4-3",   slot: ["POR", "DC", "DC", "DC/B", "E", "M/C", "C", "E", "W/A", "W/A", "A/PC"] },
+      { nome: "3-4-1-2", slot: ["POR", "DC", "DC", "DC/B", "E", "M/C", "C", "E", "T", "A/PC", "A/PC"] },
+      { nome: "3-4-2-1", slot: ["POR", "DC", "DC", "DC/B", "M", "M/C", "E", "E/W", "T", "T/A", "A/PC"] },
+      { nome: "3-5-2",   slot: ["POR", "DC", "DC", "DC/B", "M", "M/C", "E", "E/W", "C", "A/PC", "A/PC"] },
+      { nome: "3-5-1-1", slot: ["POR", "DC", "DC", "DC/B", "M", "M", "C", "E/W", "E/W", "T/A", "A/PC"] },
+      { nome: "4-3-3",   slot: ["POR", "DD", "DC", "DC", "DS", "M/C", "M", "C", "W/A", "W/A", "A/PC"] },
+      { nome: "4-3-1-2", slot: ["POR", "DD", "DC", "DC", "DS", "M/C", "M", "C", "T", "T/A/PC", "A/PC"] },
+      { nome: "4-4-2",   slot: ["POR", "DD", "DC", "DC", "DS", "M/C", "C", "E", "E/W", "A/PC", "A/PC"] },
+      { nome: "4-1-4-1", slot: ["POR", "DD", "DC", "DC", "DS", "M", "C/T", "T", "E/W", "W", "A/PC"] },
+      { nome: "4-4-1-1", slot: ["POR", "DD", "DC", "DC", "DS", "M", "C", "E/W", "E/W", "T/A", "A/PC"] },
+      { nome: "4-2-3-1", slot: ["POR", "DD", "DC", "DC", "DS", "M", "M/C", "W/T", "T", "W/A", "A/PC"] }
+    ];
 
     const emptyState = () => ({
       mode: "classic",
@@ -799,6 +849,73 @@
       `).join("") + "</ul>";
     }
 
+    // Assegna i giocatori alle caselle del modulo cercando la copertura migliore
+    // (un giocatore con più ruoli può liberare la casella di un altro: algoritmo di Kuhn).
+    function assegna(slot, rosa) {
+      const puo = slot.map(s => {
+        const ammessi = s.split("/");
+        return rosa.map(p => p.ruoli.some(r => ammessi.includes(r)));
+      });
+      const preso = new Array(slot.length).fill(-1);   // casella -> indice del giocatore
+
+      function prova(i, visti) {
+        for (let j = 0; j < rosa.length; j++) {
+          if (!puo[i][j] || visti[j]) continue;
+          visti[j] = true;
+          const dove = preso.indexOf(j);
+          if (dove === -1 || prova(dove, visti)) { preso[i] = j; return true; }
+        }
+        return false;
+      }
+
+      let coperte = 0;
+      for (let i = 0; i < slot.length; i++) {
+        if (prova(i, new Array(rosa.length).fill(false))) coperte++;
+      }
+      return { preso, coperte };
+    }
+
+    function renderModuli() {
+      $("moduli-box").hidden = !isMantra();
+      if (!isMantra()) return;
+
+      // in campo vanno solo i giocatori con un ruolo mantra (chi è aggiunto a mano non ce l'ha)
+      const rosa = state.rosa.map(p => {
+        const dal = p.id ? byId.get(p.id) : null;
+        return { name: p.name, club: p.club, ruoli: (dal ? dal.mantra : []).map(r => r.toUpperCase()) };
+      }).filter(p => p.ruoli.length);
+
+      const esiti = MODULI.map(m => {
+        const { preso, coperte } = assegna(m.slot, rosa);
+        const mancanti = m.slot.filter((_, i) => preso[i] === -1);
+        return { m, preso, coperte, mancanti };
+      }).sort((a, b) => b.coperte - a.coperte || a.m.nome.localeCompare(b.m.nome));
+
+      $("moduli").innerHTML = esiti.map(({ m, preso, coperte, mancanti }) => {
+        const pieno = coperte === m.slot.length;
+        const testo = pieno ? "Undici completo" : "Mancano " + mancanti.join(", ");
+        const righe = m.slot.map((sl, i) => {
+          const p = preso[i] >= 0 ? rosa[preso[i]] : null;
+          return `
+            <li>
+              <span class="slot">${esc(sl)}</span>
+              ${p ? `<span class="chi">${esc(p.name)} <span class="cl">${esc(p.club)}</span></span>`
+                  : '<span class="chi vuoto-slot">— scoperto</span>'}
+            </li>`;
+        }).join("");
+
+        return `
+          <details class="modulo${pieno ? " pieno" : ""}">
+            <summary>
+              <span class="nome">${m.nome}</span>
+              <span class="manca">${esc(testo)}</span>
+              <span class="quanti">${coperte}/${m.slot.length}</span>
+            </summary>
+            <ul class="undici">${righe}</ul>
+          </details>`;
+      }).join("");
+    }
+
     function render() {
       $("rosa").innerHTML = ROLES.map(r => {
         const men = state.rosa.filter(p => p.role === r)
@@ -830,6 +947,7 @@
       }).join("");
 
       renderFav();
+      renderModuli();
       updateStats();
       if (!$("suggest").hidden) renderSuggest();
     }
