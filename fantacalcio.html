@@ -209,6 +209,9 @@
     .reparto-head h2 { font-family: var(--display); font-size: 1rem; margin: 0; flex: 1; }
     .reparto-head .conto { font-size: 0.78rem; font-weight: 600; background: rgba(255,255,255,0.22);
                            border-radius: 999px; padding: 0.15rem 0.6rem; white-space: nowrap; }
+    .reparto-head .conto.over { background: rgba(255,255,255,0.92); color: #b23a30; }
+    /* in mantra i ruoli sono più lunghi: il pallino diventa una pillola */
+    .dot.wide { width: auto; min-width: 26px; padding: 0 0.45rem; border-radius: 999px; font-size: 0.72rem; }
     .reparto ul { list-style: none; margin: 0; padding: 0.35rem 1rem 0.6rem; }
     .reparto li { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0; }
     .reparto li[data-open] { cursor: pointer; }
@@ -262,6 +265,48 @@
     .pl-manual[hidden] { display: none; }
     .pl-price { margin-bottom: 0.9rem; }
     .pl-price[hidden] { display: none; }
+    .price-row { display: grid; grid-template-columns: 52px 1fr 52px; gap: 0.5rem; align-items: stretch; margin-top: 0.25rem; }
+    .price-row input {
+      text-align: center; font-family: var(--display); font-weight: 700; font-size: 1.5rem;
+      padding: 0.35rem 0.4rem; -moz-appearance: textfield;
+    }
+    .price-row input::-webkit-outer-spin-button,
+    .price-row input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .pm {
+      border: 1.5px solid var(--line); background: #f5f9fb; color: var(--brand);
+      border-radius: 12px; font-size: 1.5rem; line-height: 1; cursor: pointer;
+      display: grid; place-items: center; user-select: none; touch-action: manipulation;
+    }
+    .pm:hover { background: #e9f2f5; }
+    .pm:active { background: var(--brand); color: #fff; border-color: var(--brand); }
+    .pm:disabled { opacity: 0.4; cursor: default; }
+
+    .slider {
+      -webkit-appearance: none; appearance: none; width: 100%; height: 26px;
+      background: none; border: none; padding: 0; margin-top: 0.5rem; cursor: pointer;
+    }
+    .slider::-webkit-slider-runnable-track {
+      height: 6px; border-radius: 999px;
+      background: linear-gradient(90deg, var(--brand-2), var(--brand));
+    }
+    .slider::-moz-range-track { height: 6px; border-radius: 999px; background: #cfe2e6; }
+    .slider::-moz-range-progress { height: 6px; border-radius: 999px; background: var(--brand); }
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%; margin-top: -9px;
+      background: #fff; border: 3px solid var(--brand); box-shadow: 0 3px 10px rgba(14,124,138,0.35);
+    }
+    .slider::-moz-range-thumb {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: #fff; border: 3px solid var(--brand); box-shadow: 0 3px 10px rgba(14,124,138,0.35);
+    }
+
+    .quick { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
+    .quick button {
+      font-family: var(--body); font-size: 0.84rem; font-weight: 600; color: var(--brand);
+      background: #eef6f8; border: 1px solid #d8e9ed; border-radius: 999px;
+      padding: 0.3rem 0.75rem; cursor: pointer;
+    }
+    .quick button:hover { background: #e1eff2; }
     .pl-actions { display: grid; gap: 0.6rem; margin-top: 0.9rem; }
 
     .toast {
@@ -280,14 +325,23 @@
       cursor: pointer; font-family: var(--display); font-weight: 600; font-size: 0.9rem;
       color: var(--muted); padding: 0.3rem 0;
     }
-    .setup-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.8rem; align-items: end; margin-top: 0.8rem; }
+    .setup-card { display: block; }
+    .setup-grid { display: grid; gap: 0.8rem; align-items: end; }
+    .setup-grid.due { grid-template-columns: 1fr 1fr; }
+    .setup-grid.quattro { grid-template-columns: repeat(4, 1fr); }
+    .setup-lab {
+      font-size: 0.78rem; font-weight: 600; color: var(--muted);
+      margin: 1.2rem 0 0.5rem; display: flex; gap: 0.5rem; align-items: baseline;
+    }
+    .setup-lab span { font-weight: 500; }
+    .setup-lab span.over { color: #b23a30; }
 
     @media (min-width: 700px) {
       .sheet { align-items: center; }
       .sheet-card { border-radius: 22px; }
     }
     @media (max-width: 700px) {
-      .setup-grid { grid-template-columns: 1fr 1fr; }
+      .setup-grid.quattro { grid-template-columns: 1fr 1fr; }
     }
     @media (prefers-reduced-motion: no-preference) {
       .stats, .meter, .card, .reparto { animation: rise 0.45s ease both; }
@@ -362,26 +416,35 @@
 
     <details class="setup">
       <summary>Impostazioni asta</summary>
-      <div class="card setup-grid">
-        <div class="field">
-          <label for="budget">Crediti</label>
-          <input id="budget" type="number" min="1" step="1" value="500" />
+      <div class="card setup-card">
+        <div class="setup-grid due">
+          <div class="field">
+            <label for="mode">Modalità</label>
+            <select id="mode">
+              <option value="classic">Classic</option>
+              <option value="mantra">Mantra</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="budget">Crediti totali</label>
+            <input id="budget" type="number" min="1" step="1" value="500" />
+          </div>
         </div>
-        <div class="field">
-          <label for="slot-P">Portieri</label>
-          <input id="slot-P" type="number" min="0" step="1" value="3" />
+
+        <p class="setup-lab">Giocatori per reparto</p>
+        <div class="setup-grid quattro">
+          <div class="field"><label for="slot-P">Portieri</label><input id="slot-P" type="number" min="0" step="1" value="3" /></div>
+          <div class="field"><label for="slot-D">Difensori</label><input id="slot-D" type="number" min="0" step="1" value="8" /></div>
+          <div class="field"><label for="slot-C">Centrocampisti</label><input id="slot-C" type="number" min="0" step="1" value="8" /></div>
+          <div class="field"><label for="slot-A">Attaccanti</label><input id="slot-A" type="number" min="0" step="1" value="6" /></div>
         </div>
-        <div class="field">
-          <label for="slot-D">Difensori</label>
-          <input id="slot-D" type="number" min="0" step="1" value="8" />
-        </div>
-        <div class="field">
-          <label for="slot-C">Centrocampisti</label>
-          <input id="slot-C" type="number" min="0" step="1" value="8" />
-        </div>
-        <div class="field">
-          <label for="slot-A">Attaccanti</label>
-          <input id="slot-A" type="number" min="0" step="1" value="6" />
+
+        <p class="setup-lab">Budget desiderato per reparto <span id="rep-sum"></span></p>
+        <div class="setup-grid quattro">
+          <div class="field"><label for="rep-P">Portieri</label><input id="rep-P" type="number" min="0" step="1" value="25" /></div>
+          <div class="field"><label for="rep-D">Difensori</label><input id="rep-D" type="number" min="0" step="1" value="75" /></div>
+          <div class="field"><label for="rep-C">Centrocampisti</label><input id="rep-C" type="number" min="0" step="1" value="150" /></div>
+          <div class="field"><label for="rep-A">Attaccanti</label><input id="rep-A" type="number" min="0" step="1" value="250" /></div>
         </div>
       </div>
     </details>
@@ -424,9 +487,20 @@
         </div>
       </div>
 
-      <div class="field pl-price" id="pl-price">
+      <div class="pl-price" id="pl-price">
         <label for="p-price">Pagato</label>
-        <input id="p-price" type="number" min="1" step="1" value="1" />
+        <div class="price-row">
+          <button class="pm" id="p-minus" aria-label="Un credito in meno">&minus;</button>
+          <input id="p-price" type="number" min="1" step="1" value="1" inputmode="numeric" aria-label="Crediti pagati" />
+          <button class="pm" id="p-plus" aria-label="Un credito in più">+</button>
+        </div>
+        <input class="slider" id="p-range" type="range" min="1" max="100" step="1" value="1" aria-label="Scegli quanto pagare" />
+        <div class="quick" id="p-quick">
+          <button type="button" data-q="qt">Quotazione</button>
+          <button type="button" data-q="5">+5</button>
+          <button type="button" data-q="10">+10</button>
+          <button type="button" data-q="max">Massimo</button>
+        </div>
       </div>
 
       <div class="alert" id="alert" hidden></div>
@@ -446,10 +520,27 @@
     const ROLES = ["P", "D", "C", "A"];
     const ROLE_LABEL = { P: "Portieri", D: "Difensori", C: "Centrocampisti", A: "Attaccanti" };
     const ROLE_ONE = { P: "portiere", D: "difensore", C: "centrocampista", A: "attaccante" };
-    const listone = typeof LISTONE !== "undefined" ? LISTONE : [];
-    const byId = new Map(listone.map(p => [p[0], p]));
+    // ruoli del listone Mantra
+    const MANTRA = {
+      Por: "Portiere", Dc: "Difensore centrale", Dd: "Terzino destro", Ds: "Terzino sinistro",
+      B: "Braccetto", E: "Esterno", M: "Mediano", C: "Centrale", W: "Ala",
+      T: "Trequartista", A: "Attaccante", Pc: "Punta centrale"
+    };
 
-    const emptyState = () => ({ budget: 500, slots: { P: 3, D: 8, C: 8, A: 6 }, rosa: [], fav: [] });
+    // [id, ruolo, ruoli mantra, nome, squadra, qt classic, fvm classic, qt mantra, fvm mantra]
+    const PLAYERS = (typeof LISTONE !== "undefined" ? LISTONE : []).map(p => ({
+      id: p[0], role: p[1], mantra: p[2] ? p[2].split(";") : [],
+      name: p[3], club: p[4], qtC: p[5], fvmC: p[6], qtM: p[7], fvmM: p[8]
+    }));
+    const byId = new Map(PLAYERS.map(p => [p.id, p]));
+
+    const emptyState = () => ({
+      mode: "classic",
+      budget: 500,
+      slots: { P: 3, D: 8, C: 8, A: 6 },
+      rep:   { P: 25, D: 75, C: 150, A: 250 },
+      rosa: [], fav: []
+    });
 
     // Storage con fallback in memoria (così funziona anche dove localStorage è bloccato)
     const store = {
@@ -466,28 +557,35 @@
 
     let state = Object.assign(emptyState(), store.load());
     if (!Array.isArray(state.fav)) state.fav = [];
+    if (!state.rep) state.rep = emptyState().rep;
+    if (!state.mode) state.mode = "classic";
 
     let matches = [];    // suggerimenti mostrati
-    let active = -1;      // suggerimento evidenziato
-    let current = null;   // giocatore aperto nel pannello
+    let active = -1;     // suggerimento evidenziato
+    let current = null;  // giocatore aperto nel pannello
 
     const $ = id => document.getElementById(id);
     const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
     const norm = s => String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
+    const isMantra = () => state.mode === "mantra";
+    const qtOf  = p => isMantra() ? p.qtM : p.qtC;
+    const fvmOf = p => isMantra() ? p.fvmM : p.fvmC;
+    // sigla mostrata accanto al nome: in mantra i ruoli veri, in classic il reparto
+    const tagOf = p => (isMantra() && p.mantra && p.mantra.length) ? p.mantra.join("/") : p.role;
+
     const spent = () => state.rosa.reduce((n, p) => n + p.price, 0);
     const rest = () => state.budget - spent();
     const slotsTotal = () => ROLES.reduce((n, r) => n + state.slots[r], 0);
     const taken = role => state.rosa.filter(p => p.role === role).length;
+    const spentIn = role => state.rosa.filter(p => p.role === role).reduce((n, p) => n + p.price, 0);
     // con l'ultimo slot devi comunque poter coprire gli altri a 1 credito
-    const maxBid = () => Math.max(0, rest() - (slotsTotal() - state.rosa.length - 1));
+    const maxBid = () => Math.max(1, rest() - (slotsTotal() - state.rosa.length - 1));
 
     const inRosa = pl => state.rosa.find(p =>
       (pl.id && p.id === pl.id) || norm(p.name) === norm(pl.name));
     const isFav = pl => !!pl.id && state.fav.includes(pl.id);
-
-    const fromListone = p => ({ id: p[0], role: p[1], name: p[2], club: p[3], qt: p[4], fvm: p[5] });
 
     function alertMsg(msg) {
       $("alert").textContent = msg;
@@ -507,13 +605,13 @@
       const n = norm(q);
       if (!n) return [];
       const hits = [];
-      for (const p of listone) {
-        const name = norm(p[2]), club = norm(p[3]);
+      for (const p of PLAYERS) {
+        const name = norm(p.name), club = norm(p.club);
         // prima i nomi che iniziano così, poi le squadre, poi le corrispondenze in mezzo alla parola
         const rank = name.startsWith(n) ? 0 : club.startsWith(n) ? 1 : name.includes(n) ? 2 : club.includes(n) ? 3 : -1;
         if (rank >= 0) hits.push({ rank, p });
       }
-      hits.sort((a, b) => a.rank - b.rank || b.p[4] - a.p[4] || a.p[2].localeCompare(b.p[2]));
+      hits.sort((a, b) => a.rank - b.rank || qtOf(b.p) - qtOf(a.p) || a.p.name.localeCompare(b.p.name));
       return hits.slice(0, 10).map(h => h.p);
     }
 
@@ -527,14 +625,14 @@
         return;
       }
       const rows = matches.map((p, i) => {
-        const preso = state.rosa.some(x => x.id === p[0]);
-        const pref = state.fav.includes(p[0]);
+        const preso = state.rosa.some(x => x.id === p.id);
+        const pref = state.fav.includes(p.id);
         return `
         <li role="option" data-i="${i}" aria-selected="${i === active}">
-          <span class="dot ${p[1]}">${p[1]}</span>
-          <span class="nm">${esc(p[2])} <span class="cl">${esc(p[3])}</span>${preso ? ' <span class="cl">· in rosa</span>' : ""}</span>
+          <span class="dot ${p.role} wide">${esc(tagOf(p))}</span>
+          <span class="nm">${esc(p.name)} <span class="cl">${esc(p.club)}</span>${preso ? ' <span class="cl">· in rosa</span>' : ""}</span>
           ${pref ? '<span class="star">&#9733;</span>' : ""}
-          <span class="qt">${p[4]}</span>
+          <span class="qt">${qtOf(p)}</span>
         </li>`;
       });
       // niente nel listone: si può aggiungere lo stesso, a mano
@@ -554,6 +652,61 @@
       $("q").setAttribute("aria-expanded", "false");
     }
 
+    // ---------- prezzo: stepper, cursore e scorciatoie ----------
+    let priceMax = 1;   // tetto vero, dato dai crediti
+    let rangeMax = 1;   // tetto del cursore: sta stretto intorno alla quotazione, così è preciso
+
+    function setPrice(v, fromInput) {
+      const n = Math.min(priceMax, Math.max(1, Math.round(Number(v) || 1)));
+      if (!fromInput) $("p-price").value = n;
+      $("p-range").value = Math.min(n, rangeMax);
+      $("p-minus").disabled = n <= 1;
+      $("p-plus").disabled = n >= priceMax;
+      return n;
+    }
+
+    const priceNow = () => Math.min(priceMax, Math.max(1, parseInt($("p-price").value, 10) || 1));
+
+    function setupPrice(pl, preso) {
+      priceMax = preso ? preso.price : maxBid();
+      const qtBase = (pl.id ? qtOf(pl) : 0) || 10;
+      rangeMax = Math.max(1, Math.min(priceMax, Math.max(40, Math.ceil(qtBase * 3))));
+      $("p-range").max = rangeMax;
+      const base = preso ? preso.price : Math.min(priceMax, (pl.id ? qtOf(pl) : 0) || 1);
+      setPrice(base);
+      const qt = pl.id ? qtOf(pl) : null;
+      $("p-quick").querySelector('[data-q="qt"]').textContent = qt ? `Quotazione ${qt}` : "Quotazione";
+      $("p-quick").querySelector('[data-q="qt"]').hidden = !qt;
+      $("p-quick").querySelector('[data-q="max"]').textContent = `Massimo ${priceMax}`;
+    }
+
+    // tenendo premuto − o + il valore scorre
+    function holdable(btn, delta) {
+      let t = null, iv = null;
+      const step = () => setPrice(priceNow() + delta);
+      const stop = () => { clearTimeout(t); clearInterval(iv); t = iv = null; };
+      btn.addEventListener("pointerdown", e => {
+        e.preventDefault();
+        step();
+        t = setTimeout(() => { iv = setInterval(step, 90); }, 420);
+      });
+      ["pointerup", "pointerleave", "pointercancel"].forEach(ev => btn.addEventListener(ev, stop));
+    }
+    holdable($("p-minus"), -1);
+    holdable($("p-plus"), 1);
+
+    $("p-range").addEventListener("input", e => setPrice(e.target.value));
+    $("p-price").addEventListener("input", e => setPrice(e.target.value, true));
+    $("p-price").addEventListener("blur", () => setPrice(priceNow()));
+    $("p-quick").addEventListener("click", e => {
+      const btn = e.target.closest("[data-q]");
+      if (!btn || !current) return;
+      const q = btn.dataset.q;
+      if (q === "qt") setPrice(qtOf(current) || 1);
+      else if (q === "max") setPrice(priceMax);
+      else setPrice(priceNow() + Number(q));
+    });
+
     // ---------- pannello del giocatore ----------
     function openPlayer(pl) {
       current = pl;
@@ -563,12 +716,14 @@
       $("pl-dot").className = "dot big " + pl.role;
       $("pl-dot").textContent = pl.role;
       $("pl-name").textContent = pl.name;
-      $("pl-meta").textContent = manuale && !pl.club
-        ? "Fuori listone"
-        : ROLE_ONE[pl.role].replace(/^./, c => c.toUpperCase()) + (pl.club ? " · " + pl.club : "");
 
-      $("pl-qt").textContent = pl.qt != null ? pl.qt : "—";
-      $("pl-fvm").textContent = pl.fvm != null ? pl.fvm : "—";
+      const ruoli = isMantra() && pl.mantra && pl.mantra.length
+        ? pl.mantra.map(r => MANTRA[r] || r).join(" · ")
+        : ROLE_ONE[pl.role].replace(/^./, c => c.toUpperCase());
+      $("pl-meta").textContent = manuale && !pl.club ? "Fuori listone" : ruoli + (pl.club ? " · " + pl.club : "");
+
+      $("pl-qt").textContent = pl.id ? qtOf(pl) : "—";
+      $("pl-fvm").textContent = pl.id ? fvmOf(pl) : "—";
       $("pl-max").textContent = maxBid();
 
       $("pl-tags").innerHTML =
@@ -582,7 +737,7 @@
       }
 
       $("pl-price").hidden = !!preso;
-      $("p-price").value = preso ? preso.price : (pl.qt || 1);
+      if (!preso) setupPrice(pl, null);
 
       $("add").textContent = preso ? "Togli dalla squadra" : "Aggiungi alla squadra";
       $("add").className = "btn btn-block " + (preso ? "btn-out" : "btn-go");
@@ -594,12 +749,11 @@
       alertMsg("");
       $("sheet").hidden = false;
       document.body.style.overflow = "hidden";
-      if (!preso) { $("p-price").focus(); $("p-price").select(); }
     }
 
     function openById(id) {
       const p = byId.get(Number(id));
-      if (p) openPlayer(fromListone(p));
+      if (p) openPlayer(p);
     }
 
     function closeSheet() {
@@ -620,19 +774,24 @@
         : pct < 88 ? "linear-gradient(90deg, #e8930c, #f2ae3d)"
                    : "linear-gradient(90deg, #e0453c, #f0675a)";
       $("bar-pct").textContent = pct + "%";
+
+      const somma = ROLES.reduce((n, r) => n + state.rep[r], 0);
+      const el = $("rep-sum");
+      el.textContent = `(in tutto ${somma} di ${state.budget})`;
+      el.className = somma > state.budget ? "over" : "";
     }
 
     function renderFav() {
       const men = state.fav.map(id => byId.get(id)).filter(Boolean)
-        .sort((a, b) => ROLES.indexOf(a[1]) - ROLES.indexOf(b[1]) || b[4] - a[4]);
+        .sort((a, b) => ROLES.indexOf(a.role) - ROLES.indexOf(b.role) || qtOf(b) - qtOf(a));
       $("fav-box").hidden = men.length === 0;
       if (!men.length) return;
       $("fav-list").innerHTML = "<ul>" + men.map(p => `
-        <li data-open="${p[0]}">
-          <span class="dot ${p[1]}">${p[1]}</span>
-          <span class="who">${esc(p[2])} <span class="cl">${esc(p[3])}</span></span>
-          <span class="qt">${p[4]}<small>quotazione</small></span>
-          <button class="btn-ghost" data-unfav="${p[0]}" title="Togli dai preferiti" aria-label="Togli ${esc(p[2])} dai preferiti">&times;</button>
+        <li data-open="${p.id}">
+          <span class="dot ${p.role} wide">${esc(tagOf(p))}</span>
+          <span class="who">${esc(p.name)} <span class="cl">${esc(p.club)}</span></span>
+          <span class="qt">${qtOf(p)}<small>quotazione</small></span>
+          <button class="btn-ghost" data-unfav="${p.id}" title="Togli dai preferiti" aria-label="Togli ${esc(p.name)} dai preferiti">&times;</button>
         </li>
       `).join("") + "</ul>";
     }
@@ -641,20 +800,26 @@
       $("rosa").innerHTML = ROLES.map(r => {
         const men = state.rosa.filter(p => p.role === r)
           .sort((a, b) => b.price - a.price || a.name.localeCompare(b.name));
-        const rows = men.length ? men.map(p => `
+        const usati = spentIn(r);
+        const sforato = usati > state.rep[r];
+        const rows = men.length ? men.map(p => {
+          const dal = p.id ? byId.get(p.id) : null;
+          const tag = dal ? tagOf(dal) : p.role;
+          return `
           <li${p.id ? ` data-open="${p.id}"` : ""}>
-            <span class="dot ${r}">${r}</span>
+            <span class="dot ${r} wide">${esc(tag)}</span>
             <span class="who">${esc(p.name)}${p.club ? ` <span class="cl">${esc(p.club)}</span>` : ""}</span>
             <span class="price">${p.price}${p.qt ? `<small>qt. ${p.qt}</small>` : ""}</span>
             <button class="btn-ghost" data-del="${p.key}" title="Togli dalla rosa" aria-label="Togli ${esc(p.name)}">&times;</button>
-          </li>
-        `).join("") : `<li class="vuoto">Ancora nessun ${ROLE_ONE[r]}.</li>`;
+          </li>`;
+        }).join("") : `<li class="vuoto">Ancora nessun ${ROLE_ONE[r]}.</li>`;
 
         return `
           <section class="reparto ${r}">
             <div class="reparto-head">
               <h2>${ROLE_LABEL[r]}</h2>
               <span class="conto">${men.length}/${state.slots[r]}</span>
+              <span class="conto${sforato ? " over" : ""}" title="Crediti spesi sul budget desiderato">${usati}/${state.rep[r]}</span>
             </div>
             <ul>${rows}</ul>
           </section>`;
@@ -683,9 +848,8 @@
       const manuale = !current.id;
       const role = manuale ? $("p-role").value : current.role;
       const club = manuale ? $("p-club").value.trim() : current.club;
-      const price = parseInt($("p-price").value, 10);
+      const price = priceNow();
 
-      if (!Number.isFinite(price) || price < 1) { alertMsg("Il prezzo deve essere almeno 1 credito."); return; }
       if (taken(role) >= state.slots[role]) { alertMsg(`${ROLE_LABEL[role]}: slot già pieni.`); return; }
       if (price > maxBid()) {
         alertMsg(`Offerta troppo alta: con gli slot rimasti puoi arrivare a ${maxBid()} crediti.`);
@@ -694,12 +858,14 @@
 
       state.rosa.push({
         key: uid(), id: current.id || null, name: current.name,
-        club, role, price, qt: current.qt != null ? current.qt : null
+        club, role, price, qt: current.id ? qtOf(current) : null
       });
       state.fav = state.fav.filter(id => id !== current.id);
 
       save(); render();
-      toast(`Preso ${current.name} per ${price} ${price === 1 ? "credito" : "crediti"}`);
+      const sfora = spentIn(role) > state.rep[role];
+      toast(`Preso ${current.name} per ${price} ${price === 1 ? "credito" : "crediti"}` +
+            (sfora ? ` · ${ROLE_LABEL[role].toLowerCase()} oltre il budget` : ""));
       closeSheet();
       $("q").value = "";
       $("q-clear").hidden = true;
@@ -714,8 +880,10 @@
         state.fav.push(current.id);
         toast(`${current.name} messo tra i preferiti`);
       }
+      const prezzo = priceNow();
       save(); render();
       openPlayer(current);   // ridisegna il pannello aggiornato
+      setPrice(prezzo);
     }
 
     // ---------- eventi ----------
@@ -741,8 +909,8 @@
       }
       if (e.key === "Enter" && opzioni) {
         e.preventDefault();
-        if (active >= 0 && active < matches.length) openPlayer(fromListone(matches[active]));
-        else openPlayer({ id: null, role: "C", name: $("q").value.trim(), club: "", qt: null, fvm: null });
+        if (active >= 0 && active < matches.length) openPlayer(matches[active]);
+        else openPlayer({ id: null, role: "C", name: $("q").value.trim(), club: "", mantra: [] });
         closeSuggest();
       }
     });
@@ -751,8 +919,8 @@
       const li = e.target.closest("li");
       if (!li) return;
       e.preventDefault();
-      if (li.dataset.manual) openPlayer({ id: null, role: "C", name: $("q").value.trim(), club: "", qt: null, fvm: null });
-      else openPlayer(fromListone(matches[Number(li.dataset.i)]));
+      if (li.dataset.manual) openPlayer({ id: null, role: "C", name: $("q").value.trim(), club: "", mantra: [] });
+      else openPlayer(matches[Number(li.dataset.i)]);
       closeSuggest();
     });
 
@@ -799,15 +967,28 @@
       if (row) openById(row.dataset.open);
     });
 
+    // ---------- impostazioni ----------
+    $("mode").addEventListener("change", e => {
+      state.mode = e.target.value === "mantra" ? "mantra" : "classic";
+      save(); render();
+      toast(state.mode === "mantra" ? "Modalità Mantra: ruoli e quotazioni mantra" : "Modalità Classic");
+    });
+
     $("budget").addEventListener("change", e => {
       state.budget = Math.max(1, parseInt(e.target.value, 10) || 1);
       e.target.value = state.budget;
       save(); render();
     });
+
     ROLES.forEach(r => {
       $("slot-" + r).addEventListener("change", e => {
         state.slots[r] = Math.max(0, parseInt(e.target.value, 10) || 0);
         e.target.value = state.slots[r];
+        save(); render();
+      });
+      $("rep-" + r).addEventListener("change", e => {
+        state.rep[r] = Math.max(0, parseInt(e.target.value, 10) || 0);
+        e.target.value = state.rep[r];
         save(); render();
       });
     });
@@ -862,8 +1043,12 @@
       });
     }
 
+    $("mode").value = state.mode;
     $("budget").value = state.budget;
-    ROLES.forEach(r => { $("slot-" + r).value = state.slots[r]; });
+    ROLES.forEach(r => {
+      $("slot-" + r).value = state.slots[r];
+      $("rep-" + r).value = state.rep[r];
+    });
     render();
   </script>
 </body>
