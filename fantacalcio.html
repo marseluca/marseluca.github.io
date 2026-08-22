@@ -528,7 +528,6 @@
     <div id="rosa"></div>
 
     <div class="actions">
-      <button class="btn" id="export">Esporta JSON</button>
       <button class="btn" id="reset">Azzera rosa</button>
     </div>
 
@@ -582,7 +581,7 @@
             <div class="field"><label for="slot-A">Attaccanti</label><input id="slot-A" type="number" min="0" step="1" value="6" /></div>
           </div>
 
-          <p class="setup-lab">Budget desiderato per reparto <span id="rep-sum"></span></p>
+          <p class="setup-lab">Budget per reparto <span id="rep-sum"></span></p>
           <div class="setup-grid quattro">
             <div class="field"><label for="rep-P">Portieri</label><input id="rep-P" type="number" min="0" step="1" value="25" /></div>
             <div class="field"><label for="rep-D">Difensori</label><input id="rep-D" type="number" min="0" step="1" value="75" /></div>
@@ -954,8 +953,8 @@
 
       const somma = ROLES.reduce((n, r) => n + state.rep[r], 0);
       const el = $("rep-sum");
-      el.textContent = `(in tutto ${somma} di ${state.budget})`;
-      el.className = somma > state.budget ? "over" : "";
+      el.textContent = `si distribuiscono sui ${state.budget} crediti`;
+      el.className = somma !== state.budget ? "over" : "";
     }
 
     function renderFav() {
@@ -1363,8 +1362,38 @@
     $("budget").addEventListener("change", e => {
       state.budget = Math.max(1, parseInt(e.target.value, 10) || 1);
       e.target.value = state.budget;
+      bilanciaRep(null);   // i reparti si ridistribuiscono sul nuovo totale
       save(); render();
     });
+
+    // Il budget dei reparti deve sempre sommare ai crediti totali: quando se ne tocca
+    // uno, gli altri tre si riadattano in proporzione a quanto valevano prima.
+    function bilanciaRep(cambiato) {
+      const tot = state.budget;
+      if (cambiato) state.rep[cambiato] = Math.min(tot, Math.max(0, state.rep[cambiato]));
+
+      const altri = ROLES.filter(r => r !== cambiato);
+      const resto = Math.max(0, tot - (cambiato ? state.rep[cambiato] : 0));
+      const somma = altri.reduce((n, r) => n + state.rep[r], 0);
+
+      let dato = 0;
+      altri.forEach((r, i) => {
+        const v = i === altri.length - 1
+          ? resto - dato
+          : (somma > 0 ? Math.round(state.rep[r] / somma * resto) : Math.round(resto / altri.length));
+        state.rep[r] = Math.max(0, v);
+        dato += state.rep[r];
+      });
+
+      // gli arrotondamenti possono lasciare un credito di scarto: lo assorbe il primo reparto
+      const scarto = tot - ROLES.reduce((n, r) => n + state.rep[r], 0);
+      if (scarto !== 0) {
+        const r = altri[0] || cambiato;
+        state.rep[r] = Math.max(0, state.rep[r] + scarto);
+      }
+
+      ROLES.forEach(r => { $("rep-" + r).value = state.rep[r]; });
+    }
 
     ROLES.forEach(r => {
       $("slot-" + r).addEventListener("change", e => {
@@ -1374,18 +1403,9 @@
       });
       $("rep-" + r).addEventListener("change", e => {
         state.rep[r] = Math.max(0, parseInt(e.target.value, 10) || 0);
-        e.target.value = state.rep[r];
+        bilanciaRep(r);
         save(); render();
       });
-    });
-
-    $("export").addEventListener("click", () => {
-      const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "rosa-fantacalcio.json";
-      a.click();
-      URL.revokeObjectURL(a.href);
     });
 
     $("reset").addEventListener("click", () => {
@@ -1488,6 +1508,7 @@
       $("slot-" + r).value = state.slots[r];
       $("rep-" + r).value = state.rep[r];
     });
+    if (ROLES.reduce((n, r) => n + state.rep[r], 0) !== state.budget) { bilanciaRep(null); save(); }
     render();
   </script>
 </body>
