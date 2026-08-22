@@ -235,7 +235,6 @@
     }
     .modulo > summary::-webkit-details-marker { display: none; }
     .modulo .nome { font-family: var(--display); font-weight: 700; font-size: 1rem; }
-    .modulo .manca { flex: 1; color: var(--muted); font-size: 0.82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .modulo .quanti {
       font-family: var(--display); font-weight: 700; font-size: 0.8rem;
       border-radius: 999px; padding: 0.15rem 0.6rem; background: #eef3f6; color: var(--muted);
@@ -250,9 +249,13 @@
       background: #eef3f6; color: var(--muted); border-radius: 6px; padding: 0.1rem 0.4rem;
       min-width: 62px; text-align: center;
     }
+    .modulo .slot.P { background: #fdf2dd; color: #a8761a; }
+    .modulo .slot.D { background: #dff5ec; color: #0b7a52; }
+    .modulo .slot.C { background: #e4ecfd; color: #2a55b5; }
+    .modulo .slot.A { background: #fce8e6; color: #b23a30; }
     .modulo .chi { flex: 1; min-width: 0; }
+    .modulo > summary .quanti { margin-left: auto; }
     .modulo .chi .cl { color: var(--muted); font-size: 0.8rem; }
-    .modulo .vuoto-slot { color: #b23a30; font-size: 0.85rem; }
 
     /* ---------- pannello del giocatore ---------- */
     .sheet { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
@@ -843,7 +846,7 @@
         <li data-open="${p.id}">
           <span class="dot ${p.role} wide">${esc(tagOf(p))}</span>
           <span class="who">${esc(p.name)} <span class="cl">${esc(p.club)}</span></span>
-          <span class="qt">${qtOf(p)}<small>quotazione</small></span>
+          <span class="qt">${fvmOf(p)}<small>fvm</small></span>
           <button class="btn-ghost" data-unfav="${p.id}" title="Togli dai preferiti" aria-label="Togli ${esc(p.name)} dai preferiti">&times;</button>
         </li>
       `).join("") + "</ul>";
@@ -875,6 +878,13 @@
       return { preso, coperte };
     }
 
+    // il colore della casella segue il reparto del suo primo ruolo
+    const REPARTO_MANTRA = {
+      POR: "P", DC: "D", DD: "D", DS: "D", B: "D",
+      E: "C", M: "C", C: "C", W: "A", T: "A", A: "A", PC: "A"
+    };
+    const repartoDiSlot = sl => REPARTO_MANTRA[sl.split("/")[0]] || "C";
+
     function renderModuli() {
       $("moduli-box").hidden = !isMantra();
       if (!isMantra()) return;
@@ -887,20 +897,17 @@
 
       const esiti = MODULI.map(m => {
         const { preso, coperte } = assegna(m.slot, rosa);
-        const mancanti = m.slot.filter((_, i) => preso[i] === -1);
-        return { m, preso, coperte, mancanti };
+        return { m, preso, coperte };
       }).sort((a, b) => b.coperte - a.coperte || a.m.nome.localeCompare(b.m.nome));
 
-      $("moduli").innerHTML = esiti.map(({ m, preso, coperte, mancanti }) => {
+      $("moduli").innerHTML = esiti.map(({ m, preso, coperte }) => {
         const pieno = coperte === m.slot.length;
-        const testo = pieno ? "Undici completo" : "Mancano " + mancanti.join(", ");
         const righe = m.slot.map((sl, i) => {
           const p = preso[i] >= 0 ? rosa[preso[i]] : null;
           return `
             <li>
-              <span class="slot">${esc(sl)}</span>
-              ${p ? `<span class="chi">${esc(p.name)} <span class="cl">${esc(p.club)}</span></span>`
-                  : '<span class="chi vuoto-slot">— scoperto</span>'}
+              <span class="slot ${repartoDiSlot(sl)}">${esc(sl)}</span>
+              <span class="chi">${p ? `${esc(p.name)} <span class="cl">${esc(p.club)}</span>` : ""}</span>
             </li>`;
         }).join("");
 
@@ -908,7 +915,6 @@
           <details class="modulo${pieno ? " pieno" : ""}">
             <summary>
               <span class="nome">${m.nome}</span>
-              <span class="manca">${esc(testo)}</span>
               <span class="quanti">${coperte}/${m.slot.length}</span>
             </summary>
             <ul class="undici">${righe}</ul>
