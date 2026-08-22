@@ -275,7 +275,7 @@
     /* ---------- barra inferiore e pannelli ---------- */
     .tabbar {
       position: fixed; z-index: 45; left: 0; right: 0; bottom: 0;
-      display: grid; grid-template-columns: repeat(4, 1fr);
+      display: grid; grid-template-columns: repeat(5, 1fr);
       background: rgba(255,255,255,0.97); backdrop-filter: blur(10px);
       border-top: 1px solid var(--line);
       padding-bottom: env(safe-area-inset-bottom);
@@ -345,6 +345,30 @@
     }
     details.cons-ruolo > summary::-webkit-details-marker { display: none; }
     details.cons-ruolo > summary .quanti-r { margin-left: auto; font-size: 0.76rem; color: var(--muted); }
+
+
+    /* ---------- rosa ideale ---------- */
+    .ideale-top { padding: 0.9rem 1rem; margin-bottom: 0.8rem; }
+    .ideale-top .cifre { display: flex; gap: 1.6rem; }
+    .ideale-top .cifre div b {
+      display: block; font-family: var(--display); font-size: 1.7rem; line-height: 1;
+    }
+    .ideale-top .cifre .fvm b { color: #6d4bd8; }
+    .ideale-top .cifre .costo b { color: var(--brand); }
+    .ideale-top .cifre span { font-size: 0.78rem; color: var(--muted); }
+    .ideale-top .btn { margin-top: 0.9rem; }
+    .ideale-top .avviso { margin-top: 0.7rem; font-size: 0.84rem; color: #b23a30; }
+
+    .ideale-rep { margin-bottom: 0.8rem; }
+    .ideale-rep > summary .quanti { margin-left: auto; }
+    .ideale-rep .riga { display: flex; align-items: center; gap: 0.6rem; padding: 0.4rem 0; }
+    .ideale-rep .riga + .riga { border-top: 1px solid var(--line); }
+    .ideale-rep .chi { flex: 1; min-width: 0; }
+    .ideale-rep .chi .cl { color: var(--muted); font-size: 0.8rem; }
+    .ideale-rep .num { font-family: var(--display); font-weight: 700; text-align: right; white-space: nowrap; }
+    .ideale-rep .num small { display: block; font-family: var(--body); font-weight: 500; font-size: 0.7rem; color: var(--muted); }
+    .ideale-rep .num .f { color: #6d4bd8; }
+    .caricando { color: var(--muted); font-size: 0.9rem; padding: 0.6rem 0; }
 
     /* ---------- pannello del giocatore ---------- */
     .sheet { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
@@ -536,7 +560,7 @@
 
   <nav class="tabbar">
     <button class="tab" data-tab="setup">
-      <span class="ic">&#9881;</span>Impostazioni
+      <span class="ic">&#9881;</span>Opzioni
     </button>
     <button class="tab" data-tab="fav">
       <span class="ic">&#9733;</span>Preferiti<span class="pill" id="tab-fav-n" hidden></span>
@@ -546,6 +570,9 @@
     </button>
     <button class="tab" data-tab="consigli">
       <span class="ic">&#9998;</span>Consigli
+    </button>
+    <button class="tab" data-tab="ideale">
+      <span class="ic">&#10022;</span>Ideale
     </button>
   </nav>
 
@@ -594,6 +621,10 @@
         <section id="fav-box" hidden>
           <div class="card fav-costi" id="fav-costi"></div>
           <div class="card fav-list" id="fav-list"></div>
+        </section>
+
+        <section id="ideale-box" hidden>
+          <div id="ideale"></div>
         </section>
 
         <section id="moduli-box" hidden>
@@ -1414,12 +1445,212 @@
       save(); render();
     });
 
+    // ---------- rosa ideale ----------
+    // Con pesi che dipendono solo dal giocatore, il riempimento delle caselle è un
+    // matroide trasversale: prendendo i giocatori in ordine di peso e inserendoli con
+    // un cammino aumentante si ottiene l'assegnazione di peso massimo.
+    function assegnaPesata(slot, pool, peso) {
+      const compat = slot.map(sl => {
+        const amm = sl.split("/");
+        return pool.map(p => p.mantra.some(r => amm.includes(r.toUpperCase())));
+      });
+      const preso = new Array(slot.length).fill(-1);
+      const ordine = pool.map((_, j) => j).sort((a, b) => peso(pool[b]) - peso(pool[a]));
+
+      function prova(j, visti) {
+        for (let i = 0; i < slot.length; i++) {
+          if (!compat[i][j] || visti[i]) continue;
+          visti[i] = true;
+          if (preso[i] === -1 || prova(preso[i], visti)) { preso[i] = j; return true; }
+        }
+        return false;
+      }
+      for (const j of ordine) prova(j, new Array(slot.length).fill(false));
+      return preso;
+    }
+
+    // Undici di FVM massimo che sta nel budget: si cerca il prezzo-ombra dei crediti
+    // (moltiplicatore di Lagrange) più piccolo che fa rientrare la spesa.
+    function undiciOttimo(m, budget) {
+      const pool = PLAYERS.filter(p => p.mantra.length);
+      const valuta = preso => {
+        let fvm = 0, costo = 0, pieno = true;
+        preso.forEach(j => {
+          if (j < 0) { pieno = false; return; }
+          fvm += fvmOf(pool[j]); costo += qtOf(pool[j]);
+        });
+        return { preso, fvm, costo, pieno, pool };
+      };
+
+      let esito = valuta(assegnaPesata(m.slot, pool, p => fvmOf(p)));
+      if (esito.costo <= budget) return esito;
+
+      let lo = 0, hi = 30, best = null;
+      for (let i = 0; i < 22; i++) {
+        const lam = (lo + hi) / 2;
+        const prova = valuta(assegnaPesata(m.slot, pool, p => fvmOf(p) - lam * qtOf(p)));
+        if (prova.costo <= budget) { best = prova; hi = lam; } else lo = lam;
+      }
+      return best || esito;
+    }
+
+    // Classic: per ogni reparto il gruppo di N giocatori col FVM più alto
+    // che sta nel budget del reparto (zaino con numero di pezzi fissato).
+    function repartoOttimo(r, quanti, budget) {
+      const pool = PLAYERS.filter(p => p.role === r);
+      if (!quanti) return { scelti: [], fvm: 0, costo: 0 };
+
+      const NEG = -1e9;
+      const larg = budget + 1;
+      let dp = new Float64Array((quanti + 1) * larg).fill(NEG);
+      dp[0] = 0;
+      const scelta = new Uint8Array(pool.length * (quanti + 1) * larg);
+
+      pool.forEach((p, idx) => {
+        const c = qtOf(p), v = fvmOf(p);
+        const nuovo = dp.slice();
+        for (let k = quanti - 1; k >= 0; k--) {
+          for (let s = 0; s + c <= budget; s++) {
+            const da = dp[k * larg + s];
+            if (da === NEG) continue;
+            const pos = (k + 1) * larg + (s + c);
+            if (da + v > nuovo[pos]) {
+              nuovo[pos] = da + v;
+              scelta[idx * (quanti + 1) * larg + pos] = 1;
+            }
+          }
+        }
+        dp = nuovo;
+      });
+
+      // il costo migliore fra quelli che riempiono tutti i posti
+      let miglior = -1, spesa = 0;
+      for (let s = 0; s <= budget; s++) {
+        const v = dp[quanti * larg + s];
+        if (v > miglior) { miglior = v; spesa = s; }
+      }
+      if (miglior <= NEG / 2) return { scelti: [], fvm: 0, costo: 0, impossibile: true };
+
+      // ricostruzione a ritroso
+      const scelti = [];
+      let k = quanti, s = spesa;
+      for (let idx = pool.length - 1; idx >= 0 && k > 0; idx--) {
+        if (scelta[idx * (quanti + 1) * larg + k * larg + s]) {
+          scelti.push(pool[idx]);
+          s -= qtOf(pool[idx]);
+          k--;
+        }
+      }
+      scelti.sort((a, b) => fvmOf(b) - fvmOf(a));
+      return { scelti, fvm: scelti.reduce((t, p) => t + fvmOf(p), 0),
+               costo: scelti.reduce((t, p) => t + qtOf(p), 0) };
+    }
+
+    // ---------- disegno della rosa ideale ----------
+    let ideale = null;   // ultimo calcolo, per il pulsante "Metti in rosa"
+
+    const rigaIdeale = p => `
+      <div class="riga">
+        <span class="dot ${p.role} wide">${esc(tagOf(p))}</span>
+        <span class="chi">${esc(p.name)} <span class="cl">${esc(p.club)}</span></span>
+        <span class="num"><span class="f">${fvmOf(p)}</span><small>${qtOf(p)} ${qtOf(p) === 1 ? "credito" : "crediti"}</small></span>
+      </div>`;
+
+    function testataIdeale(fvm, costo, budget, avviso) {
+      return `
+        <div class="card ideale-top">
+          <div class="cifre">
+            <div class="fvm"><b>${fvm}</b><span>FVM totale</span></div>
+            <div class="costo"><b>${costo}</b><span>crediti su ${budget}</span></div>
+          </div>
+          ${avviso ? `<div class="avviso">${esc(avviso)}</div>` : ""}
+          <button class="btn btn-go" id="usa-ideale">Metti in rosa</button>
+        </div>`;
+    }
+
+    function renderIdealeClassic() {
+      const parti = ROLES.map(r => {
+        const e = repartoOttimo(r, state.slots[r], state.rep[r]);
+        return { r, ...e };
+      });
+      const fvm = parti.reduce((t, x) => t + x.fvm, 0);
+      const costo = parti.reduce((t, x) => t + x.costo, 0);
+      const mancanti = parti.filter(x => x.impossibile).map(x => ROLE_LABEL[x.r]);
+
+      ideale = { giocatori: parti.flatMap(x => x.scelti) };
+
+      $("ideale").innerHTML =
+        testataIdeale(fvm, costo, state.budget,
+          mancanti.length ? "Budget troppo stretto per " + mancanti.join(", ") : "") +
+        parti.map(x => `
+          <details class="modulo ideale-rep" open>
+            <summary>
+              <span class="nome">${ROLE_LABEL[x.r]}</span>
+              <span class="quanti">${x.costo}/${state.rep[x.r]} crediti</span>
+            </summary>
+            ${x.scelti.map(rigaIdeale).join("") || '<p class="caricando">Nessuna combinazione dentro il budget.</p>'}
+          </details>`).join("");
+    }
+
+    function renderIdealeMantra() {
+      // agli altri posti della rosa serve almeno un credito a testa
+      const altriSlot = Math.max(0, slotsTotal() - 11);
+      const budget11 = Math.max(11, state.budget - altriSlot);
+
+      const esiti = MODULI.map(m => ({ m, e: undiciOttimo(m, budget11) }))
+        .sort((a, b) => b.e.fvm - a.e.fvm);
+
+      const migliore = esiti[0];
+      ideale = { giocatori: migliore.e.preso.filter(j => j >= 0).map(j => migliore.e.pool[j]) };
+
+      $("ideale").innerHTML =
+        testataIdeale(migliore.e.fvm, migliore.e.costo, budget11,
+          `Miglior modulo: ${migliore.m.nome}. "Metti in rosa" usa il suo undici.`) +
+        esiti.map(({ m, e }) => `
+          <details class="modulo ideale-rep">
+            <summary>
+              <span class="nome">${m.nome}</span>
+              <span class="quanti">${e.fvm} fvm · ${e.costo} cr.</span>
+            </summary>
+            ${m.slot.map((sl, i) => {
+              const p = e.preso[i] >= 0 ? e.pool[e.preso[i]] : null;
+              return `
+                <div class="riga">
+                  <span class="slot ${repartoDiSlot(sl)}">${esc(sl)}</span>
+                  <span class="chi">${p ? `${esc(p.name)} <span class="cl">${esc(p.club)}</span>` : ""}</span>
+                  <span class="num">${p ? `<span class="f">${fvmOf(p)}</span><small>${qtOf(p)} ${qtOf(p) === 1 ? "credito" : "crediti"}</small>` : ""}</span>
+                </div>`;
+            }).join("")}
+          </details>`).join("");
+    }
+
+    function renderIdeale() {
+      $("ideale").innerHTML = '<p class="caricando">Sto cercando la rosa migliore…</p>';
+      // lascio disegnare il messaggio prima di metterci a calcolare
+      setTimeout(() => {
+        isMantra() ? renderIdealeMantra() : renderIdealeClassic();
+      }, 30);
+    }
+
+    $("ideale").addEventListener("click", e => {
+      if (!e.target.closest("#usa-ideale") || !ideale) return;
+      if (!confirm("Sostituire la rosa attuale con questa proposta? I giocatori vengono inseriti alle quotazioni.")) return;
+      state.rosa = ideale.giocatori.map(p => ({
+        key: uid(), id: p.id, name: p.name, club: p.club, role: p.role,
+        price: qtOf(p), qt: qtOf(p), fvm: fvmOf(p)
+      }));
+      save(); render();
+      toast(`Rosa sostituita: ${state.rosa.length} giocatori`);
+      apriScheda("rosa");
+    });
+
     // ---------- barra inferiore e pannelli ----------
     const SCHEDE = {
       setup:    { tit: "Impostazioni asta", box: "setup-box" },
       fav:      { tit: "Preferiti", box: "fav-box" },
       moduli:   { tit: "Moduli", box: "moduli-box" },
-      consigli: { tit: "Consigli", box: "consigli-box" }
+      consigli: { tit: "Consigli", box: "consigli-box" },
+      ideale:   { tit: "Rosa ideale", box: "ideale-box" }
     };
     let schedaAperta = "rosa";
 
@@ -1437,6 +1668,7 @@
         const s = SCHEDE[nome];
         Object.values(SCHEDE).forEach(x => { $(x.box).hidden = x.box !== s.box; });
         $("panel-tit").textContent = nome === "moduli" && !isMantra() ? "Moduli (solo in Mantra)" : s.tit;
+        if (nome === "ideale") renderIdeale();
         $("panel").hidden = false;
         $("panel").querySelector(".panel-body").scrollTop = 0;
       }
