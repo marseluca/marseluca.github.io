@@ -910,7 +910,8 @@
       box.addEventListener("toggle", e => {
         const d = e.target;
         if (!d.dataset.chiave) return;
-        if (d.open) aperti.add(d.dataset.chiave); else aperti.delete(d.dataset.chiave);
+        if (d.open) { aperti.add(d.dataset.chiave); riempiConsiglio(d); }
+        else aperti.delete(d.dataset.chiave);
       }, true);
     }
 
@@ -968,29 +969,53 @@
       return `
         <li data-open="${p.id}">
           <span class="who">${esc(p.name)} <span class="cl">${esc(p.club)}</span>${state.rosa.some(x => x.id === p.id) ? ' <span class="cl">· in rosa</span>' : ""}${state.fav.includes(p.id) ? ' <span class="star">&#9733;</span>' : ""}</span>
-          <span class="val">${fvmOf(p)}<small>qt. ${qtOf(p)}</small></span>
+          <span class="val">${fvmOf(p)}<small>fvm</small></span>
         </li>`;
     }
 
-    // Classic: niente moduli, i dieci migliori per FVM in ciascun reparto
+    const QUANTI_CONSIGLI = 50;
+
+    function blocco(sigla, elenco) {
+      return `
+        <div class="cons-ruolo">
+          <span class="slot ${repartoDiSlot(sigla)}">${esc(sigla)}</span>
+          <ul>${elenco.map(rigaConsiglio).join("") || '<li class="cl">Nessuno disponibile</li>'}</ul>
+        </div>`;
+    }
+
+    // le liste sono lunghe: le costruisco solo quando il pannello viene aperto davvero
+    function riempiConsiglio(d) {
+      const corpo = d.querySelector(".cons-body");
+      if (!corpo || corpo.dataset.pieno === "1") return;
+      const chiave = d.dataset.chiave || "";
+
+      if (chiave.startsWith("consC-")) {
+        const r = chiave.slice(6);
+        const elenco = PLAYERS.filter(p => p.role === r)
+          .sort((a, b) => fvmOf(b) - fvmOf(a) || qtOf(b) - qtOf(a))
+          .slice(0, QUANTI_CONSIGLI);
+        corpo.innerHTML = blocco(r, elenco);
+      } else if (chiave.startsWith("cons-")) {
+        const m = MODULI.find(x => x.nome === chiave.slice(5));
+        if (!m) return;
+        corpo.innerHTML = [...new Set(m.slot)]
+          .map(sl => blocco(sl, consigli(sl, QUANTI_CONSIGLI))).join("");
+      }
+      corpo.dataset.pieno = "1";
+    }
+
+    // Classic: niente moduli, i migliori per FVM in ciascun reparto
     function renderConsigliClassic() {
       $("consigli-tit").textContent = "Consigli per reparto";
-      $("consigli").innerHTML = ROLES.map(r => {
-        const righe = PLAYERS.filter(p => p.role === r)
-          .sort((a, b) => fvmOf(b) - fvmOf(a) || qtOf(b) - qtOf(a))
-          .slice(0, 10).map(rigaConsiglio).join("");
-        return `
+      $("consigli").innerHTML = ROLES.map(r => `
           <details class="modulo" data-chiave="consC-${r}"${aperti.has("consC-" + r) ? " open" : ""}>
             <summary>
               <span class="nome">${ROLE_LABEL[r]}</span>
               <span class="quanti">${taken(r)}/${state.slots[r]}</span>
             </summary>
-            <div class="cons-ruolo">
-              <span class="slot ${r}">${r}</span>
-              <ul>${righe}</ul>
-            </div>
-          </details>`;
-      }).join("");
+            <div class="cons-body"></div>
+          </details>`).join("");
+      $("consigli").querySelectorAll("details[open]").forEach(riempiConsiglio);
     }
 
     function renderConsigli(esiti) {
@@ -998,26 +1023,15 @@
       if (!isMantra()) { renderConsigliClassic(); return; }
       $("consigli-tit").textContent = "Consigli per modulo";
 
-      $("consigli").innerHTML = esiti.map(({ m, coperte }) => {
-        const ruoli = [...new Set(m.slot)];
-        const blocchi = ruoli.map(sl => {
-          const righe = consigli(sl, 10).map(rigaConsiglio).join("");
-          return `
-            <div class="cons-ruolo">
-              <span class="slot ${repartoDiSlot(sl)}">${esc(sl)}</span>
-              <ul>${righe || '<li class="cl">Nessuno disponibile</li>'}</ul>
-            </div>`;
-        }).join("");
-
-        return `
+      $("consigli").innerHTML = esiti.map(({ m, coperte }) => `
           <details class="modulo" data-chiave="cons-${m.nome}"${aperti.has("cons-" + m.nome) ? " open" : ""}>
             <summary>
               <span class="nome">${m.nome}</span>
               <span class="quanti">${coperte}/${m.slot.length}</span>
             </summary>
-            ${blocchi}
-          </details>`;
-      }).join("");
+            <div class="cons-body"></div>
+          </details>`).join("");
+      $("consigli").querySelectorAll("details[open]").forEach(riempiConsiglio);
     }
 
     function render() {
