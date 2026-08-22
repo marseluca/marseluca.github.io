@@ -1,5 +1,5 @@
 /* Service worker dell'app Asta Fantacalcio: tiene tutto offline. */
-const CACHE = "asta-fantacalcio-v14";
+const CACHE = "asta-fantacalcio-v15";
 const ASSETS = [
   "./fantacalcio.html",
   "./listone-2026-27.js",

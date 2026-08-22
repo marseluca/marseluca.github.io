@@ -284,8 +284,8 @@
     .tab {
       display: flex; flex-direction: column; align-items: center; gap: 0.1rem;
       border: none; background: none; cursor: pointer;
-      font-family: var(--body); font-size: 0.72rem; font-weight: 600; color: var(--muted);
-      padding: 0.5rem 0.2rem 0.55rem; position: relative;
+      font-family: var(--body); font-size: 0.68rem; font-weight: 600; color: var(--muted);
+      padding: 0.5rem 0.15rem 0.55rem; position: relative; white-space: nowrap;
     }
     .tab .ic { font-size: 1.15rem; line-height: 1.1; }
     .tab.on { color: var(--brand); }
@@ -323,17 +323,20 @@
     /* costi dei preferiti */
     .fav-costi { padding: 0.9rem 1rem; margin-bottom: 0.8rem; }
     .fav-costi[hidden] { display: none; }
-    .fav-costi .tot { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
-    .fav-costi .tot b { font-family: var(--display); font-size: 1.5rem; color: var(--gold); }
-    .fav-costi .tot span { font-size: 0.82rem; color: var(--muted); }
-    .fav-costi .rip { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.7rem; }
-    .fav-costi .rip span {
-      font-size: 0.78rem; font-weight: 600; border-radius: 999px; padding: 0.2rem 0.6rem;
+    .fav-costi .tot b {
+      display: block; font-family: var(--display); font-size: 2rem; line-height: 1; color: var(--gold);
     }
-    .fav-costi .rip .P { background: #fdf2dd; color: #a8761a; }
-    .fav-costi .rip .D { background: #dff5ec; color: #0b7a52; }
-    .fav-costi .rip .C { background: #e4ecfd; color: #2a55b5; }
-    .fav-costi .rip .A { background: #fce8e6; color: #b23a30; }
+    .fav-costi .tot span { font-size: 0.82rem; color: var(--muted); }
+    .fav-costi .rip { list-style: none; margin: 1rem 0 0; padding: 0; }
+    .fav-costi .rip li { display: flex; align-items: center; gap: 0.6rem; padding: 0.4rem 0; }
+    .fav-costi .rip li + li { border-top: 1px solid var(--line); }
+    .fav-costi .lab { font-size: 0.88rem; font-weight: 600; width: 8.5rem; }
+    .fav-costi .lab small { display: block; font-weight: 400; font-size: 0.72rem; color: var(--muted); }
+    .fav-costi .barra { flex: 1; height: 8px; border-radius: 999px; background: #eef3f6; overflow: hidden; }
+    .fav-costi .barra i { display: block; height: 100%; border-radius: 999px; }
+    .fav-costi .barra i.P { background: var(--p); } .fav-costi .barra i.D { background: var(--d); }
+    .fav-costi .barra i.C { background: var(--c); } .fav-costi .barra i.A { background: var(--a); }
+    .fav-costi .v { font-family: var(--display); font-weight: 700; font-size: 0.95rem; min-width: 3rem; text-align: right; }
 
     /* elenco di ogni ruolo nei consigli, richiudibile */
     details.cons-ruolo > summary {
@@ -445,6 +448,7 @@
       color: var(--muted); padding: 0.3rem 0;
     }
     .setup-card { display: block; }
+    #setup-box .setup-card { box-shadow: none; }
     .setup-grid { display: grid; gap: 0.8rem; align-items: end; }
     .setup-grid.due { grid-template-columns: 1fr 1fr; }
     .setup-grid.quattro { grid-template-columns: repeat(4, 1fr); }
@@ -528,46 +532,12 @@
       <button class="btn" id="reset">Azzera rosa</button>
     </div>
 
-    <details class="setup">
-      <summary>Impostazioni asta</summary>
-      <div class="card setup-card">
-        <div class="setup-grid due">
-          <div class="field">
-            <label for="mode">Modalità</label>
-            <select id="mode">
-              <option value="classic">Classic</option>
-              <option value="mantra">Mantra</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="budget">Crediti totali</label>
-            <input id="budget" type="number" min="1" step="1" value="500" />
-          </div>
-        </div>
-
-        <p class="setup-lab">Giocatori per reparto</p>
-        <div class="setup-grid quattro">
-          <div class="field"><label for="slot-P">Portieri</label><input id="slot-P" type="number" min="0" step="1" value="3" /></div>
-          <div class="field"><label for="slot-D">Difensori</label><input id="slot-D" type="number" min="0" step="1" value="8" /></div>
-          <div class="field"><label for="slot-C">Centrocampisti</label><input id="slot-C" type="number" min="0" step="1" value="8" /></div>
-          <div class="field"><label for="slot-A">Attaccanti</label><input id="slot-A" type="number" min="0" step="1" value="6" /></div>
-        </div>
-
-        <p class="setup-lab">Budget desiderato per reparto <span id="rep-sum"></span></p>
-        <div class="setup-grid quattro">
-          <div class="field"><label for="rep-P">Portieri</label><input id="rep-P" type="number" min="0" step="1" value="25" /></div>
-          <div class="field"><label for="rep-D">Difensori</label><input id="rep-D" type="number" min="0" step="1" value="75" /></div>
-          <div class="field"><label for="rep-C">Centrocampisti</label><input id="rep-C" type="number" min="0" step="1" value="150" /></div>
-          <div class="field"><label for="rep-A">Attaccanti</label><input id="rep-A" type="number" min="0" step="1" value="250" /></div>
-        </div>
-      </div>
-    </details>
   </main>
 
 
   <nav class="tabbar">
-    <button class="tab on" data-tab="rosa">
-      <span class="ic">&#9776;</span>Rosa
+    <button class="tab" data-tab="setup">
+      <span class="ic">&#9881;</span>Impostazioni
     </button>
     <button class="tab" data-tab="fav">
       <span class="ic">&#9733;</span>Preferiti<span class="pill" id="tab-fav-n" hidden></span>
@@ -588,6 +558,40 @@
         <button class="sheet-x" id="panel-close" aria-label="Chiudi">&times;</button>
       </div>
       <div class="panel-body">
+        <section id="setup-box" hidden>
+          <div class="card setup-card">
+          <div class="setup-grid due">
+            <div class="field">
+              <label for="mode">Modalità</label>
+              <select id="mode">
+                <option value="classic">Classic</option>
+                <option value="mantra">Mantra</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="budget">Crediti totali</label>
+              <input id="budget" type="number" min="1" step="1" value="500" />
+            </div>
+          </div>
+
+          <p class="setup-lab">Giocatori per reparto</p>
+          <div class="setup-grid quattro">
+            <div class="field"><label for="slot-P">Portieri</label><input id="slot-P" type="number" min="0" step="1" value="3" /></div>
+            <div class="field"><label for="slot-D">Difensori</label><input id="slot-D" type="number" min="0" step="1" value="8" /></div>
+            <div class="field"><label for="slot-C">Centrocampisti</label><input id="slot-C" type="number" min="0" step="1" value="8" /></div>
+            <div class="field"><label for="slot-A">Attaccanti</label><input id="slot-A" type="number" min="0" step="1" value="6" /></div>
+          </div>
+
+          <p class="setup-lab">Budget desiderato per reparto <span id="rep-sum"></span></p>
+          <div class="setup-grid quattro">
+            <div class="field"><label for="rep-P">Portieri</label><input id="rep-P" type="number" min="0" step="1" value="25" /></div>
+            <div class="field"><label for="rep-D">Difensori</label><input id="rep-D" type="number" min="0" step="1" value="75" /></div>
+            <div class="field"><label for="rep-C">Centrocampisti</label><input id="rep-C" type="number" min="0" step="1" value="150" /></div>
+            <div class="field"><label for="rep-A">Attaccanti</label><input id="rep-A" type="number" min="0" step="1" value="250" /></div>
+          </div>
+      </div>
+        </section>
+
         <section id="fav-box" hidden>
           <div class="card fav-costi" id="fav-costi"></div>
           <div class="card fav-list" id="fav-list"></div>
@@ -969,21 +973,25 @@
         return;
       }
 
-      // quanto costerebbe prenderli tutti, secondo le quotazioni
-      const totale = men.reduce((t, p) => t + qtOf(p), 0);
+      // quanto valgono i preferiti, secondo il FVM
+      const totale = men.reduce((t, p) => t + fvmOf(p), 0);
       const perReparto = ROLES.map(r => {
         const q = men.filter(p => p.role === r);
-        return { r, n: q.length, costo: q.reduce((t, p) => t + qtOf(p), 0) };
-      }).filter(x => x.n);
+        return { r, n: q.length, costo: q.reduce((t, p) => t + fvmOf(p), 0) };
+      });
 
       $("fav-costi").hidden = false;
       $("fav-costi").innerHTML = `
         <div class="tot">
-          <span>${n} preferiti · costo alle quotazioni</span>
-          <b>${totale}</b>
+          <div><b>${totale}</b><span>FVM dei ${n} preferiti</span></div>
         </div>
-        <div class="rip">${perReparto.map(x =>
-          `<span class="${x.r}">${ROLE_LABEL[x.r]} ${x.costo}<small> · ${x.n}</small></span>`).join("")}</div>`;
+        <ul class="rip">${perReparto.map(x => `
+          <li>
+            <span class="dot ${x.r}">${x.r}</span>
+            <span class="lab">${ROLE_LABEL[x.r]}<small>${x.n === 1 ? "1 giocatore" : x.n + " giocatori"}</small></span>
+            <span class="barra"><i class="${x.r}" style="width:${totale ? Math.round(x.costo / totale * 100) : 0}%"></i></span>
+            <span class="v">${x.costo}</span>
+          </li>`).join("")}</ul>`;
       $("fav-list").innerHTML = "<ul>" + men.map(p => `
         <li data-open="${p.id}">
           <span class="dot ${p.role} wide">${esc(tagOf(p))}</span>
@@ -1388,6 +1396,7 @@
 
     // ---------- barra inferiore e pannelli ----------
     const SCHEDE = {
+      setup:    { tit: "Impostazioni asta", box: "setup-box" },
       fav:      { tit: "Preferiti", box: "fav-box" },
       moduli:   { tit: "Moduli", box: "moduli-box" },
       consigli: { tit: "Consigli", box: "consigli-box" }
@@ -1412,7 +1421,7 @@
         $("panel").querySelector(".panel-body").scrollTop = 0;
       }
       document.querySelectorAll(".tab").forEach(t =>
-        t.classList.toggle("on", t.dataset.tab === (schedaAperta === "rosa" ? "rosa" : schedaAperta)));
+        t.classList.toggle("on", t.dataset.tab === schedaAperta));
       bloccaScroll();
     }
 
