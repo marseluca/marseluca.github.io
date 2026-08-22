@@ -349,11 +349,12 @@
 
     /* ---------- rosa ideale ---------- */
     .ideale-top { padding: 0.9rem 1rem; margin-bottom: 0.8rem; }
-    .ideale-top .cifre { display: flex; gap: 1.6rem; }
+    .ideale-top .cifre { display: flex; flex-wrap: wrap; gap: 1.2rem 1.6rem; }
     .ideale-top .cifre div b {
       display: block; font-family: var(--display); font-size: 1.7rem; line-height: 1;
     }
     .ideale-top .cifre .fvm b { color: #6d4bd8; }
+    .ideale-top .cifre .fvm2 b { color: #9b4bd8; }
     .ideale-top .cifre .costo b { color: var(--brand); }
     .ideale-top .cifre span { font-size: 0.78rem; color: var(--muted); }
     .ideale-top .btn { margin-top: 0.9rem; }
@@ -1471,19 +1472,20 @@
 
     // Undici di FVM massimo che sta nel budget: si cerca il prezzo-ombra dei crediti
     // (moltiplicatore di Lagrange) più piccolo che fa rientrare la spesa.
-    function undiciOttimo(m, budget) {
-      const pool = PLAYERS.filter(p => p.mantra.length);
+    function undiciOttimo(m, budget, esclusi) {
+      const pool = PLAYERS.filter(p => p.mantra.length && !(esclusi && esclusi.has(p.id)));
       const valuta = preso => {
-        let fvm = 0, costo = 0, pieno = true;
+        let fvm = 0, costo = 0;
+        const scelti = [];
         preso.forEach(j => {
-          if (j < 0) { pieno = false; return; }
-          fvm += fvmOf(pool[j]); costo += qtOf(pool[j]);
+          if (j < 0) return;
+          fvm += fvmOf(pool[j]); costo += qtOf(pool[j]); scelti.push(pool[j]);
         });
-        return { preso, fvm, costo, pieno, pool };
+        return { preso, pool, scelti, fvm, costo };
       };
 
-      let esito = valuta(assegnaPesata(m.slot, pool, p => fvmOf(p)));
-      if (esito.costo <= budget) return esito;
+      const libero = valuta(assegnaPesata(m.slot, pool, p => fvmOf(p)));
+      if (libero.costo <= budget) return libero;
 
       let lo = 0, hi = 30, best = null;
       for (let i = 0; i < 22; i++) {
@@ -1491,137 +1493,216 @@
         const prova = valuta(assegnaPesata(m.slot, pool, p => fvmOf(p) - lam * qtOf(p)));
         if (prova.costo <= budget) { best = prova; hi = lam; } else lo = lam;
       }
-      return best || esito;
+      return best || libero;
     }
 
-    // Classic: per ogni reparto il gruppo di N giocatori col FVM più alto
-    // che sta nel budget del reparto (zaino con numero di pezzi fissato).
-    function repartoOttimo(r, quanti, budget) {
-      const pool = PLAYERS.filter(p => p.role === r);
-      if (!quanti) return { scelti: [], fvm: 0, costo: 0 };
-
-      const NEG = -1e9;
+    // Zaino per reparto: per ogni numero di giocatori e ogni spesa, il FVM migliore.
+    const NEG = -1e9;
+    function tabellaDP(pool, kMax, budget) {
       const larg = budget + 1;
-      let dp = new Float64Array((quanti + 1) * larg).fill(NEG);
+      let dp = new Float64Array((kMax + 1) * larg).fill(NEG);
       dp[0] = 0;
-      const scelta = new Uint8Array(pool.length * (quanti + 1) * larg);
-
+      const scelta = new Uint8Array(pool.length * (kMax + 1) * larg);
       pool.forEach((p, idx) => {
         const c = qtOf(p), v = fvmOf(p);
         const nuovo = dp.slice();
-        for (let k = quanti - 1; k >= 0; k--) {
-          for (let s = 0; s + c <= budget; s++) {
-            const da = dp[k * larg + s];
+        const base = idx * (kMax + 1) * larg;
+        for (let k = kMax - 1; k >= 0; k--) {
+          const riga = k * larg, dopo = (k + 1) * larg;
+          for (let sp = 0; sp + c <= budget; sp++) {
+            const da = dp[riga + sp];
             if (da === NEG) continue;
-            const pos = (k + 1) * larg + (s + c);
-            if (da + v > nuovo[pos]) {
-              nuovo[pos] = da + v;
-              scelta[idx * (quanti + 1) * larg + pos] = 1;
-            }
+            const pos = dopo + sp + c;
+            if (da + v > nuovo[pos]) { nuovo[pos] = da + v; scelta[base + pos] = 1; }
           }
         }
         dp = nuovo;
       });
+      return { dp, scelta, larg, kMax, pool };
+    }
 
-      // il costo migliore fra quelli che riempiono tutti i posti
-      let miglior = -1, spesa = 0;
-      for (let s = 0; s <= budget; s++) {
-        const v = dp[quanti * larg + s];
-        if (v > miglior) { miglior = v; spesa = s; }
-      }
-      if (miglior <= NEG / 2) return { scelti: [], fvm: 0, costo: 0, impossibile: true };
-
-      // ricostruzione a ritroso
+    function estraiDP(t, k, costo) {
       const scelti = [];
-      let k = quanti, s = spesa;
-      for (let idx = pool.length - 1; idx >= 0 && k > 0; idx--) {
-        if (scelta[idx * (quanti + 1) * larg + k * larg + s]) {
-          scelti.push(pool[idx]);
-          s -= qtOf(pool[idx]);
-          k--;
+      let kk = k, sp = costo;
+      for (let idx = t.pool.length - 1; idx >= 0 && kk > 0; idx--) {
+        if (t.scelta[idx * (t.kMax + 1) * t.larg + kk * t.larg + sp]) {
+          scelti.push(t.pool[idx]);
+          sp -= qtOf(t.pool[idx]);
+          kk--;
         }
       }
-      scelti.sort((a, b) => fvmOf(b) - fvmOf(a));
-      return { scelti, fvm: scelti.reduce((t, p) => t + fvmOf(p), 0),
-               costo: scelti.reduce((t, p) => t + qtOf(p), 0) };
+      return scelti;
+    }
+
+    // Come dividere il budget fra più gruppi: convoluzione delle curve costo→FVM.
+    function combinaCurve(curve, budget) {
+      let acc = new Float64Array(budget + 1).fill(NEG);
+      acc[0] = 0;
+      const scelte = [];
+      curve.forEach(cur => {
+        const nuovo = new Float64Array(budget + 1).fill(NEG);
+        const quale = new Int16Array(budget + 1).fill(-1);
+        for (let tot = 0; tot <= budget; tot++) {
+          for (let q = 0; q <= tot; q++) {
+            const a = acc[tot - q], b = cur[q];
+            if (a === NEG || b === NEG) continue;
+            if (a + b > nuovo[tot]) { nuovo[tot] = a + b; quale[tot] = q; }
+          }
+        }
+        acc = nuovo;
+        scelte.push(quale);
+      });
+
+      let migliore = -1, spesa = 0;
+      for (let c = 0; c <= budget; c++) if (acc[c] > migliore) { migliore = acc[c]; spesa = c; }
+      if (migliore <= NEG / 2) return null;
+
+      const parti = new Array(curve.length).fill(0);
+      let resto = spesa;
+      for (let i = curve.length - 1; i >= 0; i--) {
+        parti[i] = scelte[i][resto];
+        resto -= parti[i];
+      }
+      return { fvm: migliore, costo: spesa, parti };
+    }
+
+    // Prende esattamente bisogno[r] giocatori per reparto, spendendo al più budget.
+    function gruppoOttimo(bisogno, budget, esclusi) {
+      const usati = ROLES.filter(r => bisogno[r] > 0);
+      if (!usati.length) return { scelti: [], fvm: 0, costo: 0 };
+
+      const tabelle = usati.map(r => {
+        const pool = PLAYERS.filter(p => p.role === r && !(esclusi && esclusi.has(p.id)));
+        return { r, t: tabellaDP(pool, bisogno[r], budget) };
+      });
+      const curve = tabelle.map(({ r, t }) => t.dp.slice(bisogno[r] * t.larg, bisogno[r] * t.larg + budget + 1));
+      const mix = combinaCurve(curve, budget);
+      if (!mix) return { scelti: [], fvm: 0, costo: 0, impossibile: true };
+
+      const scelti = tabelle.flatMap(({ r, t }, i) => estraiDP(t, bisogno[r], mix.parti[i]));
+      return { scelti, fvm: mix.fvm, costo: mix.costo };
+    }
+
+    // Rosa Classic: prima gli undici titolari (con uno dei moduli ammessi), poi le
+    // riserve con i crediti che restano.
+    const MODULI_CLASSIC = [[3,4,3], [3,5,2], [4,3,3], [4,4,2], [4,5,1], [5,3,2], [5,4,1]];
+
+    function rosaClassic() {
+      const totSlot = slotsTotal();
+      const riserve = Math.max(0, totSlot - 11);
+      const budgetTit = Math.max(11, state.budget - riserve);   // un credito a testa per le riserve
+
+      let miglior = null;
+      for (const [d, c, a] of MODULI_CLASSIC) {
+        if (state.slots.P < 1 || state.slots.D < d || state.slots.C < c || state.slots.A < a) continue;
+        const e = gruppoOttimo({ P: 1, D: d, C: c, A: a }, budgetTit);
+        if (e.scelti.length === 11 && (!miglior || e.fvm > miglior.e.fvm)) miglior = { modulo: `${d}-${c}-${a}`, e };
+      }
+      if (!miglior) return null;
+
+      const presi = new Set(miglior.e.scelti.map(p => p.id));
+      const conta = r => miglior.e.scelti.filter(p => p.role === r).length;
+      const bisogno = { P: state.slots.P - conta("P"), D: state.slots.D - conta("D"),
+                        C: state.slots.C - conta("C"), A: state.slots.A - conta("A") };
+      const panca = gruppoOttimo(bisogno, Math.max(0, state.budget - miglior.e.costo), presi);
+
+      return { modulo: miglior.modulo, titolari: miglior.e, panca };
     }
 
     // ---------- disegno della rosa ideale ----------
     let ideale = null;   // ultimo calcolo, per il pulsante "Metti in rosa"
 
-    const rigaIdeale = p => `
+    const rigaIdeale = (p, sigla) => `
       <div class="riga">
-        <span class="dot ${p.role} wide">${esc(tagOf(p))}</span>
-        <span class="chi">${esc(p.name)} <span class="cl">${esc(p.club)}</span></span>
-        <span class="num"><span class="f">${fvmOf(p)}</span><small>${qtOf(p)} ${qtOf(p) === 1 ? "credito" : "crediti"}</small></span>
+        ${sigla ? `<span class="slot ${repartoDiSlot(sigla)}">${esc(sigla)}</span>`
+                : `<span class="dot ${p.role} wide">${esc(tagOf(p))}</span>`}
+        <span class="chi">${p ? `${esc(p.name)} <span class="cl">${esc(p.club)}</span>` : ""}</span>
+        <span class="num">${p ? `<span class="f">${fvmOf(p)}</span><small>${qtOf(p)} ${qtOf(p) === 1 ? "credito" : "crediti"}</small>` : ""}</span>
       </div>`;
 
-    function testataIdeale(fvm, costo, budget, avviso) {
+    function testataIdeale(fvmTit, fvmTot, costo, avviso) {
       return `
         <div class="card ideale-top">
           <div class="cifre">
-            <div class="fvm"><b>${fvm}</b><span>FVM totale</span></div>
-            <div class="costo"><b>${costo}</b><span>crediti su ${budget}</span></div>
+            <div class="fvm"><b>${fvmTit}</b><span>FVM titolari</span></div>
+            <div class="fvm2"><b>${fvmTot}</b><span>FVM rosa</span></div>
+            <div class="costo"><b>${costo}</b><span>crediti su ${state.budget}</span></div>
           </div>
           ${avviso ? `<div class="avviso">${esc(avviso)}</div>` : ""}
           <button class="btn btn-go" id="usa-ideale">Metti in rosa</button>
         </div>`;
     }
 
+    function blocchiPanca(panca) {
+      if (!panca || !panca.scelti.length) return "";
+      return ROLES.map(r => {
+        const men = panca.scelti.filter(p => p.role === r).sort((a, b) => fvmOf(b) - fvmOf(a));
+        if (!men.length) return "";
+        return `
+          <details class="modulo ideale-rep">
+            <summary>
+              <span class="nome">Riserve ${ROLE_LABEL[r].toLowerCase()}</span>
+              <span class="quanti">${men.reduce((t, p) => t + qtOf(p), 0)} cr.</span>
+            </summary>
+            ${men.map(p => rigaIdeale(p)).join("")}
+          </details>`;
+      }).join("");
+    }
+
     function renderIdealeClassic() {
-      const parti = ROLES.map(r => {
-        const e = repartoOttimo(r, state.slots[r], state.rep[r]);
-        return { r, ...e };
-      });
-      const fvm = parti.reduce((t, x) => t + x.fvm, 0);
-      const costo = parti.reduce((t, x) => t + x.costo, 0);
-      const mancanti = parti.filter(x => x.impossibile).map(x => ROLE_LABEL[x.r]);
+      const r = rosaClassic();
+      if (!r) { $("ideale").innerHTML = '<p class="caricando">Con questi crediti non si riesce a comporre un undici.</p>'; return; }
 
-      ideale = { giocatori: parti.flatMap(x => x.scelti) };
+      const fvmTot = r.titolari.fvm + r.panca.fvm;
+      const costo = r.titolari.costo + r.panca.costo;
+      ideale = { giocatori: [...r.titolari.scelti, ...r.panca.scelti] };
 
-      $("ideale").innerHTML =
-        testataIdeale(fvm, costo, state.budget,
-          mancanti.length ? "Budget troppo stretto per " + mancanti.join(", ") : "") +
-        parti.map(x => `
+      const perReparto = ROLES.map(r2 => {
+        const men = r.titolari.scelti.filter(p => p.role === r2).sort((a, b) => fvmOf(b) - fvmOf(a));
+        return men.length ? `
           <details class="modulo ideale-rep" open>
             <summary>
-              <span class="nome">${ROLE_LABEL[x.r]}</span>
-              <span class="quanti">${x.costo}/${state.rep[x.r]} crediti</span>
+              <span class="nome">${ROLE_LABEL[r2]}</span>
+              <span class="quanti">${men.length} titolari · ${men.reduce((t, p) => t + qtOf(p), 0)} cr.</span>
             </summary>
-            ${x.scelti.map(rigaIdeale).join("") || '<p class="caricando">Nessuna combinazione dentro il budget.</p>'}
-          </details>`).join("");
+            ${men.map(p => rigaIdeale(p)).join("")}
+          </details>` : "";
+      }).join("");
+
+      $("ideale").innerHTML =
+        testataIdeale(r.titolari.fvm, fvmTot, costo, `Undici migliore col modulo ${r.modulo}.`) +
+        perReparto + blocchiPanca(r.panca);
     }
 
     function renderIdealeMantra() {
-      // agli altri posti della rosa serve almeno un credito a testa
-      const altriSlot = Math.max(0, slotsTotal() - 11);
-      const budget11 = Math.max(11, state.budget - altriSlot);
+      const riserve = Math.max(0, slotsTotal() - 11);
+      const budgetTit = Math.max(11, state.budget - riserve);
 
-      const esiti = MODULI.map(m => ({ m, e: undiciOttimo(m, budget11) }))
+      const esiti = MODULI.map(m => ({ m, e: undiciOttimo(m, budgetTit) }))
         .sort((a, b) => b.e.fvm - a.e.fvm);
+      const top = esiti[0];
 
-      const migliore = esiti[0];
-      ideale = { giocatori: migliore.e.preso.filter(j => j >= 0).map(j => migliore.e.pool[j]) };
+      // le riserve completano i reparti con quello che resta
+      const presi = new Set(top.e.scelti.map(p => p.id));
+      const conta = r => top.e.scelti.filter(p => p.role === r).length;
+      const bisogno = { P: Math.max(0, state.slots.P - conta("P")), D: Math.max(0, state.slots.D - conta("D")),
+                        C: Math.max(0, state.slots.C - conta("C")), A: Math.max(0, state.slots.A - conta("A")) };
+      const panca = gruppoOttimo(bisogno, Math.max(0, state.budget - top.e.costo), presi);
+
+      ideale = { giocatori: [...top.e.scelti, ...panca.scelti] };
 
       $("ideale").innerHTML =
-        testataIdeale(migliore.e.fvm, migliore.e.costo, budget11,
-          `Miglior modulo: ${migliore.m.nome}. "Metti in rosa" usa il suo undici.`) +
-        esiti.map(({ m, e }) => `
-          <details class="modulo ideale-rep">
+        testataIdeale(top.e.fvm, top.e.fvm + panca.fvm, top.e.costo + panca.costo,
+          `Undici migliore col ${top.m.nome}; le riserve completano la rosa.`) +
+        esiti.map(({ m, e }, i) => `
+          <details class="modulo ideale-rep"${i === 0 ? " open" : ""}>
             <summary>
               <span class="nome">${m.nome}</span>
               <span class="quanti">${e.fvm} fvm · ${e.costo} cr.</span>
             </summary>
-            ${m.slot.map((sl, i) => {
-              const p = e.preso[i] >= 0 ? e.pool[e.preso[i]] : null;
-              return `
-                <div class="riga">
-                  <span class="slot ${repartoDiSlot(sl)}">${esc(sl)}</span>
-                  <span class="chi">${p ? `${esc(p.name)} <span class="cl">${esc(p.club)}</span>` : ""}</span>
-                  <span class="num">${p ? `<span class="f">${fvmOf(p)}</span><small>${qtOf(p)} ${qtOf(p) === 1 ? "credito" : "crediti"}</small>` : ""}</span>
-                </div>`;
-            }).join("")}
-          </details>`).join("");
+            ${m.slot.map((sl, k) => rigaIdeale(e.preso[k] >= 0 ? e.pool[e.preso[k]] : null, sl)).join("")}
+          </details>`).join("") +
+        blocchiPanca(panca);
     }
 
     function renderIdeale() {
