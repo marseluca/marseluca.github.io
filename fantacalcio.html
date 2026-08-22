@@ -257,6 +257,20 @@
     .modulo > summary .quanti { margin-left: auto; }
     .modulo .chi .cl { color: var(--muted); font-size: 0.8rem; }
 
+    /* ---------- consigli ---------- */
+    #consigli-box[hidden] { display: none; }
+    .cons-ruolo { margin-top: 0.9rem; }
+    .cons-ruolo:first-child { margin-top: 0.5rem; }
+    .cons-ruolo > .slot { display: inline-block; margin-bottom: 0.2rem; }
+    .cons-ruolo ul { list-style: none; margin: 0; padding: 0; font-size: 0.92rem; }
+    .cons-ruolo li { display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0; cursor: pointer; }
+    .cons-ruolo li + li { border-top: 1px solid var(--line); }
+    .cons-ruolo .who { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cons-ruolo .who .cl { color: var(--muted); font-size: 0.8rem; }
+    .cons-ruolo .who .star { color: var(--gold); }
+    .cons-ruolo .val { font-family: var(--display); font-weight: 700; color: #6d4bd8; text-align: right; white-space: nowrap; }
+    .cons-ruolo .val small { display: block; font-family: var(--body); font-weight: 500; font-size: 0.7rem; color: var(--muted); }
+
     /* ---------- pannello del giocatore ---------- */
     .sheet { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
     .sheet[hidden] { display: none; }
@@ -445,6 +459,11 @@
     <section id="moduli-box" hidden>
       <p class="sec">Moduli Mantra</p>
       <div id="moduli"></div>
+    </section>
+
+    <section id="consigli-box" hidden>
+      <p class="sec">Consigli per modulo</p>
+      <div id="consigli"></div>
     </section>
 
     <div class="actions">
@@ -885,9 +904,21 @@
     };
     const repartoDiSlot = sl => REPARTO_MANTRA[sl.split("/")[0]] || "C";
 
+    // i pannelli a fisarmonica si richiudono a ogni ridisegno: mi ricordo quali erano aperti
+    const aperti = new Set();
+    function ricordaAperti(box) {
+      box.addEventListener("toggle", e => {
+        const d = e.target;
+        if (!d.dataset.chiave) return;
+        if (d.open) aperti.add(d.dataset.chiave); else aperti.delete(d.dataset.chiave);
+      }, true);
+    }
+
+    let esitiModuli = [];
+
     function renderModuli() {
       $("moduli-box").hidden = !isMantra();
-      if (!isMantra()) return;
+      if (!isMantra()) { esitiModuli = []; return; }
 
       // in campo vanno solo i giocatori con un ruolo mantra (chi è aggiunto a mano non ce l'ha)
       const rosa = state.rosa.map(p => {
@@ -900,6 +931,7 @@
         return { m, preso, coperte };
       }).sort((a, b) => b.coperte - a.coperte || a.m.nome.localeCompare(b.m.nome));
 
+      esitiModuli = esiti;
       $("moduli").innerHTML = esiti.map(({ m, preso, coperte }) => {
         const pieno = coperte === m.slot.length;
         const righe = m.slot.map((sl, i) => {
@@ -912,12 +944,52 @@
         }).join("");
 
         return `
-          <details class="modulo${pieno ? " pieno" : ""}">
+          <details class="modulo${pieno ? " pieno" : ""}" data-chiave="mod-${m.nome}"${aperti.has("mod-" + m.nome) ? " open" : ""}>
             <summary>
               <span class="nome">${m.nome}</span>
               <span class="quanti">${coperte}/${m.slot.length}</span>
             </summary>
             <ul class="undici">${righe}</ul>
+          </details>`;
+      }).join("");
+    }
+
+    // i cinque nomi con il FVM più alto che possono occupare una casella, esclusi quelli già presi
+    function consigli(sl, quanti) {
+      const ammessi = sl.split("/");
+      const presi = new Set(state.rosa.map(p => p.id).filter(Boolean));
+      return PLAYERS
+        .filter(p => !presi.has(p.id) && p.mantra.some(r => ammessi.includes(r.toUpperCase())))
+        .sort((a, b) => fvmOf(b) - fvmOf(a) || qtOf(b) - qtOf(a))
+        .slice(0, quanti);
+    }
+
+    function renderConsigli(esiti) {
+      $("consigli-box").hidden = !isMantra();
+      if (!isMantra()) return;
+
+      $("consigli").innerHTML = esiti.map(({ m, coperte }) => {
+        const ruoli = [...new Set(m.slot)];
+        const blocchi = ruoli.map(sl => {
+          const righe = consigli(sl, 5).map(p => `
+            <li data-open="${p.id}">
+              <span class="who">${esc(p.name)} <span class="cl">${esc(p.club)}</span>${state.fav.includes(p.id) ? ' <span class="star">&#9733;</span>' : ""}</span>
+              <span class="val">${fvmOf(p)}<small>qt. ${qtOf(p)}</small></span>
+            </li>`).join("");
+          return `
+            <div class="cons-ruolo">
+              <span class="slot ${repartoDiSlot(sl)}">${esc(sl)}</span>
+              <ul>${righe || '<li class="cl">Nessuno disponibile</li>'}</ul>
+            </div>`;
+        }).join("");
+
+        return `
+          <details class="modulo" data-chiave="cons-${m.nome}"${aperti.has("cons-" + m.nome) ? " open" : ""}>
+            <summary>
+              <span class="nome">${m.nome}</span>
+              <span class="quanti">${coperte}/${m.slot.length}</span>
+            </summary>
+            ${blocchi}
           </details>`;
       }).join("");
     }
@@ -954,6 +1026,7 @@
 
       renderFav();
       renderModuli();
+      renderConsigli(esitiModuli);
       updateStats();
       if (!$("suggest").hidden) renderSuggest();
     }
@@ -1085,6 +1158,13 @@
       const row = e.target.closest("[data-open]");
       if (row) openById(row.dataset.open);
     });
+
+    $("consigli").addEventListener("click", e => {
+      const row = e.target.closest("[data-open]");
+      if (row) openById(row.dataset.open);
+    });
+    ricordaAperti($("consigli"));
+    ricordaAperti($("moduli"));
 
     $("fav-list").addEventListener("click", e => {
       const un = e.target.closest("[data-unfav]");
