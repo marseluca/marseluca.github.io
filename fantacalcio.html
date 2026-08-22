@@ -117,7 +117,7 @@
 
     /* ---------- contenuto ---------- */
     .wrap { max-width: var(--maxw); margin: 0 auto;
-            padding: 1.2rem clamp(1.1rem, 5vw, 1.8rem) calc(3rem + env(safe-area-inset-bottom)); }
+            padding: 1.2rem clamp(1.1rem, 5vw, 1.8rem) calc(var(--tabh, 4.2rem) + 1.5rem); }
 
     .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
     .stat { border-radius: var(--radius); padding: 1rem 1.1rem; color: #fff; box-shadow: var(--shadow); }
@@ -270,6 +270,78 @@
     .cons-ruolo .who .star { color: var(--gold); }
     .cons-ruolo .val { font-family: var(--display); font-weight: 700; color: #6d4bd8; text-align: right; white-space: nowrap; }
     .cons-ruolo .val small { display: block; font-family: var(--body); font-weight: 500; font-size: 0.7rem; color: var(--muted); }
+
+
+    /* ---------- barra inferiore e pannelli ---------- */
+    .tabbar {
+      position: fixed; z-index: 45; left: 0; right: 0; bottom: 0;
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      background: rgba(255,255,255,0.97); backdrop-filter: blur(10px);
+      border-top: 1px solid var(--line);
+      padding-bottom: env(safe-area-inset-bottom);
+      box-shadow: 0 -6px 24px rgba(16, 36, 46, 0.08);
+    }
+    .tab {
+      display: flex; flex-direction: column; align-items: center; gap: 0.1rem;
+      border: none; background: none; cursor: pointer;
+      font-family: var(--body); font-size: 0.72rem; font-weight: 600; color: var(--muted);
+      padding: 0.5rem 0.2rem 0.55rem; position: relative;
+    }
+    .tab .ic { font-size: 1.15rem; line-height: 1.1; }
+    .tab.on { color: var(--brand); }
+    .tab.on::before {
+      content: ""; position: absolute; top: 0; left: 22%; right: 22%; height: 3px;
+      border-radius: 0 0 3px 3px; background: linear-gradient(90deg, var(--brand-2), var(--brand));
+    }
+    .tab .pill {
+      position: absolute; top: 0.25rem; right: 50%; transform: translateX(150%);
+      background: var(--gold); color: #fff; font-size: 0.62rem; font-weight: 700;
+      border-radius: 999px; padding: 0 0.3rem; min-width: 15px;
+    }
+    .tab .pill[hidden] { display: none; }
+
+    .panel { position: fixed; inset: 0; z-index: 44; display: flex; align-items: flex-end; justify-content: center; }
+    .panel[hidden] { display: none; }
+    .panel-bg { position: absolute; inset: 0; background: rgba(12, 34, 44, 0.45); backdrop-filter: blur(2px); }
+    .panel-card {
+      position: relative; width: min(720px, 100%);
+      height: calc(100dvh - var(--tabh, 4.2rem) - 1.6rem); display: flex; flex-direction: column;
+      background: var(--bg); border-radius: 22px 22px 0 0;
+      box-shadow: 0 -14px 44px rgba(12, 34, 44, 0.3);
+      margin-bottom: var(--tabh, 4.2rem);
+    }
+    .panel-head {
+      display: flex; align-items: center; gap: 1rem; flex: none;
+      padding: 1rem clamp(1rem, 4vw, 1.4rem) 0.7rem;
+    }
+    .panel-head h2 { flex: 1; margin: 0; font-family: var(--display); font-size: 1.15rem; }
+    .panel-body {
+      flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: 0 clamp(1rem, 4vw, 1.4rem) 1.4rem;
+    }
+
+    /* costi dei preferiti */
+    .fav-costi { padding: 0.9rem 1rem; margin-bottom: 0.8rem; }
+    .fav-costi[hidden] { display: none; }
+    .fav-costi .tot { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+    .fav-costi .tot b { font-family: var(--display); font-size: 1.5rem; color: var(--gold); }
+    .fav-costi .tot span { font-size: 0.82rem; color: var(--muted); }
+    .fav-costi .rip { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.7rem; }
+    .fav-costi .rip span {
+      font-size: 0.78rem; font-weight: 600; border-radius: 999px; padding: 0.2rem 0.6rem;
+    }
+    .fav-costi .rip .P { background: #fdf2dd; color: #a8761a; }
+    .fav-costi .rip .D { background: #dff5ec; color: #0b7a52; }
+    .fav-costi .rip .C { background: #e4ecfd; color: #2a55b5; }
+    .fav-costi .rip .A { background: #fce8e6; color: #b23a30; }
+
+    /* elenco di ogni ruolo nei consigli, richiudibile */
+    details.cons-ruolo > summary {
+      display: flex; align-items: center; gap: 0.5rem; cursor: pointer; list-style: none;
+      padding: 0.35rem 0;
+    }
+    details.cons-ruolo > summary::-webkit-details-marker { display: none; }
+    details.cons-ruolo > summary .quanti-r { margin-left: auto; font-size: 0.76rem; color: var(--muted); }
 
     /* ---------- pannello del giocatore ---------- */
     .sheet { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
@@ -448,23 +520,8 @@
       <div class="cap"><span>Budget usato</span><span id="bar-pct">0%</span></div>
     </div>
 
-    <section id="fav-box" hidden>
-      <p class="sec">Preferiti</p>
-      <div class="card fav-list" id="fav-list"></div>
-    </section>
-
     <p class="sec">La rosa</p>
     <div id="rosa"></div>
-
-    <section id="moduli-box" hidden>
-      <p class="sec">Moduli Mantra</p>
-      <div id="moduli"></div>
-    </section>
-
-    <section id="consigli-box" hidden>
-      <p class="sec" id="consigli-tit">Consigli</p>
-      <div id="consigli"></div>
-    </section>
 
     <div class="actions">
       <button class="btn" id="export">Esporta JSON</button>
@@ -506,6 +563,47 @@
       </div>
     </details>
   </main>
+
+
+  <nav class="tabbar">
+    <button class="tab on" data-tab="rosa">
+      <span class="ic">&#9776;</span>Rosa
+    </button>
+    <button class="tab" data-tab="fav">
+      <span class="ic">&#9733;</span>Preferiti<span class="pill" id="tab-fav-n" hidden></span>
+    </button>
+    <button class="tab" data-tab="moduli">
+      <span class="ic">&#9638;</span>Moduli
+    </button>
+    <button class="tab" data-tab="consigli">
+      <span class="ic">&#9998;</span>Consigli
+    </button>
+  </nav>
+
+  <div class="panel" id="panel" hidden>
+    <div class="panel-bg" id="panel-bg"></div>
+    <div class="panel-card">
+      <div class="panel-head">
+        <h2 id="panel-tit"></h2>
+        <button class="sheet-x" id="panel-close" aria-label="Chiudi">&times;</button>
+      </div>
+      <div class="panel-body">
+        <section id="fav-box" hidden>
+          <div class="card fav-costi" id="fav-costi"></div>
+          <div class="card fav-list" id="fav-list"></div>
+        </section>
+
+        <section id="moduli-box" hidden>
+          <div id="moduli"></div>
+        </section>
+
+        <section id="consigli-box" hidden>
+          <div id="consigli"></div>
+        </section>
+
+      </div>
+    </div>
+  </div>
 
   <div class="sheet" id="sheet" hidden>
     <div class="sheet-bg" id="sheet-bg"></div>
@@ -823,7 +921,7 @@
 
       alertMsg("");
       $("sheet").hidden = false;
-      document.body.style.overflow = "hidden";
+      bloccaScroll();
     }
 
     function openById(id) {
@@ -833,7 +931,7 @@
 
     function closeSheet() {
       $("sheet").hidden = true;
-      document.body.style.overflow = "";
+      bloccaScroll();
       current = null;
       alertMsg("");
     }
@@ -859,8 +957,33 @@
     function renderFav() {
       const men = state.fav.map(id => byId.get(id)).filter(Boolean)
         .sort((a, b) => ROLES.indexOf(a.role) - ROLES.indexOf(b.role) || qtOf(b) - qtOf(a));
-      $("fav-box").hidden = men.length === 0;
-      if (!men.length) return;
+
+      const n = men.length;
+      $("tab-fav-n").textContent = n;
+      $("tab-fav-n").hidden = n === 0;
+
+      if (!n) {
+        $("fav-costi").hidden = true;
+        $("fav-costi").innerHTML = "";
+        $("fav-list").innerHTML = '<p class="cl" style="margin:0.4rem 0">Nessun preferito: aprine uno dalla ricerca e tocca «Aggiungi ai preferiti».</p>';
+        return;
+      }
+
+      // quanto costerebbe prenderli tutti, secondo le quotazioni
+      const totale = men.reduce((t, p) => t + qtOf(p), 0);
+      const perReparto = ROLES.map(r => {
+        const q = men.filter(p => p.role === r);
+        return { r, n: q.length, costo: q.reduce((t, p) => t + qtOf(p), 0) };
+      }).filter(x => x.n);
+
+      $("fav-costi").hidden = false;
+      $("fav-costi").innerHTML = `
+        <div class="tot">
+          <span>${n} preferiti · costo alle quotazioni</span>
+          <b>${totale}</b>
+        </div>
+        <div class="rip">${perReparto.map(x =>
+          `<span class="${x.r}">${ROLE_LABEL[x.r]} ${x.costo}<small> · ${x.n}</small></span>`).join("")}</div>`;
       $("fav-list").innerHTML = "<ul>" + men.map(p => `
         <li data-open="${p.id}">
           <span class="dot ${p.role} wide">${esc(tagOf(p))}</span>
@@ -918,8 +1041,11 @@
     let esitiModuli = [];
 
     function renderModuli() {
-      $("moduli-box").hidden = !isMantra();
-      if (!isMantra()) { esitiModuli = []; return; }
+      if (!isMantra()) {
+        esitiModuli = [];
+        $("moduli").innerHTML = '<p class="cl">I moduli valgono per la modalità Mantra: puoi cambiarla nelle impostazioni.</p>';
+        return;
+      }
 
       // in campo vanno solo i giocatori con un ruolo mantra (chi è aggiunto a mano non ce l'ha)
       const rosa = state.rosa.map(p => {
@@ -977,10 +1103,13 @@
 
     function blocco(sigla, elenco) {
       return `
-        <div class="cons-ruolo">
-          <span class="slot ${repartoDiSlot(sigla)}">${esc(sigla)}</span>
+        <details class="cons-ruolo">
+          <summary>
+            <span class="slot ${repartoDiSlot(sigla)}">${esc(sigla)}</span>
+            <span class="quanti-r">${elenco.length} nomi</span>
+          </summary>
           <ul>${elenco.map(rigaConsiglio).join("") || '<li class="cl">Nessuno disponibile</li>'}</ul>
-        </div>`;
+        </details>`;
     }
 
     // le liste sono lunghe: le costruisco solo quando il pannello viene aperto davvero
@@ -1006,7 +1135,6 @@
 
     // Classic: niente moduli, i migliori per FVM in ciascun reparto
     function renderConsigliClassic() {
-      $("consigli-tit").textContent = "Consigli per reparto";
       $("consigli").innerHTML = ROLES.map(r => `
           <details class="modulo" data-chiave="consC-${r}"${aperti.has("consC-" + r) ? " open" : ""}>
             <summary>
@@ -1019,9 +1147,7 @@
     }
 
     function renderConsigli(esiti) {
-      $("consigli-box").hidden = false;
       if (!isMantra()) { renderConsigliClassic(); return; }
-      $("consigli-tit").textContent = "Consigli per modulo";
 
       $("consigli").innerHTML = esiti.map(({ m, coperte }) => `
           <details class="modulo" data-chiave="cons-${m.nome}"${aperti.has("cons-" + m.nome) ? " open" : ""}>
@@ -1179,7 +1305,9 @@
     });
 
     document.addEventListener("keydown", e => {
-      if (e.key === "Escape" && !$("sheet").hidden) closeSheet();
+      if (e.key !== "Escape") return;
+      if (!$("sheet").hidden) closeSheet();
+      else if (!$("panel").hidden) apriScheda("rosa");
     });
 
     $("sheet-close").addEventListener("click", closeSheet);
@@ -1257,6 +1385,49 @@
       state.rosa = [];
       save(); render();
     });
+
+    // ---------- barra inferiore e pannelli ----------
+    const SCHEDE = {
+      fav:      { tit: "Preferiti", box: "fav-box" },
+      moduli:   { tit: "Moduli", box: "moduli-box" },
+      consigli: { tit: "Consigli", box: "consigli-box" }
+    };
+    let schedaAperta = "rosa";
+
+    function bloccaScroll() {
+      const fermo = !$("sheet").hidden || !$("panel").hidden;
+      document.body.style.overflow = fermo ? "hidden" : "";
+    }
+
+    function apriScheda(nome) {
+      if (nome === "rosa" || nome === schedaAperta) {
+        schedaAperta = "rosa";
+        $("panel").hidden = true;
+      } else {
+        schedaAperta = nome;
+        const s = SCHEDE[nome];
+        Object.values(SCHEDE).forEach(x => { $(x.box).hidden = x.box !== s.box; });
+        $("panel-tit").textContent = nome === "moduli" && !isMantra() ? "Moduli (solo in Mantra)" : s.tit;
+        $("panel").hidden = false;
+        $("panel").querySelector(".panel-body").scrollTop = 0;
+      }
+      document.querySelectorAll(".tab").forEach(t =>
+        t.classList.toggle("on", t.dataset.tab === (schedaAperta === "rosa" ? "rosa" : schedaAperta)));
+      bloccaScroll();
+    }
+
+    function misuraBarra() {
+      const h = document.querySelector(".tabbar").offsetHeight;
+      document.documentElement.style.setProperty("--tabh", h + "px");
+    }
+    misuraBarra();
+    addEventListener("resize", misuraBarra);
+    addEventListener("orientationchange", misuraBarra);
+
+    document.querySelectorAll(".tab").forEach(t =>
+      t.addEventListener("click", () => apriScheda(t.dataset.tab)));
+    $("panel-close").addEventListener("click", () => apriScheda("rosa"));
+    $("panel-bg").addEventListener("click", () => apriScheda("rosa"));
 
     // ---------- installazione dell'app ----------
     let installEvent = null;
