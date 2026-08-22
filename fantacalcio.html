@@ -954,7 +954,7 @@
       }).join("");
     }
 
-    // i cinque nomi con il FVM più alto di tutto il listone che possono occupare quella casella
+    // i nomi con il FVM più alto di tutto il listone che possono occupare quella casella
     function consigli(sl, quanti) {
       const ammessi = sl.split("/");
       return PLAYERS
@@ -970,7 +970,7 @@
       $("consigli").innerHTML = esiti.map(({ m, coperte }) => {
         const ruoli = [...new Set(m.slot)];
         const blocchi = ruoli.map(sl => {
-          const righe = consigli(sl, 5).map(p => `
+          const righe = consigli(sl, 10).map(p => `
             <li data-open="${p.id}">
               <span class="who">${esc(p.name)} <span class="cl">${esc(p.club)}</span>${state.rosa.some(x => x.id === p.id) ? ' <span class="cl">· in rosa</span>' : ""}${state.fav.includes(p.id) ? ' <span class="star">&#9733;</span>' : ""}</span>
               <span class="val">${fvmOf(p)}<small>qt. ${qtOf(p)}</small></span>
