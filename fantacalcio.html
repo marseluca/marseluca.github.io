@@ -462,7 +462,7 @@
     </section>
 
     <section id="consigli-box" hidden>
-      <p class="sec">Consigli per modulo</p>
+      <p class="sec" id="consigli-tit">Consigli</p>
       <div id="consigli"></div>
     </section>
 
@@ -963,18 +963,45 @@
         .slice(0, quanti);
     }
 
+    // riga di un consiglio: nome, squadra, eventuale stella, FVM e quotazione
+    function rigaConsiglio(p) {
+      return `
+        <li data-open="${p.id}">
+          <span class="who">${esc(p.name)} <span class="cl">${esc(p.club)}</span>${state.rosa.some(x => x.id === p.id) ? ' <span class="cl">· in rosa</span>' : ""}${state.fav.includes(p.id) ? ' <span class="star">&#9733;</span>' : ""}</span>
+          <span class="val">${fvmOf(p)}<small>qt. ${qtOf(p)}</small></span>
+        </li>`;
+    }
+
+    // Classic: niente moduli, i dieci migliori per FVM in ciascun reparto
+    function renderConsigliClassic() {
+      $("consigli-tit").textContent = "Consigli per reparto";
+      $("consigli").innerHTML = ROLES.map(r => {
+        const righe = PLAYERS.filter(p => p.role === r)
+          .sort((a, b) => fvmOf(b) - fvmOf(a) || qtOf(b) - qtOf(a))
+          .slice(0, 10).map(rigaConsiglio).join("");
+        return `
+          <details class="modulo" data-chiave="consC-${r}"${aperti.has("consC-" + r) ? " open" : ""}>
+            <summary>
+              <span class="nome">${ROLE_LABEL[r]}</span>
+              <span class="quanti">${taken(r)}/${state.slots[r]}</span>
+            </summary>
+            <div class="cons-ruolo">
+              <span class="slot ${r}">${r}</span>
+              <ul>${righe}</ul>
+            </div>
+          </details>`;
+      }).join("");
+    }
+
     function renderConsigli(esiti) {
-      $("consigli-box").hidden = !isMantra();
-      if (!isMantra()) return;
+      $("consigli-box").hidden = false;
+      if (!isMantra()) { renderConsigliClassic(); return; }
+      $("consigli-tit").textContent = "Consigli per modulo";
 
       $("consigli").innerHTML = esiti.map(({ m, coperte }) => {
         const ruoli = [...new Set(m.slot)];
         const blocchi = ruoli.map(sl => {
-          const righe = consigli(sl, 10).map(p => `
-            <li data-open="${p.id}">
-              <span class="who">${esc(p.name)} <span class="cl">${esc(p.club)}</span>${state.rosa.some(x => x.id === p.id) ? ' <span class="cl">· in rosa</span>' : ""}${state.fav.includes(p.id) ? ' <span class="star">&#9733;</span>' : ""}</span>
-              <span class="val">${fvmOf(p)}<small>qt. ${qtOf(p)}</small></span>
-            </li>`).join("");
+          const righe = consigli(sl, 10).map(rigaConsiglio).join("");
           return `
             <div class="cons-ruolo">
               <span class="slot ${repartoDiSlot(sl)}">${esc(sl)}</span>
