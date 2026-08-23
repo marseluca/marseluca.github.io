@@ -355,6 +355,7 @@
     }
     .ideale-top .cifre .fvm b { color: #6d4bd8; }
     .ideale-top .cifre .fvm2 b { color: #9b4bd8; }
+    .ideale-top .cifre .squadre b { color: var(--brand-2); }
     .ideale-top .cifre .costo b { color: var(--brand); }
     .ideale-top .cifre span { font-size: 0.78rem; color: var(--muted); }
     .ideale-top .btn { margin-top: 0.9rem; }
@@ -371,6 +372,10 @@
     .ideale-rep .num small { display: block; font-family: var(--body); font-weight: 500; font-size: 0.7rem; color: var(--muted); }
     .ideale-rep .num .f { color: #6d4bd8; }
     .caricando { color: var(--muted); font-size: 0.9rem; padding: 0.6rem 0; }
+    .cons-tit {
+      font-family: var(--display); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--muted); margin: 1rem 0 0.3rem;
+    }
 
     /* ---------- pannello del giocatore ---------- */
     .sheet { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
@@ -1444,339 +1449,228 @@
     });
 
     // ---------- rosa ideale ----------
-    // Nell'asta il prezzo di un giocatore è il suo FVM: quindi il FVM è insieme il
-    // valore da massimizzare e il costo che consuma il budget.
-
-    function assegnaPesata(slot, pool, peso) {
-      const compat = slot.map(sl => {
-        const amm = sl.split("/");
-        return pool.map(p => p.mantra.some(r => amm.includes(r.toUpperCase())));
-      });
-      const preso = new Array(slot.length).fill(-1);
-      const ordine = pool.map((_, j) => j).sort((a, b) => peso(pool[b]) - peso(pool[a]));
-
-      function prova(j, visti) {
-        for (let i = 0; i < slot.length; i++) {
-          if (!compat[i][j] || visti[i]) continue;
-          visti[i] = true;
-          if (preso[i] === -1 || prova(preso[i], visti)) { preso[i] = j; return true; }
-        }
-        return false;
-      }
-      for (const j of ordine) prova(j, new Array(slot.length).fill(false));
-      return preso;
-    }
+    // Nell'asta il prezzo di un giocatore è il suo FVM: il budget si misura in FVM.
+    // Si ottimizza solo l'undici titolare; le riserve arrivano dopo, come alternative.
+    // Terzo criterio: pescare da più squadre possibile (i portieri non contano).
 
     const somma = lista => lista.reduce((t, p) => t + fvmOf(p), 0);
     const gruppo = scelti => ({ scelti, fvm: somma(scelti) });
+    const diPorta = p => p.role === "P";
 
-    // Undici del modulo con il FVM più alto che sta nel budget.
-    function undiciOttimo(m, budget) {
-      const tutti = PLAYERS.filter(p => p.mantra.length);
-      const leggi = (preso, pool) => ({
-        preso, pool,
-        scelti: preso.filter(j => j >= 0).map(j => pool[j]),
-        completo: preso.every(j => j >= 0)
+    // I posti da riempire: in Classic sono i reparti del modulo, in Mantra le caselle.
+    function postiClassic(d, c, a) {
+      const posti = [{ sigla: "P", ok: p => p.role === "P" }];
+      const agg = (r, n) => { for (let i = 0; i < n; i++) posti.push({ sigla: r, ok: p => p.role === r }); };
+      agg("D", d); agg("C", c); agg("A", a);
+      return posti;
+    }
+    function postiMantra(m) {
+      return m.slot.map(sl => {
+        const amm = sl.split("/");
+        return { sigla: sl, ok: p => p.mantra.some(r => amm.includes(r.toUpperCase())) };
       });
-
-      let esito = leggi(assegnaPesata(m.slot, tutti, fvmOf), tutti);
-      if (somma(esito.scelti) <= budget) return { ...esito, fvm: somma(esito.scelti) };
-
-      // tetto sul singolo giocatore: il più alto che fa rientrare la somma
-      let lo = 0, hi = Math.max(...tutti.map(fvmOf)), sol = null;
-      for (let it = 0; it < 20; it++) {
-        const cap = (lo + hi) / 2;
-        const pool = tutti.filter(p => fvmOf(p) <= cap);
-        const e = leggi(assegnaPesata(m.slot, pool, fvmOf), pool);
-        if (e.completo && somma(e.scelti) <= budget) { sol = e; lo = cap; } else hi = cap;
-      }
-      if (!sol) return { ...esito, fvm: somma(esito.scelti) };
-
-      // con quello che avanza provo a migliorare una casella per volta
-      const scelti = sol.preso.map(j => (j >= 0 ? sol.pool[j] : null));
-      let tot = somma(scelti.filter(Boolean));
-      for (let giro = 0; giro < 40; giro++) {
-        let meglio = null;
-        m.slot.forEach((sl, i) => {
-          const amm = sl.split("/");
-          const ora = scelti[i];
-          const val = ora ? fvmOf(ora) : 0;
-          for (const p of tutti) {
-            if (scelti.includes(p) || !p.mantra.some(r => amm.includes(r.toUpperCase()))) continue;
-            const nuovoTot = tot - val + fvmOf(p);
-            if (fvmOf(p) > val && nuovoTot <= budget &&
-                (!meglio || fvmOf(p) - val > meglio.guadagno)) {
-              meglio = { i, p, guadagno: fvmOf(p) - val, nuovoTot };
-            }
-          }
-        });
-        if (!meglio) break;
-        scelti[meglio.i] = meglio.p;
-        tot = meglio.nuovoTot;
-      }
-
-      const preso = scelti.map(p => (p ? tutti.indexOf(p) : -1));
-      return { preso, pool: tutti, scelti: scelti.filter(Boolean), completo: scelti.every(Boolean), fvm: tot };
     }
 
-    // Zaino per reparto: quanti giocatori, quanto FVM speso, quanto FVM guadagnato
-    // (qui costo e valore coincidono: si tratta di avvicinarsi al budget senza superarlo).
-    const NEG = -1e9;
-    function tabellaDP(pool, kMax, budget) {
-      const larg = budget + 1;
-      let dp = new Float64Array((kMax + 1) * larg).fill(NEG);
-      dp[0] = 0;
-      const scelta = new Uint8Array(pool.length * (kMax + 1) * larg);
-      pool.forEach((p, idx) => {
-        const c = fvmOf(p);
-        if (c > budget) return;
-        const nuovo = dp.slice();
-        const base = idx * (kMax + 1) * larg;
-        for (let k = kMax - 1; k >= 0; k--) {
-          const riga = k * larg, dopo = (k + 1) * larg;
-          for (let sp = 0; sp + c <= budget; sp++) {
-            const da = dp[riga + sp];
-            if (da === NEG) continue;
-            const pos = dopo + sp + c;
-            if (da + c > nuovo[pos]) { nuovo[pos] = da + c; scelta[base + pos] = 1; }
-          }
-        }
-        dp = nuovo;
-      });
-      return { dp, scelta, larg, kMax, pool };
-    }
+    // Undici migliore: somma di FVM più alta possibile entro il budget, con al più
+    // "maxClub" giocatori di movimento della stessa squadra e nessun titolare sotto
+    // "sogliaMin" (serve a non riempire l'undici di comparse per far quadrare la somma).
+    function undiciMigliore(posti, budget, maxClub, sogliaMin) {
+      const base = PLAYERS.filter(p => fvmOf(p) >= sogliaMin);
+      const cand = posti.map(x => base.filter(x.ok).sort((a, b) => fvmOf(b) - fvmOf(a)));
+      if (cand.some(c => !c.length)) return null;
 
-    function estraiDP(t, k, spesa) {
-      const scelti = [];
-      let kk = k, sp = spesa;
-      for (let idx = t.pool.length - 1; idx >= 0 && kk > 0; idx--) {
-        if (t.scelta[idx * (t.kMax + 1) * t.larg + kk * t.larg + sp]) {
-          scelti.push(t.pool[idx]);
-          sp -= fvmOf(t.pool[idx]);
-          kk--;
-        }
-      }
-      return scelti;
-    }
+      const scelti = new Array(posti.length).fill(null);
+      const usati = new Set();
+      const club = new Map();
+      const contoClub = c => club.get(c) || 0;
 
-    function combinaCurve(curve, budget) {
-      let acc = new Float64Array(budget + 1).fill(NEG);
-      acc[0] = 0;
-      const scelte = [];
-      curve.forEach(cur => {
-        const nuovo = new Float64Array(budget + 1).fill(NEG);
-        const quale = new Int16Array(budget + 1).fill(-1);
-        for (let tot = 0; tot <= budget; tot++) {
-          for (let q = 0; q <= tot; q++) {
-            const a = acc[tot - q], b = cur[q];
-            if (a === NEG || b === NEG) continue;
-            if (a + b > nuovo[tot]) { nuovo[tot] = a + b; quale[tot] = q; }
-          }
-        }
-        acc = nuovo;
-        scelte.push(quale);
-      });
-
-      let migliore = -1, spesa = 0;
-      for (let c = 0; c <= budget; c++) if (acc[c] > migliore) { migliore = acc[c]; spesa = c; }
-      if (migliore < 0) return null;
-
-      const parti = new Array(curve.length).fill(0);
-      let resto = spesa;
-      for (let i = curve.length - 1; i >= 0; i--) {
-        parti[i] = scelte[i][resto];
-        resto -= parti[i];
-      }
-      return { fvm: migliore, parti };
-    }
-
-    // Esattamente bisogno[r] giocatori per reparto, con il FVM più alto entro il budget
-    function gruppoOttimo(bisogno, budget, esclusi) {
-      const usati = ROLES.filter(r => bisogno[r] > 0);
-      if (!usati.length) return gruppo([]);
-
-      const tabelle = usati.map(r => {
-        const pool = PLAYERS.filter(p => p.role === r && !(esclusi && esclusi.has(p.id)));
-        return { r, t: tabellaDP(pool, bisogno[r], budget) };
-      });
-      const curve = tabelle.map(({ r, t }) => t.dp.slice(bisogno[r] * t.larg, bisogno[r] * t.larg + budget + 1));
-      const mix = combinaCurve(curve, budget);
-      if (!mix) return { ...gruppo([]), impossibile: true };
-
-      return gruppo(tabelle.flatMap(({ r, t }, i) => estraiDP(t, bisogno[r], mix.parti[i])));
-    }
-
-    // Rosa Classic: prima l'undici (scegliendo anche il modulo), poi le riserve
-    const MODULI_CLASSIC = [[3,4,3], [3,5,2], [4,3,3], [4,4,2], [4,5,1], [5,3,2], [5,4,1]];
-
-    // A parità di FVM speso ci sono tante combinazioni equivalenti: fra queste scelgo
-    // quella che tiene più alto il valore del titolare più debole, per non ritrovarsi
-    // in campo dei riempitivi solo per far quadrare la somma.
-    function undiciClassic(budget) {
-      const moduli = MODULI_CLASSIC.filter(([d, c, a]) =>
-        state.slots.P >= 1 && state.slots.D >= d && state.slots.C >= c && state.slots.A >= a);
-      if (!moduli.length) return null;
-
-      const cerca = soglia => {
-        const tabelle = {};
-        ROLES.forEach(r => {
-          const pool = PLAYERS.filter(p => p.role === r && fvmOf(p) >= soglia);
-          tabelle[r] = tabellaDP(pool, 5, budget);
-        });
-        let best = null;
-        for (const [d, c, a] of moduli) {
-          const bisogno = { P: 1, D: d, C: c, A: a };
-          const usati = ROLES.filter(r => bisogno[r] > 0);
-          const curve = usati.map(r => {
-            const t = tabelle[r];
-            return t.dp.slice(bisogno[r] * t.larg, bisogno[r] * t.larg + budget + 1);
-          });
-          const mix = combinaCurve(curve, budget);
-          if (!mix) continue;
-          const scelti = usati.flatMap((r, i) => estraiDP(tabelle[r], bisogno[r], mix.parti[i]));
-          if (scelti.length !== 11) continue;
-          if (!best || mix.fvm > best.e.fvm) best = { modulo: `${d}-${c}-${a}`, e: gruppo(scelti) };
-        }
-        return best;
+      const libero = (p, i) => {
+        if (usati.has(p.id)) return false;
+        if (diPorta(p)) return true;
+        const ora = scelti[i];
+        const gia = contoClub(p.club) - (ora && !diPorta(ora) && ora.club === p.club ? 1 : 0);
+        return gia < maxClub;
+      };
+      const metti = (i, p) => {
+        const ora = scelti[i];
+        if (ora) { usati.delete(ora.id); if (!diPorta(ora)) club.set(ora.club, contoClub(ora.club) - 1); }
+        scelti[i] = p;
+        usati.add(p.id);
+        if (!diPorta(p)) club.set(p.club, contoClub(p.club) + 1);
       };
 
-      let migliore = cerca(0);
-      if (!migliore) return null;
-
-      // alzo il valore minimo del titolare finché la rosa resta componibile
-      let lo = 0, hi = Math.floor(budget / 11);
-      for (let it = 0; it < 8 && hi - lo > 1; it++) {
-        const m = Math.floor((lo + hi) / 2);
-        const prova = cerca(m);
-        if (prova && prova.e.scelti.length === 11) { migliore = prova; lo = m; } else hi = m;
+      // parto dai posti con meno scelta e prendo il meglio disponibile
+      const ordine = posti.map((_, i) => i).sort((x, y) => cand[x].length - cand[y].length);
+      for (const i of ordine) {
+        const p = cand[i].find(q => libero(q, i));
+        if (!p) return null;
+        metti(i, p);
       }
-      return migliore;
+
+      let tot = somma(scelti);
+
+      // scendo dal giocatore più caro finché la somma rientra
+      for (let giro = 0; giro < 400 && tot > budget; giro++) {
+        let mossa = null;
+        for (let i = 0; i < posti.length; i++) {
+          const val = fvmOf(scelti[i]);
+          // il miglior candidato che porta dentro il budget, altrimenti il primo più basso
+          let scelto = null;
+          for (const p of cand[i]) {
+            if (fvmOf(p) >= val || !libero(p, i)) continue;
+            scelto = p;
+            if (tot - val + fvmOf(p) <= budget) break;
+          }
+          if (!scelto) continue;
+          const nuovo = tot - val + fvmOf(scelto);
+          const punteggio = (nuovo <= budget ? 1e6 : 0) + nuovo;   // meglio se rientra subito
+          if (!mossa || punteggio > mossa.punteggio) mossa = { i, p: scelto, nuovo, punteggio };
+        }
+        if (!mossa) return null;
+        metti(mossa.i, mossa.p);
+        tot = mossa.nuovo;
+      }
+      if (tot > budget) return null;
+
+      // poi risalgo dove posso, aiutando prima i più deboli
+      for (let giro = 0; giro < 120; giro++) {
+        let mossa = null;
+        for (let i = 0; i < posti.length; i++) {
+          const val = fvmOf(scelti[i]);
+          for (const p of cand[i]) {
+            const v = fvmOf(p);
+            if (v <= val) break;                 // la lista è in ordine: oltre non serve
+            if (tot - val + v > budget || !libero(p, i)) continue;
+            const punteggio = (v - val) * 1000 - val;
+            if (!mossa || punteggio > mossa.punteggio) mossa = { i, p, nuovo: tot - val + v, punteggio };
+          }
+        }
+        if (!mossa) break;
+        metti(mossa.i, mossa.p);
+        tot = mossa.nuovo;
+      }
+
+      return { posti, scelti, fvm: tot, minimo: Math.min(...scelti.map(fvmOf)) };
     }
 
-    function rosaClassic() {
-      const panchina = Math.max(0, slotsTotal() - 11);
-      const budgetTit = Math.max(11, state.budget - panchina);   // un punto a testa per le riserve
+    // Poche squadre ripetute e nessuna comparsa in campo: cerco il numero minimo di
+    // giocatori per club e, con quello, la soglia più alta per il titolare più debole.
+    function undiciConClub(posti, budget) {
+      let maxClub = 0, prima = null;
+      for (let k = 1; k <= 4 && !prima; k++) {
+        prima = undiciMigliore(posti, budget, k, 0);
+        maxClub = k;
+      }
+      if (!prima) return null;
 
-      const miglior = undiciClassic(budgetTit);
-      if (!miglior) return null;
-
-      const presi = new Set(miglior.e.scelti.map(p => p.id));
-      const conta = r => miglior.e.scelti.filter(p => p.role === r).length;
-      const bisogno = { P: state.slots.P - conta("P"), D: state.slots.D - conta("D"),
-                        C: state.slots.C - conta("C"), A: state.slots.A - conta("A") };
-      const panca = gruppoOttimo(bisogno, Math.max(0, state.budget - miglior.e.fvm), presi);
-
-      return { modulo: miglior.modulo, titolari: miglior.e, panca };
+      let migliore = prima;
+      let lo = 0, hi = Math.floor(budget / posti.length);
+      for (let it = 0; it < 7 && hi - lo > 1; it++) {
+        const m = Math.floor((lo + hi) / 2);
+        const e = undiciMigliore(posti, budget, maxClub, m);
+        if (e) { migliore = e; lo = m; } else hi = m;
+      }
+      return { ...migliore, maxClub };
     }
 
-    // ---------- disegno della rosa ideale ----------    // ---------- disegno della rosa ideale ----------    // ---------- disegno della rosa ideale ----------
+    // Riserve: completano la rosa a 25 senza toccare il budget dei titolari,
+    // sempre cercando di variare le squadre.
+    function riserve(titolari) {
+      const presi = new Set(titolari.map(p => p.id));
+      const conto = new Map();
+      titolari.forEach(p => { if (!diPorta(p)) conto.set(p.club, (conto.get(p.club) || 0) + 1); });
+
+      const serve = {};
+      ROLES.forEach(r => { serve[r] = state.slots[r] - titolari.filter(p => p.role === r).length; });
+
+      const scelti = [];
+      ROLES.forEach(r => {
+        const disponibili = PLAYERS.filter(p => p.role === r && !presi.has(p.id))
+          .sort((a, b) => fvmOf(b) - fvmOf(a));
+        for (let n = 0; n < serve[r]; n++) {
+          let scelto = null;
+          // giro dopo giro allargo il numero massimo di giocatori per squadra
+          for (let k = 1; k <= 25 && !scelto; k++) {
+            scelto = disponibili.find(p => !presi.has(p.id) &&
+              (diPorta(p) || (conto.get(p.club) || 0) < k)) || null;
+          }
+          if (!scelto) break;
+          presi.add(scelto.id);
+          if (!diPorta(scelto)) conto.set(scelto.club, (conto.get(scelto.club) || 0) + 1);
+          scelti.push(scelto);
+        }
+      });
+      return gruppo(scelti);
+    }
+
+    const MODULI_CLASSIC = [[3,4,3], [3,5,2], [4,3,3], [4,4,2], [4,5,1], [5,3,2], [5,4,1]];
+
+    function schemiIdeali() {
+      const budget = state.budget;
+      const lista = isMantra()
+        ? MODULI.map(m => ({ nome: m.nome, posti: postiMantra(m) }))
+        : MODULI_CLASSIC
+            .filter(([d, c, a]) => state.slots.P >= 1 && state.slots.D >= d && state.slots.C >= c && state.slots.A >= a)
+            .map(([d, c, a]) => ({ nome: `${d}-${c}-${a}`, posti: postiClassic(d, c, a) }));
+
+      return lista.map(x => {
+        const e = undiciConClub(x.posti, budget);
+        if (!e) return null;
+        const panca = riserve(e.scelti);
+        const squadre = new Set(e.scelti.filter(p => !diPorta(p)).map(p => p.club)).size;
+        return { nome: x.nome, undici: e, panca, squadre };
+      }).filter(Boolean).sort((a, b) => b.undici.fvm - a.undici.fvm);
+    }
+
+    // ---------- disegno della rosa ideale ----------
     let ideale = null;   // ultimo calcolo, per il pulsante "Metti in rosa"
 
     const rigaIdeale = (p, sigla) => `
       <div class="riga">
         ${sigla ? `<span class="slot ${repartoDiSlot(sigla)}">${esc(sigla)}</span>`
                 : `<span class="dot ${p.role} wide">${esc(tagOf(p))}</span>`}
-        <span class="chi">${p ? `${esc(p.name)} <span class="cl">${esc(p.club)}</span>` : ""}</span>
-        <span class="num">${p ? `<span class="f">${fvmOf(p)}</span><small>fvm</small>` : ""}</span>
+        <span class="chi">${esc(p.name)} <span class="cl">${esc(p.club)}</span></span>
+        <span class="num"><span class="f">${fvmOf(p)}</span><small>fvm</small></span>
       </div>`;
-
-    function testataIdeale(fvmTit, fvmTot, avviso) {
-      const sfora = fvmTot > state.budget;
-      return `
-        <div class="card ideale-top">
-          <div class="cifre">
-            <div class="fvm"><b>${fvmTit}</b><span>FVM titolari</span></div>
-            <div class="fvm2"><b>${fvmTot}</b><span>FVM rosa · budget ${state.budget}</span></div>
-          </div>
-          ${avviso ? `<div class="nota-ideale">${esc(avviso)}</div>` : ""}
-          ${sfora ? `<div class="avviso">Sfora il budget di ${fvmTot - state.budget}.</div>` : ""}
-          <button class="btn btn-go" id="usa-ideale">Metti in rosa</button>
-        </div>`;
-    }
-
-    function blocchiPanca(panca) {
-      if (!panca || !panca.scelti.length) return "";
-      return ROLES.map(r => {
-        const men = panca.scelti.filter(p => p.role === r).sort((a, b) => fvmOf(b) - fvmOf(a));
-        if (!men.length) return "";
-        return `
-          <details class="modulo ideale-rep">
-            <summary>
-              <span class="nome">Riserve ${ROLE_LABEL[r].toLowerCase()}</span>
-              <span class="quanti">${men.reduce((t, p) => t + fvmOf(p), 0)} fvm</span>
-            </summary>
-            ${men.map(p => rigaIdeale(p)).join("")}
-          </details>`;
-      }).join("");
-    }
-
-    function renderIdealeClassic() {
-      const r = rosaClassic();
-      if (!r) { $("ideale").innerHTML = '<p class="caricando">Con questi crediti non si riesce a comporre un undici.</p>'; return; }
-
-      const fvmTot = r.titolari.fvm + r.panca.fvm;
-      ideale = { giocatori: [...r.titolari.scelti, ...r.panca.scelti] };
-
-      const perReparto = ROLES.map(r2 => {
-        const men = r.titolari.scelti.filter(p => p.role === r2).sort((a, b) => fvmOf(b) - fvmOf(a));
-        return men.length ? `
-          <details class="modulo ideale-rep" open>
-            <summary>
-              <span class="nome">${ROLE_LABEL[r2]}</span>
-              <span class="quanti">${men.length} titolari · ${men.reduce((t, p) => t + fvmOf(p), 0)} fvm</span>
-            </summary>
-            ${men.map(p => rigaIdeale(p)).join("")}
-          </details>` : "";
-      }).join("");
-
-      $("ideale").innerHTML =
-        testataIdeale(r.titolari.fvm, fvmTot,
-          `Undici col FVM più alto dentro il budget: modulo ${r.modulo}.`) +
-        perReparto + blocchiPanca(r.panca);
-    }
-
-    function renderIdealeMantra() {
-      const panchina = Math.max(0, slotsTotal() - 11);
-      const budgetTit = Math.max(11, state.budget - panchina);
-
-      const esiti = MODULI.map(m => ({ m, e: undiciOttimo(m, budgetTit) }))
-        .sort((a, b) => b.e.fvm - a.e.fvm);
-      const top = esiti[0];
-
-      // le riserve completano i reparti con quello che resta del budget
-      const presi = new Set(top.e.scelti.map(p => p.id));
-      const conta = r => top.e.scelti.filter(p => p.role === r).length;
-      const bisogno = { P: Math.max(0, state.slots.P - conta("P")), D: Math.max(0, state.slots.D - conta("D")),
-                        C: Math.max(0, state.slots.C - conta("C")), A: Math.max(0, state.slots.A - conta("A")) };
-      const panca = gruppoOttimo(bisogno, Math.max(0, state.budget - top.e.fvm), presi);
-
-      ideale = { giocatori: [...top.e.scelti, ...panca.scelti] };
-
-      $("ideale").innerHTML =
-        testataIdeale(top.e.fvm, top.e.fvm + panca.fvm,
-          `Undici col FVM più alto dentro il budget: ${top.m.nome}. Le riserve completano la rosa.`) +
-        esiti.map(({ m, e }, i) => `
-          <details class="modulo ideale-rep"${i === 0 ? " open" : ""}>
-            <summary>
-              <span class="nome">${m.nome}</span>
-              <span class="quanti">${e.fvm} fvm</span>
-            </summary>
-            ${m.slot.map((sl, k) => rigaIdeale(e.preso[k] >= 0 ? e.pool[e.preso[k]] : null, sl)).join("")}
-          </details>`).join("") +
-        blocchiPanca(panca);
-    }
 
     function renderIdeale() {
       $("ideale").innerHTML = '<p class="caricando">Sto cercando la rosa migliore…</p>';
-      // lascio disegnare il messaggio prima di metterci a calcolare
       setTimeout(() => {
-        isMantra() ? renderIdealeMantra() : renderIdealeClassic();
+        const schemi = schemiIdeali();
+        if (!schemi.length) {
+          $("ideale").innerHTML = '<p class="caricando">Con questi crediti non si riesce a comporre un undici.</p>';
+          return;
+        }
+        const top = schemi[0];
+        ideale = { giocatori: [...top.undici.scelti, ...top.panca.scelti], nome: top.nome };
+
+        const testata = `
+          <div class="card ideale-top">
+            <div class="cifre">
+              <div class="fvm"><b>${top.undici.fvm}</b><span>FVM titolari · budget ${state.budget}</span></div>
+              <div class="squadre"><b>${top.squadre}</b><span>squadre diverse in campo</span></div>
+            </div>
+            <div class="nota-ideale">Schema migliore: ${esc(top.nome)}. Le riserve completano la rosa a ${slotsTotal()} senza pesare sul budget dei titolari.</div>
+            <button class="btn btn-go" id="usa-ideale">Metti in rosa</button>
+          </div>`;
+
+        $("ideale").innerHTML = testata + schemi.map((sc, i) => `
+          <details class="modulo ideale-rep"${i === 0 ? " open" : ""}>
+            <summary>
+              <span class="nome">${esc(sc.nome)}</span>
+              <span class="quanti">${sc.undici.fvm} fvm · ${sc.squadre} squadre</span>
+            </summary>
+            <p class="cons-tit">Titolari</p>
+            ${sc.undici.scelti.map((p, k) => rigaIdeale(p, isMantra() ? sc.undici.posti[k].sigla : null)).join("")}
+            <p class="cons-tit">Riserve · per arrivare a ${slotsTotal()}</p>
+            ${sc.panca.scelti.map(p => rigaIdeale(p)).join("") || '<p class="caricando">Nessuna riserva da aggiungere.</p>'}
+          </details>`).join("");
       }, 30);
     }
 
     $("ideale").addEventListener("click", e => {
       if (!e.target.closest("#usa-ideale") || !ideale) return;
-      if (!confirm("Sostituire la rosa attuale con questa proposta? I giocatori vengono inseriti al loro FVM.")) return;
+      if (!confirm(`Sostituire la rosa attuale con lo schema ${ideale.nome}? I giocatori vengono inseriti al loro FVM.`)) return;
       state.rosa = ideale.giocatori.map(p => ({
         key: uid(), id: p.id, name: p.name, club: p.club, role: p.role,
         price: fvmOf(p), fvm: fvmOf(p)
