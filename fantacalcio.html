@@ -400,7 +400,7 @@
     .pl-tags .in-rosa { background: #e4f4ec; color: #0b7a52; }
     .pl-tags .in-fav { background: #fdf3dc; color: #9a6c05; }
 
-    .pl-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin: 1rem 0; }
+    .pl-nums { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; margin: 1rem 0; }
     .pl-nums div { background: #f5f9fb; border: 1px solid var(--line); border-radius: 12px;
                    padding: 0.6rem 0.5rem; text-align: center; }
     .pl-nums b { display: block; font-family: var(--display); font-size: 1.3rem; line-height: 1.1; }
@@ -657,7 +657,6 @@
       <div class="pl-tags" id="pl-tags"></div>
 
       <div class="pl-nums">
-        <div class="qt"><b id="pl-qt">—</b><small>Quotazione</small></div>
         <div class="fvm"><b id="pl-fvm">—</b><small>FVM</small></div>
         <div class="max"><b id="pl-max">—</b><small>Puoi offrire</small></div>
       </div>
@@ -687,7 +686,7 @@
         </div>
         <input class="slider" id="p-range" type="range" min="0" max="100" step="1" value="0" aria-label="Scegli quanto pagare" />
         <div class="quick" id="p-quick">
-          <button type="button" data-q="qt">Quotazione</button>
+          <button type="button" data-q="fvm">FVM</button>
           <button type="button" data-q="5">+5</button>
           <button type="button" data-q="10">+10</button>
           <button type="button" data-q="max">Massimo</button>
@@ -780,7 +779,6 @@
     const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
     const isMantra = () => state.mode === "mantra";
-    const qtOf  = p => isMantra() ? p.qtM : p.qtC;
     const fvmOf = p => isMantra() ? p.fvmM : p.fvmC;
     // sigla mostrata accanto al nome: in mantra i ruoli veri, in classic il reparto
     const tagOf = p => (isMantra() && p.mantra && p.mantra.length) ? p.mantra.join("/") : p.role;
@@ -821,7 +819,7 @@
         const rank = name.startsWith(n) ? 0 : club.startsWith(n) ? 1 : name.includes(n) ? 2 : club.includes(n) ? 3 : -1;
         if (rank >= 0) hits.push({ rank, p });
       }
-      hits.sort((a, b) => a.rank - b.rank || qtOf(b.p) - qtOf(a.p) || a.p.name.localeCompare(b.p.name));
+      hits.sort((a, b) => a.rank - b.rank || fvmOf(b.p) - fvmOf(a.p) || a.p.name.localeCompare(b.p.name));
       return hits.slice(0, 10).map(h => h.p);
     }
 
@@ -842,7 +840,7 @@
           <span class="dot ${p.role} wide">${esc(tagOf(p))}</span>
           <span class="nm">${esc(p.name)} <span class="cl">${esc(p.club)}</span>${preso ? ' <span class="cl">· in rosa</span>' : ""}</span>
           ${pref ? '<span class="star">&#9733;</span>' : ""}
-          <span class="qt">${qtOf(p)}</span>
+          <span class="qt">${fvmOf(p)}</span>
         </li>`;
       });
       // niente nel listone: si può aggiungere lo stesso, a mano
@@ -879,11 +877,11 @@
     function setupPrice(pl, preso) {
       priceMax = preso ? preso.price : maxBid();
       $("p-range").max = priceMax;   // il cursore copre tutto: da 0 all'offerta massima
-      const base = preso ? preso.price : Math.min(priceMax, (pl.id ? qtOf(pl) : 0) || 1);
+      const base = preso ? preso.price : Math.min(priceMax, (pl.id ? fvmOf(pl) : 0) || 1);
       setPrice(base);
-      const qt = pl.id ? qtOf(pl) : null;
-      $("p-quick").querySelector('[data-q="qt"]').textContent = qt ? `Quotazione ${qt}` : "Quotazione";
-      $("p-quick").querySelector('[data-q="qt"]').hidden = !qt;
+      const rif = pl.id ? fvmOf(pl) : null;
+      $("p-quick").querySelector('[data-q="fvm"]').textContent = rif ? `FVM ${rif}` : "FVM";
+      $("p-quick").querySelector('[data-q="fvm"]').hidden = !rif;
       $("p-quick").querySelector('[data-q="max"]').textContent = `Massimo ${priceMax}`;
     }
 
@@ -909,7 +907,7 @@
       const btn = e.target.closest("[data-q]");
       if (!btn || !current) return;
       const q = btn.dataset.q;
-      if (q === "qt") setPrice(qtOf(current) || 1);
+      if (q === "fvm") setPrice(fvmOf(current) || 1);
       else if (q === "max") setPrice(priceMax);
       else setPrice(priceNow() + Number(q));
     });
@@ -931,7 +929,6 @@
         : ROLE_ONE[pl.role].replace(/^./, c => c.toUpperCase());
       $("pl-meta").textContent = manuale && !pl.club ? "Fuori listone" : ruoli + (pl.club ? " · " + pl.club : "");
 
-      $("pl-qt").textContent = pl.id ? qtOf(pl) : "—";
       $("pl-fvm").textContent = pl.id ? fvmOf(pl) : "—";
       $("pl-max").textContent = maxBid();
 
@@ -992,7 +989,7 @@
 
     function renderFav() {
       const men = state.fav.map(id => byId.get(id)).filter(Boolean)
-        .sort((a, b) => ROLES.indexOf(a.role) - ROLES.indexOf(b.role) || qtOf(b) - qtOf(a));
+        .sort((a, b) => ROLES.indexOf(a.role) - ROLES.indexOf(b.role) || fvmOf(b) - fvmOf(a));
 
       const n = men.length;
       $("tab-fav-n").textContent = n;
@@ -1126,11 +1123,11 @@
       const ammessi = sl.split("/");
       return PLAYERS
         .filter(p => p.mantra.some(r => ammessi.includes(r.toUpperCase())))
-        .sort((a, b) => fvmOf(b) - fvmOf(a) || qtOf(b) - qtOf(a))
+        .sort((a, b) => fvmOf(b) - fvmOf(a) || a.name.localeCompare(b.name))
         .slice(0, quanti);
     }
 
-    // riga di un consiglio: nome, squadra, eventuale stella, FVM e quotazione
+    // riga di un consiglio: nome, squadra, eventuale stella e FVM
     function rigaConsiglio(p) {
       return `
         <li data-open="${p.id}">
@@ -1161,7 +1158,7 @@
       if (chiave.startsWith("consC-")) {
         const r = chiave.slice(6);
         const elenco = PLAYERS.filter(p => p.role === r)
-          .sort((a, b) => fvmOf(b) - fvmOf(a) || qtOf(b) - qtOf(a))
+          .sort((a, b) => fvmOf(b) - fvmOf(a) || a.name.localeCompare(b.name))
           .slice(0, QUANTI_CONSIGLI);
         corpo.innerHTML = blocco(r, elenco);
       } else if (chiave.startsWith("cons-")) {
@@ -1266,7 +1263,6 @@
       state.rosa.push({
         key: uid(), id: current.id || null, name: current.name,
         club, role, price,
-        qt: current.id ? qtOf(current) : null,
         fvm: current.id ? fvmOf(current) : null
       });
       state.fav = state.fav.filter(id => id !== current.id);
@@ -1389,7 +1385,7 @@
     $("mode").addEventListener("change", e => {
       state.mode = e.target.value === "mantra" ? "mantra" : "classic";
       save(); render();
-      toast(state.mode === "mantra" ? "Modalità Mantra: ruoli e quotazioni mantra" : "Modalità Classic");
+      toast(state.mode === "mantra" ? "Modalità Mantra: ruoli e valori mantra" : "Modalità Classic");
     });
 
     $("budget").addEventListener("change", e => {
@@ -1448,12 +1444,9 @@
     });
 
     // ---------- rosa ideale ----------
-    // Unico criterio: il FVM. I crediti non entrano nella scelta, sono solo il conto
-    // finale di quanto costerebbe la rosa alle quotazioni.
+    // Nell'asta il prezzo di un giocatore è il suo FVM: quindi il FVM è insieme il
+    // valore da massimizzare e il costo che consuma il budget.
 
-    // Con pesi che dipendono solo dal giocatore, il riempimento delle caselle è un
-    // matroide trasversale: prendendo i giocatori in ordine di FVM e inserendoli con
-    // un cammino aumentante si ottiene l'assegnazione di FVM massimo.
     function assegnaPesata(slot, pool, peso) {
       const compat = slot.map(sl => {
         const amm = sl.split("/");
@@ -1474,55 +1467,209 @@
       return preso;
     }
 
-    // L'undici di FVM più alto che il modulo consente
-    function undiciOttimo(m) {
-      const pool = PLAYERS.filter(p => p.mantra.length);
-      const preso = assegnaPesata(m.slot, pool, p => fvmOf(p));
-      const scelti = preso.filter(j => j >= 0).map(j => pool[j]);
-      return {
-        preso, pool, scelti,
-        fvm: scelti.reduce((t, p) => t + fvmOf(p), 0),
-        costo: scelti.reduce((t, p) => t + qtOf(p), 0)
-      };
+    const somma = lista => lista.reduce((t, p) => t + fvmOf(p), 0);
+    const gruppo = scelti => ({ scelti, fvm: somma(scelti) });
+
+    // Undici del modulo con il FVM più alto che sta nel budget.
+    function undiciOttimo(m, budget) {
+      const tutti = PLAYERS.filter(p => p.mantra.length);
+      const leggi = (preso, pool) => ({
+        preso, pool,
+        scelti: preso.filter(j => j >= 0).map(j => pool[j]),
+        completo: preso.every(j => j >= 0)
+      });
+
+      let esito = leggi(assegnaPesata(m.slot, tutti, fvmOf), tutti);
+      if (somma(esito.scelti) <= budget) return { ...esito, fvm: somma(esito.scelti) };
+
+      // tetto sul singolo giocatore: il più alto che fa rientrare la somma
+      let lo = 0, hi = Math.max(...tutti.map(fvmOf)), sol = null;
+      for (let it = 0; it < 20; it++) {
+        const cap = (lo + hi) / 2;
+        const pool = tutti.filter(p => fvmOf(p) <= cap);
+        const e = leggi(assegnaPesata(m.slot, pool, fvmOf), pool);
+        if (e.completo && somma(e.scelti) <= budget) { sol = e; lo = cap; } else hi = cap;
+      }
+      if (!sol) return { ...esito, fvm: somma(esito.scelti) };
+
+      // con quello che avanza provo a migliorare una casella per volta
+      const scelti = sol.preso.map(j => (j >= 0 ? sol.pool[j] : null));
+      let tot = somma(scelti.filter(Boolean));
+      for (let giro = 0; giro < 40; giro++) {
+        let meglio = null;
+        m.slot.forEach((sl, i) => {
+          const amm = sl.split("/");
+          const ora = scelti[i];
+          const val = ora ? fvmOf(ora) : 0;
+          for (const p of tutti) {
+            if (scelti.includes(p) || !p.mantra.some(r => amm.includes(r.toUpperCase()))) continue;
+            const nuovoTot = tot - val + fvmOf(p);
+            if (fvmOf(p) > val && nuovoTot <= budget &&
+                (!meglio || fvmOf(p) - val > meglio.guadagno)) {
+              meglio = { i, p, guadagno: fvmOf(p) - val, nuovoTot };
+            }
+          }
+        });
+        if (!meglio) break;
+        scelti[meglio.i] = meglio.p;
+        tot = meglio.nuovoTot;
+      }
+
+      const preso = scelti.map(p => (p ? tutti.indexOf(p) : -1));
+      return { preso, pool: tutti, scelti: scelti.filter(Boolean), completo: scelti.every(Boolean), fvm: tot };
     }
 
-    // I migliori per FVM di un reparto, saltando chi è già stato preso
-    function migliori(r, quanti, esclusi) {
-      return PLAYERS
-        .filter(p => p.role === r && !(esclusi && esclusi.has(p.id)))
-        .sort((a, b) => fvmOf(b) - fvmOf(a) || qtOf(a) - qtOf(b))
-        .slice(0, Math.max(0, quanti));
+    // Zaino per reparto: quanti giocatori, quanto FVM speso, quanto FVM guadagnato
+    // (qui costo e valore coincidono: si tratta di avvicinarsi al budget senza superarlo).
+    const NEG = -1e9;
+    function tabellaDP(pool, kMax, budget) {
+      const larg = budget + 1;
+      let dp = new Float64Array((kMax + 1) * larg).fill(NEG);
+      dp[0] = 0;
+      const scelta = new Uint8Array(pool.length * (kMax + 1) * larg);
+      pool.forEach((p, idx) => {
+        const c = fvmOf(p);
+        if (c > budget) return;
+        const nuovo = dp.slice();
+        const base = idx * (kMax + 1) * larg;
+        for (let k = kMax - 1; k >= 0; k--) {
+          const riga = k * larg, dopo = (k + 1) * larg;
+          for (let sp = 0; sp + c <= budget; sp++) {
+            const da = dp[riga + sp];
+            if (da === NEG) continue;
+            const pos = dopo + sp + c;
+            if (da + c > nuovo[pos]) { nuovo[pos] = da + c; scelta[base + pos] = 1; }
+          }
+        }
+        dp = nuovo;
+      });
+      return { dp, scelta, larg, kMax, pool };
     }
 
-    function gruppo(scelti) {
-      return {
-        scelti,
-        fvm: scelti.reduce((t, p) => t + fvmOf(p), 0),
-        costo: scelti.reduce((t, p) => t + qtOf(p), 0)
-      };
+    function estraiDP(t, k, spesa) {
+      const scelti = [];
+      let kk = k, sp = spesa;
+      for (let idx = t.pool.length - 1; idx >= 0 && kk > 0; idx--) {
+        if (t.scelta[idx * (t.kMax + 1) * t.larg + kk * t.larg + sp]) {
+          scelti.push(t.pool[idx]);
+          sp -= fvmOf(t.pool[idx]);
+          kk--;
+        }
+      }
+      return scelti;
     }
 
-    // Rosa Classic: l'undici col FVM più alto fra i moduli ammessi, poi le riserve
+    function combinaCurve(curve, budget) {
+      let acc = new Float64Array(budget + 1).fill(NEG);
+      acc[0] = 0;
+      const scelte = [];
+      curve.forEach(cur => {
+        const nuovo = new Float64Array(budget + 1).fill(NEG);
+        const quale = new Int16Array(budget + 1).fill(-1);
+        for (let tot = 0; tot <= budget; tot++) {
+          for (let q = 0; q <= tot; q++) {
+            const a = acc[tot - q], b = cur[q];
+            if (a === NEG || b === NEG) continue;
+            if (a + b > nuovo[tot]) { nuovo[tot] = a + b; quale[tot] = q; }
+          }
+        }
+        acc = nuovo;
+        scelte.push(quale);
+      });
+
+      let migliore = -1, spesa = 0;
+      for (let c = 0; c <= budget; c++) if (acc[c] > migliore) { migliore = acc[c]; spesa = c; }
+      if (migliore < 0) return null;
+
+      const parti = new Array(curve.length).fill(0);
+      let resto = spesa;
+      for (let i = curve.length - 1; i >= 0; i--) {
+        parti[i] = scelte[i][resto];
+        resto -= parti[i];
+      }
+      return { fvm: migliore, parti };
+    }
+
+    // Esattamente bisogno[r] giocatori per reparto, con il FVM più alto entro il budget
+    function gruppoOttimo(bisogno, budget, esclusi) {
+      const usati = ROLES.filter(r => bisogno[r] > 0);
+      if (!usati.length) return gruppo([]);
+
+      const tabelle = usati.map(r => {
+        const pool = PLAYERS.filter(p => p.role === r && !(esclusi && esclusi.has(p.id)));
+        return { r, t: tabellaDP(pool, bisogno[r], budget) };
+      });
+      const curve = tabelle.map(({ r, t }) => t.dp.slice(bisogno[r] * t.larg, bisogno[r] * t.larg + budget + 1));
+      const mix = combinaCurve(curve, budget);
+      if (!mix) return { ...gruppo([]), impossibile: true };
+
+      return gruppo(tabelle.flatMap(({ r, t }, i) => estraiDP(t, bisogno[r], mix.parti[i])));
+    }
+
+    // Rosa Classic: prima l'undici (scegliendo anche il modulo), poi le riserve
     const MODULI_CLASSIC = [[3,4,3], [3,5,2], [4,3,3], [4,4,2], [4,5,1], [5,3,2], [5,4,1]];
 
-    function rosaClassic() {
-      let miglior = null;
-      for (const [d, c, a] of MODULI_CLASSIC) {
-        if (state.slots.P < 1 || state.slots.D < d || state.slots.C < c || state.slots.A < a) continue;
-        const scelti = [...migliori("P", 1), ...migliori("D", d), ...migliori("C", c), ...migliori("A", a)];
-        if (scelti.length < 11) continue;
-        const e = gruppo(scelti);
-        if (!miglior || e.fvm > miglior.e.fvm) miglior = { modulo: `${d}-${c}-${a}`, e };
+    // A parità di FVM speso ci sono tante combinazioni equivalenti: fra queste scelgo
+    // quella che tiene più alto il valore del titolare più debole, per non ritrovarsi
+    // in campo dei riempitivi solo per far quadrare la somma.
+    function undiciClassic(budget) {
+      const moduli = MODULI_CLASSIC.filter(([d, c, a]) =>
+        state.slots.P >= 1 && state.slots.D >= d && state.slots.C >= c && state.slots.A >= a);
+      if (!moduli.length) return null;
+
+      const cerca = soglia => {
+        const tabelle = {};
+        ROLES.forEach(r => {
+          const pool = PLAYERS.filter(p => p.role === r && fvmOf(p) >= soglia);
+          tabelle[r] = tabellaDP(pool, 5, budget);
+        });
+        let best = null;
+        for (const [d, c, a] of moduli) {
+          const bisogno = { P: 1, D: d, C: c, A: a };
+          const usati = ROLES.filter(r => bisogno[r] > 0);
+          const curve = usati.map(r => {
+            const t = tabelle[r];
+            return t.dp.slice(bisogno[r] * t.larg, bisogno[r] * t.larg + budget + 1);
+          });
+          const mix = combinaCurve(curve, budget);
+          if (!mix) continue;
+          const scelti = usati.flatMap((r, i) => estraiDP(tabelle[r], bisogno[r], mix.parti[i]));
+          if (scelti.length !== 11) continue;
+          if (!best || mix.fvm > best.e.fvm) best = { modulo: `${d}-${c}-${a}`, e: gruppo(scelti) };
+        }
+        return best;
+      };
+
+      let migliore = cerca(0);
+      if (!migliore) return null;
+
+      // alzo il valore minimo del titolare finché la rosa resta componibile
+      let lo = 0, hi = Math.floor(budget / 11);
+      for (let it = 0; it < 8 && hi - lo > 1; it++) {
+        const m = Math.floor((lo + hi) / 2);
+        const prova = cerca(m);
+        if (prova && prova.e.scelti.length === 11) { migliore = prova; lo = m; } else hi = m;
       }
+      return migliore;
+    }
+
+    function rosaClassic() {
+      const panchina = Math.max(0, slotsTotal() - 11);
+      const budgetTit = Math.max(11, state.budget - panchina);   // un punto a testa per le riserve
+
+      const miglior = undiciClassic(budgetTit);
       if (!miglior) return null;
 
       const presi = new Set(miglior.e.scelti.map(p => p.id));
       const conta = r => miglior.e.scelti.filter(p => p.role === r).length;
-      const panca = gruppo(ROLES.flatMap(r => migliori(r, state.slots[r] - conta(r), presi)));
+      const bisogno = { P: state.slots.P - conta("P"), D: state.slots.D - conta("D"),
+                        C: state.slots.C - conta("C"), A: state.slots.A - conta("A") };
+      const panca = gruppoOttimo(bisogno, Math.max(0, state.budget - miglior.e.fvm), presi);
+
       return { modulo: miglior.modulo, titolari: miglior.e, panca };
     }
 
-    // ---------- disegno della rosa ideale ----------    // ---------- disegno della rosa ideale ----------
+    // ---------- disegno della rosa ideale ----------    // ---------- disegno della rosa ideale ----------    // ---------- disegno della rosa ideale ----------
     let ideale = null;   // ultimo calcolo, per il pulsante "Metti in rosa"
 
     const rigaIdeale = (p, sigla) => `
@@ -1530,20 +1677,19 @@
         ${sigla ? `<span class="slot ${repartoDiSlot(sigla)}">${esc(sigla)}</span>`
                 : `<span class="dot ${p.role} wide">${esc(tagOf(p))}</span>`}
         <span class="chi">${p ? `${esc(p.name)} <span class="cl">${esc(p.club)}</span>` : ""}</span>
-        <span class="num">${p ? `<span class="f">${fvmOf(p)}</span><small>${qtOf(p)} ${qtOf(p) === 1 ? "credito" : "crediti"}</small>` : ""}</span>
+        <span class="num">${p ? `<span class="f">${fvmOf(p)}</span><small>fvm</small>` : ""}</span>
       </div>`;
 
-    function testataIdeale(fvmTit, fvmTot, costo, avviso) {
-      const sfora = costo > state.budget;
+    function testataIdeale(fvmTit, fvmTot, avviso) {
+      const sfora = fvmTot > state.budget;
       return `
         <div class="card ideale-top">
           <div class="cifre">
             <div class="fvm"><b>${fvmTit}</b><span>FVM titolari</span></div>
-            <div class="fvm2"><b>${fvmTot}</b><span>FVM rosa</span></div>
-            <div class="costo"><b>${costo}</b><span>crediti alle quotazioni</span></div>
+            <div class="fvm2"><b>${fvmTot}</b><span>FVM rosa · budget ${state.budget}</span></div>
           </div>
           ${avviso ? `<div class="nota-ideale">${esc(avviso)}</div>` : ""}
-          ${sfora ? `<div class="avviso">Costerebbe ${costo - state.budget} crediti più di quanti ne hai.</div>` : ""}
+          ${sfora ? `<div class="avviso">Sfora il budget di ${fvmTot - state.budget}.</div>` : ""}
           <button class="btn btn-go" id="usa-ideale">Metti in rosa</button>
         </div>`;
     }
@@ -1557,7 +1703,7 @@
           <details class="modulo ideale-rep">
             <summary>
               <span class="nome">Riserve ${ROLE_LABEL[r].toLowerCase()}</span>
-              <span class="quanti">${men.reduce((t, p) => t + qtOf(p), 0)} cr.</span>
+              <span class="quanti">${men.reduce((t, p) => t + fvmOf(p), 0)} fvm</span>
             </summary>
             ${men.map(p => rigaIdeale(p)).join("")}
           </details>`;
@@ -1569,7 +1715,6 @@
       if (!r) { $("ideale").innerHTML = '<p class="caricando">Con questi crediti non si riesce a comporre un undici.</p>'; return; }
 
       const fvmTot = r.titolari.fvm + r.panca.fvm;
-      const costo = r.titolari.costo + r.panca.costo;
       ideale = { giocatori: [...r.titolari.scelti, ...r.panca.scelti] };
 
       const perReparto = ROLES.map(r2 => {
@@ -1578,38 +1723,43 @@
           <details class="modulo ideale-rep" open>
             <summary>
               <span class="nome">${ROLE_LABEL[r2]}</span>
-              <span class="quanti">${men.length} titolari · ${men.reduce((t, p) => t + qtOf(p), 0)} cr.</span>
+              <span class="quanti">${men.length} titolari · ${men.reduce((t, p) => t + fvmOf(p), 0)} fvm</span>
             </summary>
             ${men.map(p => rigaIdeale(p)).join("")}
           </details>` : "";
       }).join("");
 
       $("ideale").innerHTML =
-        testataIdeale(r.titolari.fvm, fvmTot, costo,
-          `Undici col FVM più alto: modulo ${r.modulo}.`) +
+        testataIdeale(r.titolari.fvm, fvmTot,
+          `Undici col FVM più alto dentro il budget: modulo ${r.modulo}.`) +
         perReparto + blocchiPanca(r.panca);
     }
 
     function renderIdealeMantra() {
-      const esiti = MODULI.map(m => ({ m, e: undiciOttimo(m) }))
+      const panchina = Math.max(0, slotsTotal() - 11);
+      const budgetTit = Math.max(11, state.budget - panchina);
+
+      const esiti = MODULI.map(m => ({ m, e: undiciOttimo(m, budgetTit) }))
         .sort((a, b) => b.e.fvm - a.e.fvm);
       const top = esiti[0];
 
-      // le riserve completano i reparti con i migliori rimasti
+      // le riserve completano i reparti con quello che resta del budget
       const presi = new Set(top.e.scelti.map(p => p.id));
       const conta = r => top.e.scelti.filter(p => p.role === r).length;
-      const panca = gruppo(ROLES.flatMap(r => migliori(r, state.slots[r] - conta(r), presi)));
+      const bisogno = { P: Math.max(0, state.slots.P - conta("P")), D: Math.max(0, state.slots.D - conta("D")),
+                        C: Math.max(0, state.slots.C - conta("C")), A: Math.max(0, state.slots.A - conta("A")) };
+      const panca = gruppoOttimo(bisogno, Math.max(0, state.budget - top.e.fvm), presi);
 
       ideale = { giocatori: [...top.e.scelti, ...panca.scelti] };
 
       $("ideale").innerHTML =
-        testataIdeale(top.e.fvm, top.e.fvm + panca.fvm, top.e.costo + panca.costo,
-          `Undici col FVM più alto: ${top.m.nome}. Le riserve completano la rosa.`) +
+        testataIdeale(top.e.fvm, top.e.fvm + panca.fvm,
+          `Undici col FVM più alto dentro il budget: ${top.m.nome}. Le riserve completano la rosa.`) +
         esiti.map(({ m, e }, i) => `
           <details class="modulo ideale-rep"${i === 0 ? " open" : ""}>
             <summary>
               <span class="nome">${m.nome}</span>
-              <span class="quanti">${e.fvm} fvm · ${e.costo} cr.</span>
+              <span class="quanti">${e.fvm} fvm</span>
             </summary>
             ${m.slot.map((sl, k) => rigaIdeale(e.preso[k] >= 0 ? e.pool[e.preso[k]] : null, sl)).join("")}
           </details>`).join("") +
@@ -1626,10 +1776,10 @@
 
     $("ideale").addEventListener("click", e => {
       if (!e.target.closest("#usa-ideale") || !ideale) return;
-      if (!confirm("Sostituire la rosa attuale con questa proposta? I giocatori vengono inseriti alle quotazioni.")) return;
+      if (!confirm("Sostituire la rosa attuale con questa proposta? I giocatori vengono inseriti al loro FVM.")) return;
       state.rosa = ideale.giocatori.map(p => ({
         key: uid(), id: p.id, name: p.name, club: p.club, role: p.role,
-        price: qtOf(p), qt: qtOf(p), fvm: fvmOf(p)
+        price: fvmOf(p), fvm: fvmOf(p)
       }));
       save(); render();
       toast(`Rosa sostituita: ${state.rosa.length} giocatori`);
