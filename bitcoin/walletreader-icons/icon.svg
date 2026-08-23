@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Saldo wallet Bitcoin">
+  <rect width="512" height="512" rx="113" fill="#d9730d"/>
+  <text x="256" y="256" fill="#f5f0e6" font-family="'Space Grotesk','Bricolage Grotesque',system-ui,sans-serif"
+        font-size="317" font-weight="700" text-anchor="middle" dominant-baseline="central">&#8383;</text>
+</svg>

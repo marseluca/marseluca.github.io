@@ -1,0 +1,17 @@
+{
+  "name": "Saldo wallet Bitcoin",
+  "short_name": "Wallet BTC",
+  "description": "Saldo, movimenti e andamento storico di un indirizzo Bitcoin, letti direttamente dalla blockchain.",
+  "lang": "it",
+  "start_url": "./walletreader.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5f0e6",
+  "theme_color": "#d9730d",
+  "icons": [
+    { "src": "./walletreader-icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./walletreader-icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./walletreader-icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
