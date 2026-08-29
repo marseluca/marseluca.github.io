@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Luca — Follower Instagram</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .eyebrow { color: var(--c-instagram); }
+
+    .warn {
+      background: #fff7ed;
+      border: 1px solid #f2d5b3;
+      border-radius: var(--radius);
+      padding: 1rem 1.15rem;
+      margin-bottom: 1.75rem;
+      font-size: 0.92rem;
+    }
+    .warn strong { font-family: var(--display); }
+    .warn ul { margin: 0.5rem 0 0; padding-left: 1.1rem; }
+    .warn li { margin-bottom: 0.25rem; }
+    .warn li:last-child { margin-bottom: 0; }
+
+    .searchbar { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .searchbar .field { flex: 1 1 240px; }
+    .searchbar .actions { display: flex; gap: 0.5rem; align-items: flex-end; }
+
+    details.config {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 0.9rem 1.1rem;
+      margin-bottom: 1.75rem;
+    }
+    details.config > summary {
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--muted);
+      list-style: none;
+    }
+    details.config > summary::-webkit-details-marker { display: none; }
+    details.config > summary::before { content: "▸ "; }
+    details.config[open] > summary::before { content: "▾ "; }
+    .cfg-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.8rem;
+      margin-top: 1rem;
+    }
+    .cfg-grid .wide { grid-column: 1 / -1; }
+    .cfg-hint { font-size: 0.78rem; color: var(--muted); margin: 0.15rem 0 0; }
+    .cfg-foot { display: flex; gap: 0.6rem; align-items: center; margin-top: 1rem; flex-wrap: wrap; }
+
+    .toolbar { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
+    .toolbar .grow { flex: 1 1 200px; }
+    .toolbar select, .toolbar input { width: auto; }
+
+    .progress-track {
+      height: 4px; background: var(--line); border-radius: 2px;
+      overflow: hidden; margin-bottom: 1.25rem;
+    }
+    .progress-fill {
+      height: 100%; width: 0%; background: var(--c-instagram);
+      border-radius: 2px; transition: width 0.3s ease;
+    }
+    /* Il numero di follower non è noto in anticipo: durante la scansione
+       la barra scorre invece di fingere una percentuale. */
+    .progress-fill.indet {
+      width: 100%;
+      background: linear-gradient(90deg, var(--line) 10%, var(--c-instagram) 50%, var(--line) 90%);
+      background-size: 220% 100%;
+      animation: scorri 1.2s linear infinite;
+    }
+    .progress-fill.done { width: 100%; background: var(--c-allenamenti); }
+    .progress-fill.halt { width: 100%; background: var(--muted); }
+    @keyframes scorri { from { background-position: 110% 0; } to { background-position: -110% 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      .progress-fill.indet { animation: none; background: var(--c-instagram); }
+    }
+
+    .status { font-size: 0.85rem; color: var(--muted); margin: 0 0 1rem; }
+    .status.err { color: #c0392b; }
+    .status.ok  { color: var(--c-allenamenti); }
+
+    ul.followers { list-style: none; margin: 0; padding: 0; }
+    li.follower {
+      display: flex; align-items: center; gap: 0.8rem;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 0.65rem 0.9rem;
+    }
+    li.follower + li.follower { margin-top: 0.5rem; }
+    .ava {
+      width: 38px; height: 38px; border-radius: 50%;
+      flex-shrink: 0; object-fit: cover;
+      background: var(--line);
+      display: grid; place-items: center;
+      font-family: var(--display); font-weight: 600; font-size: 0.85rem;
+      color: #fff;
+    }
+    .who { min-width: 0; flex: 1; }
+    .who .u {
+      font-weight: 600; font-size: 0.95rem;
+      display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      color: var(--ink); text-decoration: none;
+    }
+    .who .u:hover { color: var(--c-instagram); }
+    .who .n {
+      font-size: 0.83rem; color: var(--muted);
+      display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .tags { display: flex; gap: 0.35rem; flex-shrink: 0; }
+    .tag {
+      font-size: 0.68rem; font-weight: 600;
+      padding: 0.12rem 0.45rem; border-radius: 999px;
+      background: var(--line); color: var(--muted);
+    }
+    .tag.v { background: #e3f0fb; color: #1f6fb0; }
+    .tag.p { background: #f1eefb; color: #6b52b8; }
+
+    .more { display: block; width: 100%; margin-top: 0.9rem; }
+
+    code.k {
+      background: var(--line); border-radius: 4px;
+      padding: 0.1rem 0.3rem; font-size: 0.85em;
+    }
+    pre.shape {
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: 10px; padding: 0.8rem 0.9rem;
+      overflow-x: auto; font-size: 0.8rem; line-height: 1.5; margin: 0.6rem 0 0;
+    }
+
+    @media (max-width: 560px) {
+      .cfg-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="index.html">Luca</a>
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="ricette.html">Ricette</a></li>
+      <li><a href="bitcoin.html">Bitcoin</a></li>
+      <li><a href="allenamenti.html">Allenamenti</a></li>
+      <li><a href="libri.html">Libri</a></li>
+      <li><a href="modellazione3d.html">Modellazione 3D</a></li>
+      <li><a href="fantacalcio.html">Fantacalcio</a></li>
+    </ul>
+  </nav>
+
+  <main class="wrap">
+    <header class="page-head">
+      <p class="eyebrow">Strumento</p>
+      <h1 class="title">Follower Instagram</h1>
+      <p class="lead">Inserisci un nome utente e scarica l'elenco completo dei follower, pagina dopo pagina, fino all'ultimo.</p>
+    </header>
+
+    <div class="warn">
+      <strong>Prima di iniziare: serve una sorgente dati.</strong>
+      Instagram non offre nessun endpoint pubblico che restituisca l'elenco dei follower, quindi questa pagina
+      non può funzionare “da sola”: è il <em>client</em>, la sorgente la scegli tu nel pannello qui sotto.
+      <ul>
+        <li><strong>Graph API ufficiale</strong> (account Business/Creator collegati a una Pagina Facebook): espone solo <code class="k">followers_count</code>, il numero. La lista dei nomi non è mai stata esposta, e la Basic Display API è stata dismessa a dicembre 2024.</li>
+        <li><strong>Endpoint interno</strong> di Instagram (<code class="k">/api/v1/friendships/&lt;id&gt;/followers/</code>): richiede il cookie di sessione, è bloccato dal CORS del browser e il suo uso viola i Termini di servizio.</li>
+        <li><strong>Provider esterni a pagamento</strong> (servizi di scraping con API REST): sono l'unica via che funziona davvero da una pagina statica, purché il provider risponda con header CORS. Configura sotto URL, chiave e mappatura dei campi.</li>
+        <li><strong>Un tuo backend / proxy</strong> che parla con una delle fonti sopra e ti restituisce il JSON nel formato documentato in fondo alla pagina.</li>
+      </ul>
+    </div>
+
+    <div class="searchbar">
+      <div class="field">
+        <label for="username">Nome utente (o ID numerico)</label>
+        <input id="username" type="text" placeholder="es. nasa" autocomplete="off" spellcheck="false" />
+      </div>
+      <div class="actions">
+        <button class="btn btn-accent" id="go">Carica follower</button>
+        <button class="btn" id="stop" hidden>Interrompi</button>
+      </div>
+    </div>
+
+    <details class="config" id="cfg">
+      <summary>Sorgente dati e mappatura dei campi</summary>
+
+      <div class="cfg-grid">
+        <div class="field wide">
+          <label for="preset">Sorgente</label>
+          <select id="preset">
+            <option value="demo">Demo — dati inventati, nessuna rete</option>
+            <option value="custom">Endpoint personalizzato (provider o tuo proxy)</option>
+          </select>
+        </div>
+
+        <div class="field wide">
+          <label for="endpoint">URL dell'endpoint</label>
+          <input id="endpoint" type="text" spellcheck="false"
+                 placeholder="https://provider.example/v1/followers?user={username}&amp;max_id={cursor}&amp;count={count}" />
+          <p class="cfg-hint">Segnaposto disponibili: <code class="k">{username}</code>, <code class="k">{cursor}</code>, <code class="k">{count}</code>. Alla prima chiamata <code class="k">{cursor}</code> è vuoto.</p>
+        </div>
+
+        <div class="field wide">
+          <label for="headers">Header HTTP (JSON)</label>
+          <input id="headers" type="text" spellcheck="false" placeholder='{"x-access-key": "LA-TUA-CHIAVE"}' />
+          <p class="cfg-hint">Restano solo nel tuo browser (<code class="k">localStorage</code>): non vengono inviati da nessuna parte se non al provider che indichi tu.</p>
+        </div>
+
+        <div class="field">
+          <label for="usersPath">Percorso dell'array utenti</label>
+          <input id="usersPath" type="text" spellcheck="false" placeholder="users" />
+          <p class="cfg-hint">Es. <code class="k">users</code>, <code class="k">data.items</code>. Vuoto = la risposta è già un array.</p>
+        </div>
+        <div class="field">
+          <label for="cursorPath">Percorso del cursore</label>
+          <input id="cursorPath" type="text" spellcheck="false" placeholder="next_max_id" />
+          <p class="cfg-hint">Quando manca o è vuoto, l'elenco è finito.</p>
+        </div>
+
+        <div class="field">
+          <label for="fUser">Campo username</label>
+          <input id="fUser" type="text" spellcheck="false" placeholder="username" />
+        </div>
+        <div class="field">
+          <label for="fName">Campo nome completo</label>
+          <input id="fName" type="text" spellcheck="false" placeholder="full_name" />
+        </div>
+        <div class="field">
+          <label for="fPic">Campo immagine profilo</label>
+          <input id="fPic" type="text" spellcheck="false" placeholder="profile_pic_url" />
+        </div>
+        <div class="field">
+          <label for="fId">Campo ID</label>
+          <input id="fId" type="text" spellcheck="false" placeholder="pk" />
+        </div>
+        <div class="field">
+          <label for="fVer">Campo verificato</label>
+          <input id="fVer" type="text" spellcheck="false" placeholder="is_verified" />
+        </div>
+        <div class="field">
+          <label for="fPriv">Campo privato</label>
+          <input id="fPriv" type="text" spellcheck="false" placeholder="is_private" />
+        </div>
+
+        <div class="field">
+          <label for="pageSize">Follower per pagina</label>
+          <input id="pageSize" type="number" min="1" max="200" step="1" />
+        </div>
+        <div class="field">
+          <label for="delay">Pausa tra pagine (ms)</label>
+          <input id="delay" type="number" min="0" max="60000" step="100" />
+          <p class="cfg-hint">Una pausa evita di farsi limitare dal provider.</p>
+        </div>
+        <div class="field">
+          <label for="maxPages">Massimo pagine</label>
+          <input id="maxPages" type="number" min="1" max="10000" step="1" />
+          <p class="cfg-hint">Rete di sicurezza contro i cicli infiniti.</p>
+        </div>
+      </div>
+
+      <div class="cfg-foot">
+        <button class="btn" id="save">Salva configurazione</button>
+        <button class="btn btn-ghost" id="reset">Ripristina i valori predefiniti</button>
+        <span class="meta" id="saved"></span>
+      </div>
+    </details>
+
+    <div class="stats">
+      <div class="stat"><div class="n" id="s-count">0</div><div class="l">Follower caricati</div></div>
+      <div class="stat"><div class="n" id="s-pages">0</div><div class="l">Pagine richieste</div></div>
+      <div class="stat"><div class="n" id="s-state">—</div><div class="l">Stato</div></div>
+    </div>
+
+    <div class="progress-track" id="track" hidden><div class="progress-fill" id="fill"></div></div>
+    <p class="status" id="status"></p>
+
+    <div class="toolbar" id="toolbar" hidden>
+      <div class="grow"><input id="filter" type="search" placeholder="Filtra per nome utente o nome…" /></div>
+      <select id="sort">
+        <option value="orig">Ordine di arrivo</option>
+        <option value="az">Username A → Z</option>
+        <option value="za">Username Z → A</option>
+      </select>
+      <button class="btn" id="csv">CSV</button>
+      <button class="btn" id="json">JSON</button>
+      <button class="btn" id="copy">Copia</button>
+    </div>
+
+    <div id="out">
+      <p class="empty">Nessun elenco caricato. Scegli una sorgente, scrivi un nome utente e premi <em>Carica follower</em>.</p>
+    </div>
+
+    <p class="section-divider">Formato JSON atteso</p>
+    <p class="note" style="margin-top:0">
+      Con la mappatura predefinita (<code class="k">users</code> / <code class="k">next_max_id</code>) la pagina si aspetta,
+      per ogni chiamata, una risposta di questa forma — e continua a richiedere pagine finché il cursore non sparisce.
+      Se il tuo provider usa nomi diversi, cambiali nel pannello sopra: non serve toccare il codice.
+    </p>
+    <pre class="shape">{
+  "users": [
+    { "pk": "1234", "username": "mario", "full_name": "Mario Rossi",
+      "profile_pic_url": "https://…/foto.jpg", "is_verified": false, "is_private": true }
+  ],
+  "next_max_id": "QVFE…"   // assente o vuoto sull'ultima pagina
+}</pre>
+
+    <p class="note">
+      L'estrazione massiva di dati da Instagram è vietata dai suoi Termini di servizio e i dati sui follower sono
+      dati personali: usa questo strumento su account tuoi o con il consenso di chi li possiede, e ricordati del GDPR
+      prima di conservare o riutilizzare gli elenchi.
+    </p>
+  </main>
+
+  <footer class="site">&copy; <span id="y"></span> Luca</footer>
+
+  <script>
+  (() => {
+    "use strict";
+
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+
+    // ---------- configurazione ----------
+    const DEFAULTS = {
+      preset: "demo",
+      endpoint: "",
+      headers: "",
+      usersPath: "users",
+      cursorPath: "next_max_id",
+      fUser: "username",
+      fName: "full_name",
+      fPic: "profile_pic_url",
+      fId: "pk",
+      fVer: "is_verified",
+      fPriv: "is_private",
+      pageSize: 50,
+      delay: 800,
+      maxPages: 400
+    };
+    const KEY = "ig-followers-config";
+    const FIELDS = Object.keys(DEFAULTS);
+
+    function readConfig() {
+      const cfg = {};
+      for (const k of FIELDS) {
+        const el = $(k);
+        cfg[k] = el.type === "number" ? Number(el.value) || DEFAULTS[k] : el.value.trim();
+      }
+      return cfg;
+    }
+    function writeConfig(cfg) {
+      for (const k of FIELDS) $(k).value = cfg[k] ?? DEFAULTS[k];
+      syncPreset();
+    }
+    function loadConfig() {
+      try {
+        const raw = localStorage.getItem(KEY);
+        return raw ? { ...DEFAULTS, ...JSON.parse(raw) } : { ...DEFAULTS };
+      } catch { return { ...DEFAULTS }; }
+    }
+    function syncPreset() {
+      const demo = $("preset").value === "demo";
+      $("cfg").querySelectorAll("input").forEach(el => {
+        if (el.id === "pageSize" || el.id === "delay" || el.id === "maxPages") return;
+        el.disabled = demo;
+      });
+    }
+
+    writeConfig(loadConfig());
+    $("preset").addEventListener("change", syncPreset);
+    $("save").addEventListener("click", () => {
+      try {
+        localStorage.setItem(KEY, JSON.stringify(readConfig()));
+        $("saved").textContent = "Salvata in questo browser.";
+      } catch {
+        $("saved").textContent = "Impossibile salvare (storage non disponibile).";
+      }
+      setTimeout(() => { $("saved").textContent = ""; }, 3000);
+    });
+    $("reset").addEventListener("click", () => {
+      try { localStorage.removeItem(KEY); } catch {}
+      writeConfig({ ...DEFAULTS });
+      $("saved").textContent = "Valori predefiniti ripristinati.";
+      setTimeout(() => { $("saved").textContent = ""; }, 3000);
+    });
+
+    // ---------- utilità ----------
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+    // Legge "a.b.0.c" dentro un oggetto; percorso vuoto = oggetto stesso.
+    function getPath(obj, path) {
+      if (!path) return obj;
+      return path.split(".").reduce((acc, k) => (acc == null ? undefined : acc[k]), obj);
+    }
+
+    function cleanUsername(raw) {
+      let v = raw.trim();
+      const m = v.match(/instagram\.com\/([^/?#]+)/i);
+      if (m) v = m[1];
+      return v.replace(/^@/, "").trim();
+    }
+
+    function buildUrl(tpl, username, cursor, count) {
+      return tpl
+        .replace(/\{username\}/g, encodeURIComponent(username))
+        .replace(/\{cursor\}/g, encodeURIComponent(cursor || ""))
+        .replace(/\{count\}/g, encodeURIComponent(String(count)));
+    }
+
+    // ---------- sorgente demo ----------
+    const DEMO_NAMES = ["giulia","marco","chiara","alessio","francesca","davide","sara","luca","martina","andrea",
+      "elena","matteo","giorgia","simone","valentina","federico","alice","riccardo","beatrice","tommaso"];
+    const DEMO_SURNAMES = ["rossi","bianchi","ferrari","russo","esposito","romano","colombo","ricci","marino","greco",
+      "bruno","gallo","conti","costa","giordano","mancini","rizzo","lombardi","moretti","barbieri"];
+
+    function demoPage(username, cursor, count) {
+      const total = 137;
+      const start = cursor ? Number(cursor) : 0;
+      const users = [];
+      for (let i = start; i < Math.min(start + count, total); i++) {
+        const n = DEMO_NAMES[i % DEMO_NAMES.length];
+        const s = DEMO_SURNAMES[(i * 7) % DEMO_SURNAMES.length];
+        users.push({
+          pk: String(100000 + i),
+          username: `${n}.${s}${Math.floor(i / DEMO_NAMES.length) || ""}`,
+          full_name: `${n[0].toUpperCase()}${n.slice(1)} ${s[0].toUpperCase()}${s.slice(1)}`,
+          profile_pic_url: "",
+          is_verified: i % 23 === 0,
+          is_private: i % 4 === 0
+        });
+      }
+      const next = start + count < total ? String(start + count) : "";
+      return { users, next_max_id: next };
+    }
+
+    // ---------- stato ----------
+    let followers = [];
+    let seen = new Set();
+    let running = false;
+    let controller = null;
+    let visible = 300;
+    const PAGE_RENDER = 300;
+
+    function setStatus(msg, cls) {
+      const el = $("status");
+      el.textContent = msg;
+      el.className = "status" + (cls ? " " + cls : "");
+    }
+    function setStat(count, pages, state) {
+      $("s-count").textContent = count.toLocaleString("it-IT");
+      $("s-pages").textContent = pages;
+      $("s-state").textContent = state;
+    }
+
+    // ---------- rendering ----------
+    function initial(f) { return esc((f.username[0] || "?").toUpperCase()); }
+
+    // L'immagine remota può non caricarsi (CDN che blocca l'hotlink): in quel caso
+    // la sostituiamo con l'iniziale colorata, agganciando il fallback dopo il render
+    // invece di usare un onerror inline con dentro dati di provenienza esterna.
+    function avatarFor(f) {
+      const url = f.pic;
+      if (typeof url === "string" && /^https:\/\//i.test(url)) {
+        return `<img class="ava js-ava" src="${esc(url)}" alt="" loading="lazy" referrerpolicy="no-referrer"
+                     data-initial="${initial(f)}" data-bg="${esc(colorFor(f.username))}" />`;
+      }
+      return `<div class="ava" style="background:${esc(colorFor(f.username))}">${initial(f)}</div>`;
+    }
+
+    function attachAvatarFallbacks(root) {
+      root.querySelectorAll("img.js-ava").forEach(img => {
+        img.addEventListener("error", () => {
+          const div = document.createElement("div");
+          div.className = "ava";
+          div.style.background = img.dataset.bg || "";
+          div.textContent = img.dataset.initial || "?";
+          img.replaceWith(div);
+        }, { once: true });
+      });
+    }
+    function colorFor(name) {
+      let h = 0;
+      for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360;
+      return `hsl(${h} 42% 58%)`;
+    }
+
+    function currentList() {
+      const q = $("filter").value.trim().toLowerCase();
+      let list = followers;
+      if (q) list = list.filter(f => f.username.toLowerCase().includes(q) || f.fullName.toLowerCase().includes(q));
+      const s = $("sort").value;
+      if (s === "az") list = [...list].sort((a, b) => a.username.localeCompare(b.username, "it"));
+      if (s === "za") list = [...list].sort((a, b) => b.username.localeCompare(a.username, "it"));
+      return list;
+    }
+
+    function render() {
+      const list = currentList();
+      const out = $("out");
+      if (!list.length) {
+        out.innerHTML = followers.length
+          ? `<p class="empty">Nessun follower corrisponde al filtro.</p>`
+          : `<p class="empty">Nessun elenco caricato. Scegli una sorgente, scrivi un nome utente e premi <em>Carica follower</em>.</p>`;
+        return;
+      }
+      const shown = list.slice(0, visible);
+      const rows = shown.map(f => `
+        <li class="follower">
+          ${avatarFor(f)}
+          <div class="who">
+            <a class="u" href="https://www.instagram.com/${encodeURIComponent(f.username)}/" target="_blank" rel="noopener noreferrer">@${esc(f.username)}</a>
+            ${f.fullName ? `<span class="n">${esc(f.fullName)}</span>` : ""}
+          </div>
+          <div class="tags">
+            ${f.verified ? '<span class="tag v">verificato</span>' : ""}
+            ${f.private ? '<span class="tag p">privato</span>' : ""}
+          </div>
+        </li>`).join("");
+
+      out.innerHTML = `<ul class="followers">${rows}</ul>` +
+        (list.length > shown.length
+          ? `<button class="btn more" id="more">Mostra altri ${Math.min(PAGE_RENDER, list.length - shown.length)} (${(list.length - shown.length).toLocaleString("it-IT")} rimanenti)</button>`
+          : "");
+
+      attachAvatarFallbacks(out);
+
+      const more = $("more");
+      if (more) more.addEventListener("click", () => { visible += PAGE_RENDER; render(); });
+    }
+
+    $("filter").addEventListener("input", () => { visible = PAGE_RENDER; render(); });
+    $("sort").addEventListener("change", () => { visible = PAGE_RENDER; render(); });
+
+    // ---------- recupero pagine ----------
+    async function fetchPage(cfg, username, cursor) {
+      if (cfg.preset === "demo") {
+        await sleep(Math.min(cfg.delay, 400));
+        return demoPage(username, cursor, cfg.pageSize);
+      }
+
+      let headers = {};
+      if (cfg.headers) {
+        try { headers = JSON.parse(cfg.headers); }
+        catch { throw new Error("Gli header non sono JSON valido."); }
+      }
+      const url = buildUrl(cfg.endpoint, username, cursor, cfg.pageSize);
+
+      let wait = 1500;
+      for (let attempt = 0; attempt < 4; attempt++) {
+        const res = await fetch(url, { headers, signal: controller.signal });
+        if (res.ok) return res.json();
+
+        const retryable = res.status === 429 || res.status >= 500;
+        if (!retryable || attempt === 3) {
+          throw new Error(`Il provider ha risposto ${res.status} ${res.statusText || ""}`.trim() + ".");
+        }
+        setStatus(`Limite di frequenza (${res.status}): riprovo tra ${wait / 1000}s…`);
+        await sleep(wait);
+        wait *= 2;
+      }
+    }
+
+    function mapUser(cfg, raw) {
+      const username = String(getPath(raw, cfg.fUser) ?? "").trim();
+      if (!username) return null;
+      return {
+        id: String(getPath(raw, cfg.fId) ?? username),
+        username,
+        fullName: String(getPath(raw, cfg.fName) ?? ""),
+        pic: getPath(raw, cfg.fPic) ?? "",
+        verified: Boolean(getPath(raw, cfg.fVer)),
+        private: Boolean(getPath(raw, cfg.fPriv))
+      };
+    }
+
+    async function run() {
+      const username = cleanUsername($("username").value);
+      if (!username) {
+        setStatus("Scrivi un nome utente.", "err");
+        $("username").focus();
+        return;
+      }
+      const cfg = readConfig();
+      if (cfg.preset !== "demo" && !cfg.endpoint) {
+        setStatus("Configura l'URL dell'endpoint nel pannello della sorgente dati.", "err");
+        $("cfg").open = true;
+        return;
+      }
+
+      followers = [];
+      seen = new Set();
+      visible = PAGE_RENDER;
+      running = true;
+      controller = new AbortController();
+
+      setStat(0, 0, "in corso");
+      setStatus("");
+      $("go").disabled = true;
+      $("stop").hidden = false;
+      $("toolbar").hidden = false;
+      $("track").hidden = false;
+      $("fill").className = "progress-fill indet";
+      render();
+
+      let cursor = "";
+      let pages = 0;
+      let complete = false;
+      let stalled = 0;
+
+      try {
+        while (running && pages < cfg.maxPages) {
+          setStatus(`Carico la pagina ${pages + 1} dei follower di @${username}…`);
+          const data = await fetchPage(cfg, username, cursor);
+          pages++;
+
+          const rawUsers = getPath(data, cfg.usersPath);
+          if (!Array.isArray(rawUsers)) {
+            throw new Error(`Nella risposta non trovo un array in "${cfg.usersPath || "(radice)"}". Controlla la mappatura dei campi.`);
+          }
+
+          let added = 0;
+          for (const raw of rawUsers) {
+            const u = mapUser(cfg, raw);
+            if (!u || seen.has(u.id)) continue;
+            seen.add(u.id);
+            followers.push(u);
+            added++;
+          }
+
+          setStat(followers.length, pages, "in corso");
+          render();
+
+          const next = getPath(data, cfg.cursorPath);
+          cursor = next == null ? "" : String(next);
+
+          // Fine naturale: niente cursore. Due pagine di fila senza nomi nuovi significano
+          // che la paginazione non avanza (cursore fermo): meglio fermarsi che ciclare.
+          stalled = added === 0 ? stalled + 1 : 0;
+          if (!cursor || stalled >= 2) { complete = true; break; }
+          if (running) await sleep(cfg.delay);
+        }
+
+        $("fill").className = "progress-fill " + (running && complete ? "done" : "halt");
+        if (!running) {
+          setStat(followers.length, pages, "interrotto");
+          setStatus(`Interrotto: ${followers.length.toLocaleString("it-IT")} follower caricati su un totale ignoto. L'elenco è parziale.`);
+        } else if (complete) {
+          setStat(followers.length, pages, "completo");
+          setStatus(`Elenco completo: ${followers.length.toLocaleString("it-IT")} follower di @${username} in ${pages} pagine.`, "ok");
+        } else {
+          setStat(followers.length, pages, "troncato");
+          setStatus(`Raggiunto il limite di ${cfg.maxPages} pagine: l'elenco è parziale. Alza "Massimo pagine" per continuare.`, "err");
+        }
+      } catch (err) {
+        $("fill").className = "progress-fill halt";
+        setStat(followers.length, pages, "errore");
+        const aborted = err && err.name === "AbortError";
+        if (aborted) {
+          setStatus(`Interrotto: ${followers.length.toLocaleString("it-IT")} follower caricati. L'elenco è parziale.`);
+        } else {
+          const msg = String(err && err.message || err);
+          setStatus(/Failed to fetch|NetworkError|Load failed/i.test(msg)
+            ? "Chiamata bloccata dal browser: l'endpoint è irraggiungibile oppure non invia gli header CORS. In quel caso serve un proxy tuo."
+            : msg, "err");
+        }
+      } finally {
+        running = false;
+        controller = null;
+        $("go").disabled = false;
+        $("stop").hidden = true;
+        render();
+      }
+    }
+
+    $("go").addEventListener("click", run);
+    $("username").addEventListener("keydown", e => { if (e.key === "Enter") run(); });
+    $("stop").addEventListener("click", () => {
+      running = false;
+      if (controller) controller.abort();
+      setStatus("Interruzione in corso…");
+    });
+
+    // ---------- esportazione ----------
+    function download(name, text, type) {
+      const blob = new Blob([text], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+    const slug = () => (cleanUsername($("username").value) || "instagram").replace(/[^a-z0-9._-]/gi, "");
+
+    $("csv").addEventListener("click", () => {
+      const list = currentList();
+      if (!list.length) return;
+      const cell = v => `"${String(v).replace(/"/g, '""')}"`;
+      const rows = [["id", "username", "nome_completo", "verificato", "privato"].join(",")];
+      for (const f of list) rows.push([f.id, f.username, f.fullName, f.verified, f.private].map(cell).join(","));
+      download(`follower-${slug()}.csv`, "﻿" + rows.join("\r\n"), "text/csv;charset=utf-8");
+    });
+
+    $("json").addEventListener("click", () => {
+      const list = currentList();
+      if (!list.length) return;
+      download(`follower-${slug()}.json`, JSON.stringify(list, null, 2), "application/json");
+    });
+
+    $("copy").addEventListener("click", async () => {
+      const list = currentList();
+      if (!list.length) return;
+      const text = list.map(f => "@" + f.username).join("\n");
+      try {
+        await navigator.clipboard.writeText(text);
+        setStatus(`Copiati ${list.length.toLocaleString("it-IT")} nomi utente negli appunti.`, "ok");
+      } catch {
+        setStatus("Il browser ha bloccato la copia negli appunti: usa l'esportazione CSV o JSON.", "err");
+      }
+    });
+
+    $("y").textContent = new Date().getFullYear();
+  })();
+  </script>
+</body>
+</html>
