@@ -72,6 +72,11 @@
       font-size: 0.8rem; color: var(--muted); margin: 0.7rem 0 0;
     }
 
+    details.config ol { margin: 0.9rem 0 0; padding-left: 1.3rem; font-size: 0.92rem; }
+    details.config ol li { margin-bottom: 0.5rem; }
+    details.config ol li:last-child { margin-bottom: 0; }
+    details.config .warnline { color: #9a5b12; font-weight: 600; }
+
     .toolbar { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
     .toolbar .grow { flex: 1 1 200px; }
     .toolbar select, .toolbar input { width: auto; }
@@ -184,10 +189,8 @@
       non può funzionare “da sola”: è il <em>client</em>, la sorgente la scegli tu nel pannello qui sotto.
       <ul>
         <li><strong>L'esportazione dei tuoi dati</strong> — se l'account è tuo, questa è la strada giusta:
-            gratuita, ufficiale, senza chiavi e senza violare niente. Da Instagram vai su
-            <em>Centro gestione account → Le tue informazioni e autorizzazioni → Scarica le tue informazioni</em>,
-            scegli il formato <strong>JSON</strong>, e quando arriva l'archivio seleziona qui sotto la sorgente
-            <em>File dell'esportazione</em>: la pagina legge i file <code class="k">followers_*.json</code>.</li>
+            gratuita, ufficiale, senza chiavi e senza violare niente. Scegli la sorgente
+            <em>File dell'esportazione</em> qui sotto: trovi lì i passaggi per ottenere l'archivio da Instagram.</li>
         <li><strong>Graph API ufficiale</strong> (account Business/Creator collegati a una Pagina Facebook): espone solo <code class="k">followers_count</code>, il numero. La lista dei nomi non è mai stata esposta, e la Basic Display API è stata dismessa a dicembre 2024.</li>
         <li><strong>Endpoint interno</strong> di Instagram (<code class="k">/api/v1/friendships/&lt;id&gt;/followers/</code>): richiede il cookie di sessione, è bloccato dal CORS del browser e il suo uso viola i Termini di servizio.</li>
         <li><strong>Provider esterni a pagamento</strong> (servizi di scraping con API REST): sono l'unica via che funziona davvero da una pagina statica, purché il provider risponda con header CORS. Configura sotto URL, chiave e mappatura dei campi.</li>
@@ -222,6 +225,29 @@
       <input type="file" id="files" accept=".json,application/json" multiple />
       <p class="path">Nell'archivio stanno in <code class="k">connections/followers_and_following/</code>. Restano nel tuo browser: non vengono caricati da nessuna parte.</p>
     </div>
+
+    <details class="config" id="howto" hidden>
+      <summary>Come ottengo i file dell'esportazione</summary>
+      <ol>
+        <li>Apri <a class="inline" href="https://accountscenter.instagram.com/info_and_permissions/" target="_blank" rel="noopener noreferrer">accountscenter.instagram.com</a>
+            (o dall'app: <em>Impostazioni → Centro gestione account</em>) e vai su
+            <em>Le tue informazioni e autorizzazioni → Esporta le tue informazioni</em>.
+            Nelle versioni più vecchie la voce si chiama <em>Scarica le tue informazioni</em>.</li>
+        <li>Avvia una nuova esportazione e scegli l'account, se ne hai più d'uno collegato.</li>
+        <li>In <em>Personalizza informazioni</em> togli tutte le spunte e lascia solo
+            <em>Follower e profili seguiti</em>: altrimenti ti ritrovi nell'archivio anche foto e video,
+            e i tempi si allungano parecchio.</li>
+        <li><span class="warnline">Intervallo di date: «Sempre».</span> È l'errore più comune —
+            con l'intervallo predefinito l'elenco che ottieni non è completo.</li>
+        <li><span class="warnline">Formato: JSON</span>, non HTML. Questa pagina legge solo il JSON.</li>
+        <li>Invia la richiesta e aspetta l'email di Instagram: di solito pochi minuti, ma su account
+            grandi può volerci molto di più.</li>
+        <li>Scarica lo ZIP dalla stessa sezione — resta disponibile solo per qualche giorno — ed estrailo.</li>
+        <li>I file da trascinare qui sopra stanno in
+            <code class="k">connections/followers_and_following/</code> e si chiamano
+            <code class="k">followers_1.json</code>, <code class="k">followers_2.json</code>, e così via.</li>
+      </ol>
+    </details>
 
     <details class="config" id="cfg">
       <summary>Endpoint, header e mappatura dei campi</summary>
@@ -396,6 +422,7 @@
       const mode = $("preset").value;
       $("cfg").hidden = mode !== "custom";
       $("filebox").hidden = mode !== "file";
+      $("howto").hidden = mode !== "file";
       document.querySelector(".searchbar").hidden = mode === "file";
       $("s-pages-l").textContent = mode === "file" ? "File letti" : "Pagine richieste";
     }
