@@ -21,6 +21,10 @@
     .warn li { margin-bottom: 0.25rem; }
     .warn li:last-child { margin-bottom: 0; }
 
+    /* .searchbar e .toolbar sono display:flex: senza questa regola l'attributo
+       hidden non nasconderebbe niente. */
+    [hidden] { display: none !important; }
+
     .searchbar { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1rem; }
     .searchbar .field { flex: 1 1 240px; }
     .searchbar .actions { display: flex; gap: 0.5rem; align-items: flex-end; }
@@ -51,6 +55,22 @@
     .cfg-grid .wide { grid-column: 1 / -1; }
     .cfg-hint { font-size: 0.78rem; color: var(--muted); margin: 0.15rem 0 0; }
     .cfg-foot { display: flex; gap: 0.6rem; align-items: center; margin-top: 1rem; flex-wrap: wrap; }
+
+    .dropzone {
+      border: 2px dashed var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 1.6rem 1.2rem;
+      text-align: center;
+      margin-bottom: 1rem;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .dropzone.over { border-color: var(--c-instagram); background: #fdf4f9; }
+    .dropzone p { margin: 0 0 0.7rem; color: var(--muted); font-size: 0.92rem; }
+    .dropzone input[type="file"] { display: none; }
+    .dropzone .path {
+      font-size: 0.8rem; color: var(--muted); margin: 0.7rem 0 0;
+    }
 
     .toolbar { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
     .toolbar .grow { flex: 1 1 200px; }
@@ -163,11 +183,25 @@
       Instagram non offre nessun endpoint pubblico che restituisca l'elenco dei follower, quindi questa pagina
       non può funzionare “da sola”: è il <em>client</em>, la sorgente la scegli tu nel pannello qui sotto.
       <ul>
+        <li><strong>L'esportazione dei tuoi dati</strong> — se l'account è tuo, questa è la strada giusta:
+            gratuita, ufficiale, senza chiavi e senza violare niente. Da Instagram vai su
+            <em>Centro gestione account → Le tue informazioni e autorizzazioni → Scarica le tue informazioni</em>,
+            scegli il formato <strong>JSON</strong>, e quando arriva l'archivio seleziona qui sotto la sorgente
+            <em>File dell'esportazione</em>: la pagina legge i file <code class="k">followers_*.json</code>.</li>
         <li><strong>Graph API ufficiale</strong> (account Business/Creator collegati a una Pagina Facebook): espone solo <code class="k">followers_count</code>, il numero. La lista dei nomi non è mai stata esposta, e la Basic Display API è stata dismessa a dicembre 2024.</li>
         <li><strong>Endpoint interno</strong> di Instagram (<code class="k">/api/v1/friendships/&lt;id&gt;/followers/</code>): richiede il cookie di sessione, è bloccato dal CORS del browser e il suo uso viola i Termini di servizio.</li>
         <li><strong>Provider esterni a pagamento</strong> (servizi di scraping con API REST): sono l'unica via che funziona davvero da una pagina statica, purché il provider risponda con header CORS. Configura sotto URL, chiave e mappatura dei campi.</li>
         <li><strong>Un tuo backend / proxy</strong> che parla con una delle fonti sopra e ti restituisce il JSON nel formato documentato in fondo alla pagina.</li>
       </ul>
+    </div>
+
+    <div class="field" style="margin-bottom:1.1rem">
+      <label for="preset">Da dove prendo i follower</label>
+      <select id="preset">
+        <option value="demo">Demo — dati inventati, per provare l'interfaccia</option>
+        <option value="file">File dell'esportazione Instagram — il tuo account, gratis</option>
+        <option value="custom">Endpoint personalizzato — provider esterno o tuo proxy</option>
+      </select>
     </div>
 
     <div class="searchbar">
@@ -181,18 +215,18 @@
       </div>
     </div>
 
+    <div class="dropzone" id="filebox" hidden>
+      <p>Trascina qui i file <code class="k">followers_1.json</code> (e i successivi, se l'elenco è diviso)
+         presi dall'archivio dell'esportazione, oppure selezionali.</p>
+      <button class="btn btn-accent" id="pick">Scegli i file</button>
+      <input type="file" id="files" accept=".json,application/json" multiple />
+      <p class="path">Nell'archivio stanno in <code class="k">connections/followers_and_following/</code>. Restano nel tuo browser: non vengono caricati da nessuna parte.</p>
+    </div>
+
     <details class="config" id="cfg">
-      <summary>Sorgente dati e mappatura dei campi</summary>
+      <summary>Endpoint, header e mappatura dei campi</summary>
 
       <div class="cfg-grid">
-        <div class="field wide">
-          <label for="preset">Sorgente</label>
-          <select id="preset">
-            <option value="demo">Demo — dati inventati, nessuna rete</option>
-            <option value="custom">Endpoint personalizzato (provider o tuo proxy)</option>
-          </select>
-        </div>
-
         <div class="field wide">
           <label for="endpoint">URL dell'endpoint</label>
           <input id="endpoint" type="text" spellcheck="false"
@@ -267,7 +301,7 @@
 
     <div class="stats">
       <div class="stat"><div class="n" id="s-count">0</div><div class="l">Follower caricati</div></div>
-      <div class="stat"><div class="n" id="s-pages">0</div><div class="l">Pagine richieste</div></div>
+      <div class="stat"><div class="n" id="s-pages">0</div><div class="l" id="s-pages-l">Pagine richieste</div></div>
       <div class="stat"><div class="n" id="s-state">—</div><div class="l">Stato</div></div>
     </div>
 
@@ -359,11 +393,11 @@
       } catch { return { ...DEFAULTS }; }
     }
     function syncPreset() {
-      const demo = $("preset").value === "demo";
-      $("cfg").querySelectorAll("input").forEach(el => {
-        if (el.id === "pageSize" || el.id === "delay" || el.id === "maxPages") return;
-        el.disabled = demo;
-      });
+      const mode = $("preset").value;
+      $("cfg").hidden = mode !== "custom";
+      $("filebox").hidden = mode !== "file";
+      document.querySelector(".searchbar").hidden = mode === "file";
+      $("s-pages-l").textContent = mode === "file" ? "File letti" : "Pagine richieste";
     }
 
     writeConfig(loadConfig());
@@ -433,6 +467,106 @@
       return { users, next_max_id: next };
     }
 
+    // ---------- esportazione ufficiale di Instagram ----------
+    // I file followers_*.json dell'archivio "Scarica le tue informazioni" contengono
+    // una lista di voci con dentro string_list_data: { value: username, href, timestamp }.
+    // La forma esatta cambia fra le versioni dell'export, quindi cerchiamo quella
+    // struttura ovunque si trovi invece di fissare un percorso.
+    function usernameFromHref(href) {
+      const m = String(href || "").match(/instagram\.com\/([^/?#]+)/i);
+      return m ? decodeURIComponent(m[1]) : "";
+    }
+
+    function extractFromExport(json) {
+      const out = [];
+      const visto = new Set();
+      const push = (username, ts) => {
+        const u = String(username || "").trim().replace(/^@/, "");
+        if (!u || visto.has(u)) return;
+        visto.add(u);
+        out.push({ username: u, ts: Number(ts) || 0 });
+      };
+      const visit = (node, depth) => {
+        if (node == null || depth > 8) return;
+        if (Array.isArray(node)) {
+          if (node.length && node.every(x => typeof x === "string")) { node.forEach(x => push(x, 0)); return; }
+          node.forEach(x => visit(x, depth + 1));
+          return;
+        }
+        if (typeof node !== "object") return;
+        if (Array.isArray(node.string_list_data)) {
+          for (const sl of node.string_list_data) push(sl.value || usernameFromHref(sl.href), sl.timestamp);
+          return;
+        }
+        for (const v of Object.values(node)) visit(v, depth + 1);
+      };
+      visit(json, 0);
+      return out;
+    }
+
+    async function loadFromFiles(fileList) {
+      const files = [...fileList].filter(f => /\.json$/i.test(f.name))
+        .sort((a, b) => a.name.localeCompare(b.name, "it", { numeric: true }));
+      if (!files.length) {
+        setStatus("Servono i file .json dell'esportazione: se hai scaricato l'archivio, estrailo prima.", "err");
+        return;
+      }
+
+      followers = [];
+      seen = new Set();
+      visible = PAGE_RENDER;
+      setStat(0, 0, "in corso");
+      setStatus("");
+      $("toolbar").hidden = false;
+      $("track").hidden = false;
+      $("fill").className = "progress-fill indet";
+      render();
+
+      const illeggibili = [];
+      let sospettoSeguiti = false;
+      let letti = 0;
+
+      for (const f of files) {
+        let data;
+        try { data = JSON.parse(await f.text()); }
+        catch { illeggibili.push(f.name); continue; }
+        letti++;
+
+        if (/following/i.test(f.name) ||
+            (data && !Array.isArray(data) && Object.keys(data).some(k => /following/i.test(k)))) {
+          sospettoSeguiti = true;
+        }
+
+        for (const e of extractFromExport(data)) {
+          if (seen.has(e.username)) continue;
+          seen.add(e.username);
+          followers.push({
+            id: e.username, username: e.username, fullName: "",
+            pic: "", verified: false, private: false, since: e.ts
+          });
+        }
+      }
+
+      render();
+
+      if (!followers.length) {
+        $("fill").className = "progress-fill halt";
+        setStat(0, letti, "errore");
+        setStatus(illeggibili.length
+          ? `File non leggibili come JSON: ${illeggibili.join(", ")}.`
+          : "Nei file scelti non ho trovato nessun nome utente: controlla di aver preso i followers_*.json e di aver richiesto l'esportazione in formato JSON, non HTML.", "err");
+        return;
+      }
+
+      $("fill").className = "progress-fill done";
+      setStat(followers.length, letti, "completo");
+      const extra = [];
+      if (sospettoSeguiti) extra.push("attenzione: uno dei file sembra l'elenco dei profili che segui tu, non dei follower");
+      if (illeggibili.length) extra.push(`saltati perché illeggibili: ${illeggibili.join(", ")}`);
+      setStatus(`Elenco completo: ${followers.length.toLocaleString("it-IT")} follower da ${letti} file.` +
+        (extra.length ? " — " + extra.join("; ") + "." : ""), "ok");
+    }
+
     // ---------- stato ----------
     let followers = [];
     let seen = new Set();
@@ -484,6 +618,16 @@
       return `hsl(${h} 42% 58%)`;
     }
 
+    const fmtMese = ts => {
+      const d = new Date(ts * 1000);
+      return isNaN(d.getTime()) ? "" : d.toLocaleDateString("it-IT", { month: "long", year: "numeric" });
+    };
+    // L'esportazione ufficiale non ha nome completo ma ha la data del follow: usiamo quel che c'è.
+    function sottotitolo(f) {
+      const mese = f.since ? fmtMese(f.since) : "";
+      return [f.fullName, mese ? "segue dal " + mese : ""].filter(Boolean).join(" · ");
+    }
+
     function currentList() {
       const q = $("filter").value.trim().toLowerCase();
       let list = followers;
@@ -509,7 +653,7 @@
           ${avatarFor(f)}
           <div class="who">
             <a class="u" href="https://www.instagram.com/${encodeURIComponent(f.username)}/" target="_blank" rel="noopener noreferrer">@${esc(f.username)}</a>
-            ${f.fullName ? `<span class="n">${esc(f.fullName)}</span>` : ""}
+            ${sottotitolo(f) ? `<span class="n">${esc(sottotitolo(f))}</span>` : ""}
           </div>
           <div class="tags">
             ${f.verified ? '<span class="tag v">verificato</span>' : ""}
@@ -680,6 +824,23 @@
       setStatus("Interruzione in corso…");
     });
 
+    // ---------- scelta e rilascio dei file ----------
+    $("pick").addEventListener("click", () => $("files").click());
+    $("files").addEventListener("change", e => { loadFromFiles(e.target.files); e.target.value = ""; });
+
+    const box = $("filebox");
+    box.addEventListener("dragover", e => { e.preventDefault(); box.classList.add("over"); });
+    box.addEventListener("dragleave", () => box.classList.remove("over"));
+    box.addEventListener("drop", e => {
+      e.preventDefault();
+      box.classList.remove("over");
+      if (e.dataTransfer && e.dataTransfer.files.length) loadFromFiles(e.dataTransfer.files);
+    });
+    // Un file lasciato cadere fuori dal riquadro aprirebbe il file al posto della pagina,
+    // buttando via l'elenco già caricato.
+    document.addEventListener("dragover", e => e.preventDefault());
+    document.addEventListener("drop", e => e.preventDefault());
+
     // ---------- esportazione ----------
     function download(name, text, type) {
       const blob = new Blob([text], { type });
@@ -698,8 +859,9 @@
       const list = currentList();
       if (!list.length) return;
       const cell = v => `"${String(v).replace(/"/g, '""')}"`;
-      const rows = [["id", "username", "nome_completo", "verificato", "privato"].join(",")];
-      for (const f of list) rows.push([f.id, f.username, f.fullName, f.verified, f.private].map(cell).join(","));
+      const iso = f => (f.since ? new Date(f.since * 1000).toISOString().slice(0, 10) : "");
+      const rows = [["id", "username", "nome_completo", "verificato", "privato", "segue_dal"].join(",")];
+      for (const f of list) rows.push([f.id, f.username, f.fullName, f.verified, f.private, iso(f)].map(cell).join(","));
       download(`follower-${slug()}.csv`, "﻿" + rows.join("\r\n"), "text/csv;charset=utf-8");
     });
 
