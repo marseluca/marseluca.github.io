@@ -351,19 +351,16 @@
 
   /* ---- grafico storico ---- */
   .chart-card { padding: 20px 16px 16px; }
-  .chart-head {
-    display: flex; align-items: flex-start; justify-content: space-between;
-    gap: 12px; flex-wrap: wrap; padding: 0 6px;
-  }
+  .chart-card .sec-title { padding: 0 6px; }
   .chart-price {
     font-family: var(--mono); font-weight: 700; font-size: 24px;
-    letter-spacing: -.02em; line-height: 1.1;
+    letter-spacing: -.02em; line-height: 1.1; padding: 0 6px;
   }
   .chart-price .muted { color: var(--muted); font-weight: 400; font-size: 13px; }
-  .chart-delta { font-family: var(--mono); font-size: 13px; margin-top: 4px; }
+  .chart-delta { font-family: var(--mono); font-size: 13px; margin-top: 4px; padding: 0 6px; }
   .chart-delta.up { color: var(--in); }
   .chart-delta.down { color: var(--out); }
-  .range { display: flex; gap: 4px; flex: none; }
+  .range { display: flex; flex-wrap: wrap; gap: 4px; margin: 14px 0 0; padding: 0 6px; }
   .range button {
     border: 1px solid var(--hair); background: var(--paper);
     color: var(--muted); font-family: var(--mono); font-size: 11px;
@@ -373,7 +370,7 @@
   .range button:hover { color: var(--amber); border-color: var(--amber); }
   .range button.on { color: var(--amber); border-color: var(--amber); background: var(--amber-soft); }
   .chart-wrap { margin-top: 14px; touch-action: pan-y; }
-  .chart-wrap svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .chart-wrap svg { display: block; width: 100%; height: auto; overflow: visible; cursor: crosshair; }
   .chart-wrap svg text { font-family: var(--mono); font-size: 12px; fill: var(--muted); }
   .chart-wrap .grid { stroke: var(--hair); stroke-width: 1; }
   .chart-wrap .curve { stroke: var(--amber); stroke-width: 2; fill: none; }
@@ -386,13 +383,18 @@
   .chart-wrap .tip-bg { fill: var(--ink); opacity: .92; }
   .chart-wrap .tip-v { fill: var(--paper); font-weight: 700; }
   .chart-wrap .tip-d { fill: #c9bfae; font-size: 11px; }
+  /* etichetta bloccata con un clic: bordo ambra e puntina */
+  .chart-wrap .bloccato .tip-bg { stroke: var(--amber); stroke-width: 1.5; opacity: 1; }
+  .chart-wrap .bloccato .cross-line { opacity: .7; }
+  .chart-wrap .pin { fill: var(--amber); font-size: 10px; display: none; }
+  .chart-wrap .bloccato .pin { display: block; }
   .chart-foot {
     display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap;
     font-family: var(--mono); font-size: 11px; color: var(--muted);
     padding: 10px 6px 0; margin-top: 4px; border-top: 1px solid var(--hair);
   }
   .chart-note { color: var(--amber); }
-  .chart-state { min-height: 150px; display: grid; place-items: center; }
+  .chart-state { min-height: 200px; display: grid; place-items: center; }
 
   /* ---- installazione ---- */
   .btn-install {
@@ -419,6 +421,9 @@
   @media (max-width: 420px) {
     .card { padding: 18px; }
     .chart-card { padding: 16px 12px 12px; }
+    /* nove periodi su una riga sola invece di lasciare YTD orfano a capo */
+    .range { gap: 3px; }
+    .range button { padding: 5px 6px; font-size: 10px; letter-spacing: .04em; }
     .search button { padding: 0 14px; }
     h1 .btn-install { font-size: 10px; padding: 6px 9px; }
   }
@@ -446,18 +451,10 @@
     <div id="out"></div>
 
     <section class="card chart-card" id="chart-card">
-      <div class="chart-head">
-        <div>
-          <div class="sec-title">Bitcoin · andamento</div>
-          <div class="chart-price" id="chart-price"><span class="muted">…</span></div>
-          <div class="chart-delta" id="chart-delta"></div>
-        </div>
-        <div class="range" id="chart-range" role="group" aria-label="Periodo del grafico">
-          <button type="button" data-years="1">1A</button>
-          <button type="button" data-years="3">3A</button>
-          <button type="button" data-years="5" class="on">5A</button>
-        </div>
-      </div>
+      <div class="sec-title">Bitcoin · andamento</div>
+      <div class="chart-price" id="chart-price"><span class="muted">…</span></div>
+      <div class="chart-delta" id="chart-delta"></div>
+      <div class="range" id="chart-range" role="group" aria-label="Periodo del grafico"></div>
       <div class="chart-wrap" id="chart-wrap">
         <div class="state chart-state"><div class="spinner"></div>Carico lo storico…</div>
       </div>
@@ -687,35 +684,156 @@ document.getElementById("go").addEventListener("click", () => lookup(input.value
 input.addEventListener("keydown", e => { if (e.key === "Enter") lookup(input.value); });
 
 /* ---------- grafico storico del prezzo ---------- */
-/* Tre sorgenti in cascata: la prima che risponde con abbastanza storia vince.
-   CoinGecko resta per ultima perché il piano gratuito si ferma a un anno. */
-const CHART_SOURCES = [
-  {
-    label: "Kraken (XBT/EUR)",
-    url: "https://api.kraken.com/0/public/OHLC?pair=XBTEUR&interval=10080",
-    parse(j) {
-      if (j.error && j.error.length) throw new Error(j.error[0]);
-      const key = Object.keys(j.result || {}).find(k => k !== "last");
-      return (j.result[key] || []).map(r => [r[0] * 1000, +r[4]]);
-    }
-  },
-  {
-    label: "Bitstamp (BTC/EUR)",
-    url: "https://www.bitstamp.net/api/v2/ohlc/btceur/?step=259200&limit=650",
-    parse: j => (j.data.ohlc || []).map(c => [+c.timestamp * 1000, +c.close])
-  },
-  {
-    label: "CoinGecko (solo 1 anno)",
-    url: "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=eur&days=365&interval=daily",
-    parse: j => (j.prices || []).map(p => [p[0], p[1]])
-  }
-];
-
-const CHART_KEY = "btc_price_history_v1";
-const CHART_TTL = 6 * 60 * 60 * 1000;
-const ANNO = 365.25 * 24 * 3600 * 1000;
 
 const chartWrap = document.getElementById("chart-wrap");
+const G = 86400e3;
+
+/* Quattro livelli di dettaglio: un giorno vuole candele da un quarto d'ora,
+   cinque anni le vogliono settimanali. Ogni livello ha le sue sorgenti in
+   cascata e vince la prima che risponde con abbastanza punti; CoinGecko resta
+   sempre ultima perché il piano gratuito si ferma a un anno di storico. */
+const daKraken = j => {
+  if (j.error && j.error.length) throw new Error(j.error[0]);
+  const k = Object.keys(j.result || {}).find(x => x !== "last");
+  return (j.result[k] || []).map(r => [r[0] * 1000, +r[4]]);
+};
+const daBitstamp = j => (j.data.ohlc || []).map(c => [+c.timestamp * 1000, +c.close]);
+const daGecko = j => (j.prices || []).map(p => [p[0], p[1]]);
+
+const kraken = i => ({ label: "Kraken (XBT/EUR)", url: `https://api.kraken.com/0/public/OHLC?pair=XBTEUR&interval=${i}`, parse: daKraken });
+const bitstamp = (passo, n) => ({ label: "Bitstamp (BTC/EUR)", url: `https://www.bitstamp.net/api/v2/ohlc/btceur/?step=${passo}&limit=${n}`, parse: daBitstamp });
+const gecko = (q, nota) => ({ label: "CoinGecko" + (nota || ""), url: `https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=eur&${q}`, parse: daGecko });
+
+const LIVELLI = {
+  intra: { ttl: 5 * 60e3,    fonti: [kraken(15),    bitstamp(900, 1000),    gecko("days=7")] },
+  breve: { ttl: 30 * 60e3,   fonti: [kraken(240),   bitstamp(14400, 1000),  gecko("days=90")] },
+  medio: { ttl: 6 * 3600e3,  fonti: [kraken(1440),  bitstamp(86400, 1000),  gecko("days=365&interval=daily", " (solo 1 anno)")] },
+  lungo: { ttl: 24 * 3600e3, fonti: [kraken(10080), bitstamp(259200, 700),  gecko("days=365&interval=daily", " (solo 1 anno)")] }
+};
+
+const PERIODI = [
+  { id: "1g",  label: "1G",  desc: "1 giorno",       giorni: 1,    livello: "intra" },
+  { id: "1s",  label: "1S",  desc: "1 settimana",    giorni: 7,    livello: "intra" },
+  { id: "1m",  label: "1M",  desc: "1 mese",         giorni: 30,   livello: "breve" },
+  { id: "2m",  label: "2M",  desc: "2 mesi",         giorni: 61,   livello: "breve" },
+  { id: "6m",  label: "6M",  desc: "6 mesi",         giorni: 183,  livello: "medio" },
+  { id: "1a",  label: "1A",  desc: "1 anno",         giorni: 365,  livello: "medio" },
+  { id: "2a",  label: "2A",  desc: "2 anni",         giorni: 730,  livello: "lungo" },
+  { id: "5a",  label: "5A",  desc: "5 anni",         giorni: 1826, livello: "lungo" },
+  { id: "ytd", label: "YTD", desc: "da inizio anno", giorni: null, livello: "medio" }
+];
+
+const CHIAVE = liv => "btc_price_history_v2_" + liv;
+try { localStorage.removeItem("btc_price_history_v1"); } catch (_) { /* niente da ripulire */ }
+
+const fmtEur0 = v => v.toLocaleString("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+const fmtAsse = v => v >= 1000
+  ? "€ " + (v / 1000).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "k"
+  : "€ " + Math.round(v);
+const fmtGiorno = ts => new Date(ts).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" });
+const fmtOra = ts => new Date(ts).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const fmtMese = ts => new Date(ts).toLocaleDateString("it-IT", { month: "short", year: "numeric" });
+// l'estremo si legge diverso a seconda di quanto è largo il periodo
+const fmtEstremo = (ts, span) => span <= 3 * G ? fmtOra(ts) : span <= 400 * G ? fmtGiorno(ts) : fmtMese(ts);
+
+const dati = {};                                    // livelli già caricati
+let periodo = PERIODI.find(p => p.id === "5a");     // si parte da cinque anni
+let vista = [];                                     // punti effettivamente disegnati
+let richiesta = 0;                                  // per non far vincere una richiesta vecchia
+
+const giorniDi = p => p.giorni !== null
+  ? p.giorni
+  : Math.max(1, (Date.now() - new Date(new Date().getFullYear(), 0, 1)) / G);
+
+function pulisci(punti) {
+  return punti
+    .filter(p => Array.isArray(p) && isFinite(p[0]) && isFinite(p[1]) && p[1] > 0)
+    .sort((a, b) => a[0] - b[0]);
+}
+
+function leggiCache(liv) {
+  try {
+    const c = JSON.parse(localStorage.getItem(CHIAVE(liv)));
+    if (c && Array.isArray(c.serie) && c.serie.length > 20) return c;
+  } catch (_) { /* cache illeggibile: si riparte dalla rete */ }
+  return null;
+}
+
+async function caricaLivello(liv) {
+  const cache = leggiCache(liv);
+  if (cache && Date.now() - cache.ts < LIVELLI[liv].ttl) return { serie: cache.serie, fonte: cache.fonte };
+
+  for (const fonte of LIVELLI[liv].fonti) {
+    try {
+      const r = await fetch(fonte.url);
+      if (!r.ok) continue;
+      const punti = pulisci(fonte.parse(await r.json()));
+      if (punti.length < 20) continue;
+      try { localStorage.setItem(CHIAVE(liv), JSON.stringify({ ts: Date.now(), fonte: fonte.label, serie: punti })); }
+      catch (_) { /* storage pieno o negato: il grafico resta valido per la sessione */ }
+      return { serie: punti, fonte: fonte.label };
+    } catch (_) { /* sorgente muta: si prova la prossima */ }
+  }
+
+  // rete giù: meglio dati vecchi dichiarati che una scheda vuota
+  if (cache) return { serie: cache.serie, fonte: cache.fonte + " · dati del " + fmtGiorno(cache.ts) };
+  return null;
+}
+
+async function mostra() {
+  const liv = periodo.livello;
+  const mia = ++richiesta;
+
+  if (!dati[liv]) {
+    chartWrap.innerHTML = '<div class="state chart-state"><div class="spinner"></div>Carico lo storico…</div>';
+    const d = await caricaLivello(liv);
+    if (mia !== richiesta) return;                  // nel frattempo hanno scelto un altro periodo
+    if (!d) {
+      chartWrap.innerHTML = '<div class="state error">Non riesco a scaricare lo storico dei prezzi. Riprova più tardi.</div>';
+      document.getElementById("chart-range-label").textContent = "";
+      document.getElementById("chart-source").textContent = "";
+      return;
+    }
+    dati[liv] = d;
+  }
+
+  const { serie, fonte } = dati[liv];
+  const taglio = Date.now() - giorniDi(periodo) * G;
+  const w = serie.filter(p => p[0] >= taglio);
+  vista = w.length >= 2 ? w : serie.slice(-2);
+
+  sblocca();
+  disegnaGrafico(vista);
+  aggiornaTesta(vista, fonte);
+  if (priceEur === null) priceEur = serie[serie.length - 1][1];
+}
+
+function aggiornaTesta(w, fonte) {
+  const primo = w[0][1], ultimo = w[w.length - 1][1];
+  const varPct = (ultimo - primo) / primo * 100;
+  const su = varPct >= 0;
+  const span = w[w.length - 1][0] - w[0][0];
+
+  document.getElementById("chart-price").textContent = fmtEur0(ultimo);
+  const delta = document.getElementById("chart-delta");
+  delta.className = "chart-delta " + (su ? "up" : "down");
+  delta.textContent = `${su ? "▲" : "▼"} ${su ? "+" : "−"}${Math.abs(varPct).toLocaleString("it-IT", { maximumFractionDigits: varPct && Math.abs(varPct) < 10 ? 2 : 1 })}% · ${periodo.desc}`;
+
+  const min = Math.min(...w.map(p => p[1])), max = Math.max(...w.map(p => p[1]));
+  document.getElementById("chart-range-label").textContent =
+    `${fmtEstremo(w[0][0], span)} → ${fmtEstremo(w[w.length - 1][0], span)} · min ${fmtEur0(min)} · max ${fmtEur0(max)}`;
+
+  // se la sorgente non copre il periodo chiesto lo diciamo, invece di far finta
+  const chiesto = giorniDi(periodo) * G;
+  const parziale = span < chiesto * .85;
+  const src = document.getElementById("chart-source");
+  src.className = parziale ? "chart-note" : "";
+  src.textContent = parziale
+    ? `storico disponibile: ${Math.round(span / G)} giorni · ${fonte}`
+    : `fonte: ${fonte}`;
+}
+
+/* ---------- disegno ---------- */
 
 // il viewBox segue la larghezza reale del contenitore: se lo scalassimo da 720 a
 // 360 anche le scritte dentro l'SVG si dimezzerebbero, diventando illeggibili
@@ -728,105 +846,45 @@ function dimensiona() {
   PY0 = 18;
   PY1 = H - 26;
 }
-const fmtEur0 = v => v.toLocaleString("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
-const fmtAsse = v => v >= 1000
-  ? "€ " + (v / 1000).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "k"
-  : "€ " + Math.round(v);
-const fmtMese = ts => new Date(ts).toLocaleDateString("it-IT", { month: "short", year: "numeric" });
-const fmtGiorno = ts => new Date(ts).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" });
-
-let serie = [];          // storico completo [[ms, prezzo], …]
-let fonte = "";
-let anni = 5;            // periodo mostrato: la richiesta parte da 5 anni
-
-function pulisci(punti) {
-  return punti
-    .filter(p => Array.isArray(p) && isFinite(p[0]) && isFinite(p[1]) && p[1] > 0)
-    .sort((a, b) => a[0] - b[0]);
-}
-
-function leggiCache() {
-  try {
-    const c = JSON.parse(localStorage.getItem(CHART_KEY));
-    if (c && Array.isArray(c.serie) && c.serie.length > 30) return c;
-  } catch (_) { /* cache illeggibile: si riparte dalla rete */ }
-  return null;
-}
-
-async function caricaStorico() {
-  const cache = leggiCache();
-  if (cache && Date.now() - cache.ts < CHART_TTL) {
-    serie = cache.serie; fonte = cache.fonte;
-    disegnaTutto();
-    return;
-  }
-
-  for (const src of CHART_SOURCES) {
-    try {
-      const r = await fetch(src.url);
-      if (!r.ok) continue;
-      const punti = pulisci(src.parse(await r.json()));
-      if (punti.length < 30) continue;
-      serie = punti; fonte = src.label;
-      try { localStorage.setItem(CHART_KEY, JSON.stringify({ ts: Date.now(), fonte, serie })); }
-      catch (_) { /* storage pieno o negato: il grafico resta valido per la sessione */ }
-      disegnaTutto();
-      return;
-    } catch (_) { /* sorgente muta: si prova la prossima */ }
-  }
-
-  if (cache) {                       // rete giù ma qualcosa in cache c'è: meglio del vuoto
-    serie = cache.serie; fonte = cache.fonte + " · dati del " + fmtGiorno(cache.ts);
-    disegnaTutto();
-    return;
-  }
-  chartWrap.innerHTML = '<div class="state error">Non riesco a scaricare lo storico dei prezzi. Riprova più tardi.</div>';
-}
-
-function finestra() {
-  const taglio = Date.now() - anni * ANNO;
-  const w = serie.filter(p => p[0] >= taglio);
-  return w.length >= 2 ? w : serie.slice(-2);
-}
 
 function tacche(min, max, n = 4) {
   const span = (max - min) || max || 1;
   const mag = Math.pow(10, Math.floor(Math.log10(span / n)));
   const norm = span / n / mag;
-  const step = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * mag;
+  const passo = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * mag;
   const t = [];
-  for (let v = Math.ceil(min / step) * step; v <= max; v += step) t.push(v);
+  for (let v = Math.ceil(min / passo) * passo; v <= max; v += passo) t.push(v);
   return t;
 }
 
-function disegnaTutto() {
-  const w = finestra();
-  disegnaGrafico(w);
-  aggiornaTesta(w);
-  if (priceEur === null && serie.length) priceEur = serie[serie.length - 1][1];
+// tacche temporali su confini leggibili: ore, giorni, primi del mese o anni
+function taccheTempo(t0, t1) {
+  const span = t1 - t0, out = [];
+  const ora = t => new Date(t).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+  const giorno = t => new Date(t).toLocaleDateString("it-IT", { day: "numeric", month: "short" });
+  const mese = t => new Date(t).toLocaleDateString("it-IT", { month: "short", year: "2-digit" });
+
+  if (span <= 2.5 * G) {
+    const passo = Math.max(1, Math.round(span / 3600e3 / 6)) * 3600e3;
+    for (let t = Math.ceil(t0 / passo) * passo; t <= t1; t += passo) out.push([t, ora(t)]);
+  } else if (span <= 70 * G) {
+    const passo = Math.max(1, Math.round(span / G / 6));
+    const d = new Date(t0); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + 1);
+    for (; +d <= t1; d.setDate(d.getDate() + passo)) out.push([+d, giorno(+d)]);
+  } else if (span <= 800 * G) {
+    const passo = Math.max(1, Math.round(span / G / 30.4 / 6));
+    const d = new Date(t0); d.setDate(1); d.setHours(0, 0, 0, 0); d.setMonth(d.getMonth() + 1);
+    for (; +d <= t1; d.setMonth(d.getMonth() + passo)) out.push([+d, mese(+d)]);
+  } else {
+    const passo = Math.max(1, Math.round(span / G / 365.25 / 6));
+    const d = new Date(new Date(t0).getFullYear() + 1, 0, 1);
+    for (; +d <= t1; d.setFullYear(d.getFullYear() + passo)) out.push([+d, String(d.getFullYear())]);
+  }
+  return out;
 }
 
-function aggiornaTesta(w) {
-  const ultimo = w[w.length - 1][1], primo = w[0][1];
-  const varPct = (ultimo - primo) / primo * 100;
-  const su = varPct >= 0;
-  const mesi = Math.round((w[w.length - 1][0] - w[0][0]) / ANNO * 12);
-  const periodo = mesi >= 24 ? `${Math.round(mesi / 12)} anni` : `${mesi} mesi`;
-
-  document.getElementById("chart-price").textContent = fmtEur0(ultimo);
-  const delta = document.getElementById("chart-delta");
-  delta.className = "chart-delta " + (su ? "up" : "down");
-  delta.textContent = `${su ? "▲" : "▼"} ${su ? "+" : "−"}${Math.abs(varPct).toLocaleString("it-IT", { maximumFractionDigits: 1 })}% · ${periodo}`;
-
-  const min = Math.min(...w.map(p => p[1])), max = Math.max(...w.map(p => p[1]));
-  document.getElementById("chart-range-label").textContent =
-    `${fmtMese(w[0][0])} → ${fmtMese(w[w.length - 1][0])} · min ${fmtEur0(min)} · max ${fmtEur0(max)}`;
-
-  const parziale = anni === 5 && (w[w.length - 1][0] - w[0][0]) < 4.5 * ANNO;
-  const src = document.getElementById("chart-source");
-  src.className = parziale ? "chart-note" : "";
-  src.textContent = parziale ? `storico disponibile: ${periodo} · ${fonte}` : `fonte: ${fonte}`;
-}
+const TIP_W = 148, TIP_H = 38;
+let scala = null;   // conversioni tempo/prezzo → coordinate, servono al crosshair
 
 function disegnaGrafico(w) {
   dimensiona();
@@ -838,6 +896,7 @@ function disegnaGrafico(w) {
   const X = t => PX0 + (t - t0) / ((t1 - t0) || 1) * (PX1 - PX0);
   const Y = v => PY1 - (v - yLo) / ((yHi - yLo) || 1) * (PY1 - PY0);
   const r = n => Math.round(n * 10) / 10;
+  scala = { X, Y, span: t1 - t0 };
 
   const punti = w.map(p => [r(X(p[0])), r(Y(p[1]))]);
   const linea = punti.map((p, i) => `${i ? "L" : "M"}${p[0]} ${p[1]}`).join(" ");
@@ -847,22 +906,14 @@ function disegnaGrafico(w) {
     <line class="grid" x1="${PX0}" y1="${r(Y(v))}" x2="${PX1}" y2="${r(Y(v))}" stroke-dasharray="2 4"/>
     <text x="${PX1 + 7}" y="${r(Y(v)) + 4}">${fmtAsse(v)}</text>`).join("");
 
-  const primoAnno = new Date(t0).getFullYear(), ultimoAnno = new Date(t1).getFullYear();
-  const salto = Math.ceil((ultimoAnno - primoAnno + 1) / 6);
-  let assi = "";
-  for (let a = primoAnno + 1; a <= ultimoAnno; a++) {
-    if ((a - primoAnno - 1) % salto) continue;
-    const t = Date.UTC(a, 0, 1);
-    if (t < t0 || t > t1) continue;
-    assi += `
-      <line class="grid" x1="${r(X(t))}" y1="${PY0}" x2="${r(X(t))}" y2="${PY1}"/>
-      <text x="${r(X(t))}" y="${H - 8}" text-anchor="middle">${a}</text>`;
-  }
+  const assi = taccheTempo(t0, t1).map(([t, testo]) => `
+    <line class="grid" x1="${r(X(t))}" y1="${PY0}" x2="${r(X(t))}" y2="${PY1}"/>
+    <text x="${r(X(t))}" y="${H - 8}" text-anchor="middle">${testo}</text>`).join("");
 
   const fine = punti[punti.length - 1];
   chartWrap.innerHTML = `
     <svg viewBox="0 0 ${W} ${H}" role="img"
-         aria-label="Prezzo di Bitcoin in euro da ${fmtMese(t0)} a ${fmtMese(t1)}">
+         aria-label="Prezzo di Bitcoin in euro · ${periodo.desc}">
       <defs>
         <linearGradient id="fillAmber" x1="0" y1="0" x2="0" y2="1">
           <stop class="stop-a" offset="0%"/>
@@ -876,63 +927,99 @@ function disegnaGrafico(w) {
       <g id="cross" style="display:none" pointer-events="none">
         <line class="cross-line" y1="${PY0}" y2="${PY1}" stroke-dasharray="3 3"/>
         <circle class="cross-dot" r="4"/>
-        <rect class="tip-bg" rx="6" height="38" width="124"/>
+        <rect class="tip-bg" rx="6" height="${TIP_H}" width="${TIP_W}"/>
         <text class="tip-v"></text>
         <text class="tip-d"></text>
+        <text class="pin">📌</text>
       </g>
-      <rect x="${PX0}" y="${PY0}" width="${PX1 - PX0}" height="${PY1 - PY0}" fill="transparent" id="hit"/>
+      <rect x="${PX0}" y="${PY0}" width="${PX1 - PX0}" height="${PY1 - PY0}" fill="transparent"/>
     </svg>`;
 
-  collegaCrosshair(w, X, Y);
+  collegaCrosshair();
 }
 
-function collegaCrosshair(w, X, Y) {
+/* ---------- etichetta del prezzo ---------- */
+/* Passando sopra segue il dito o il mouse; con un clic resta ferma sul punto,
+   e si toglie cliccando fuori dal grafico o con Esc. */
+let bloccato = false;
+
+function gruppoCross() { return chartWrap.querySelector("#cross"); }
+
+function sblocca() {
+  bloccato = false;
+  const g = gruppoCross();
+  if (g) { g.style.display = "none"; g.classList.remove("bloccato"); }
+}
+
+function collegaCrosshair() {
   const svg = chartWrap.querySelector("svg");
-  const g = svg.querySelector("#cross");
+  const g = gruppoCross();
   const linea = g.querySelector(".cross-line");
   const dot = g.querySelector(".cross-dot");
   const box = g.querySelector(".tip-bg");
   const prezzo = g.querySelector(".tip-v");
   const data = g.querySelector(".tip-d");
+  const pin = g.querySelector(".pin");
 
-  const muovi = e => {
-    const box0 = svg.getBoundingClientRect();
-    const vx = (e.clientX - box0.left) / box0.width * W;
+  const punta = e => {
+    const rect = svg.getBoundingClientRect();
+    const vx = (e.clientX - rect.left) / rect.width * W;
     let i = 0, best = Infinity;
-    w.forEach((p, k) => { const d = Math.abs(X(p[0]) - vx); if (d < best) { best = d; i = k; } });
-    const [t, v] = w[i], x = X(t), y = Y(v);
+    vista.forEach((p, k) => { const d = Math.abs(scala.X(p[0]) - vx); if (d < best) { best = d; i = k; } });
+    const [t, v] = vista[i], x = scala.X(t), y = scala.Y(v);
 
     linea.setAttribute("x1", x); linea.setAttribute("x2", x);
     dot.setAttribute("cx", x); dot.setAttribute("cy", y);
-    const bx = Math.min(Math.max(x - 62, PX0), Math.max(PX0, PX1 - 124));
+    const bx = Math.min(Math.max(x - TIP_W / 2, PX0), Math.max(PX0, PX1 - TIP_W));
     box.setAttribute("x", bx); box.setAttribute("y", PY0 - 4);
     prezzo.setAttribute("x", bx + 10); prezzo.setAttribute("y", PY0 + 12);
     prezzo.textContent = fmtEur0(v);
     data.setAttribute("x", bx + 10); data.setAttribute("y", PY0 + 27);
-    data.textContent = fmtGiorno(t);
+    data.textContent = scala.span <= 3 * G ? fmtOra(t) : fmtGiorno(t);
+    pin.setAttribute("x", bx + TIP_W - 22); pin.setAttribute("y", PY0 + 12);
     g.style.display = "";
   };
 
-  svg.addEventListener("pointermove", muovi);
-  svg.addEventListener("pointerdown", muovi);
-  svg.addEventListener("pointerleave", () => { g.style.display = "none"; });
+  svg.addEventListener("pointermove", e => { if (!bloccato) punta(e); });
+  svg.addEventListener("pointerleave", () => { if (!bloccato) g.style.display = "none"; });
+  svg.addEventListener("click", e => {
+    punta(e);
+    bloccato = true;
+    g.classList.add("bloccato");
+  });
 }
+
+// un clic in qualsiasi altro punto della pagina, o Esc, libera l'etichetta
+document.addEventListener("pointerdown", e => {
+  if (bloccato && !chartWrap.contains(e.target)) sblocca();
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") sblocca(); });
+
+/* ---------- selettore del periodo ---------- */
+const barraPeriodi = document.getElementById("chart-range");
+barraPeriodi.innerHTML = PERIODI.map(p =>
+  `<button type="button" data-id="${p.id}" aria-label="${p.desc}" aria-pressed="${p.id === periodo.id}"
+           class="${p.id === periodo.id ? "on" : ""}">${p.label}</button>`).join("");
+
+barraPeriodi.addEventListener("click", e => {
+  const b = e.target.closest("button[data-id]");
+  if (!b || b.dataset.id === periodo.id) return;
+  periodo = PERIODI.find(p => p.id === b.dataset.id);
+  barraPeriodi.querySelectorAll("button").forEach(x => {
+    const on = x === b;
+    x.classList.toggle("on", on);
+    x.setAttribute("aria-pressed", on);
+  });
+  mostra();
+});
 
 // ridisegno quando cambia la larghezza (rotazione dello schermo compresa)
 let larghezzaNota = 0, ridisegno = null;
 window.addEventListener("resize", () => {
-  if (!serie.length || chartWrap.clientWidth === larghezzaNota) return;
+  if (!vista.length || chartWrap.clientWidth === larghezzaNota) return;
   larghezzaNota = chartWrap.clientWidth;
   clearTimeout(ridisegno);
-  ridisegno = setTimeout(disegnaTutto, 150);
-});
-
-document.getElementById("chart-range").addEventListener("click", e => {
-  const b = e.target.closest("button[data-years]");
-  if (!b) return;
-  anni = +b.dataset.years;
-  document.querySelectorAll("#chart-range button").forEach(x => x.classList.toggle("on", x === b));
-  if (serie.length) disegnaTutto();
+  ridisegno = setTimeout(() => { sblocca(); disegnaGrafico(vista); }, 150);
 });
 
 /* ---------- installazione dell'app ---------- */
@@ -977,10 +1064,13 @@ if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("walletreader-sw.js").catch(() => {});
   });
-  // quando entra in servizio una versione nuova ricarico, così pagina e cache vanno d'accordo
+  // Quando entra in servizio una versione nuova ricarico, così pagina e cache vanno
+  // d'accordo. Alla primissima visita però il service worker prende il controllo di
+  // una pagina che non ne aveva: lì un reload sarebbe solo un lampo inutile.
+  const primaVolta = !navigator.serviceWorker.controller;
   let ricaricato = false;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
-    if (ricaricato) return;
+    if (primaVolta || ricaricato) return;
     ricaricato = true;
     location.reload();
   });
@@ -988,7 +1078,7 @@ if ("serviceWorker" in navigator) {
 
 renderSaved();
 fetchPrice();
-caricaStorico();
+mostra();
 </script>
 </body>
 </html>
