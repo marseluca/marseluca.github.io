@@ -1099,6 +1099,12 @@
       return { preso, coperte: preso.filter(x => x >= 0).length, bloccati };
     }
 
+    // Chi viene aggiunto a mano non è nel listone e non ha ruoli mantra: gli assegno
+    // quelli del suo reparto, così può occupare le caselle corrispondenti.
+    const MANTRA_DI_REPARTO = {
+      P: ["POR"], D: ["DC", "DD", "DS", "B"], C: ["E", "M", "C", "W", "T"], A: ["A", "PC"]
+    };
+
     // il colore della casella segue il reparto del suo primo ruolo
     const REPARTO_MANTRA = {
       POR: "P", DC: "D", DD: "D", DS: "D", B: "D",
@@ -1129,7 +1135,9 @@
       // in campo vanno solo i giocatori con un ruolo mantra (chi è aggiunto a mano non ce l'ha)
       const rosa = state.rosa.map(p => {
         const dal = p.id ? byId.get(p.id) : null;
-        return { key: p.key, name: p.name, club: p.club, ruoli: (dal ? dal.mantra : []).map(r => r.toUpperCase()) };
+        const ruoli = dal ? dal.mantra.map(r => r.toUpperCase())
+                          : (MANTRA_DI_REPARTO[p.role] || []);
+        return { key: p.key, name: p.name, club: p.club, ruoli };
       }).filter(p => p.ruoli.length);
 
       const esiti = MODULI.map(m => {
@@ -1154,7 +1162,7 @@
               <span class="slot ${repartoDiSlot(sl)}">${esc(sl)}</span>
               <select class="scelta${fisso ? " fissa" : ""}" data-mod="${esc(m.nome)}" data-i="${i}"
                       aria-label="Chi gioca in ${esc(sl)}">
-                <option value=""${fisso ? "" : " selected"}>${p && !fisso ? "Automatico · " + esc(p.name) : "Automatico"}</option>
+                <option value=""${fisso ? "" : " selected"}>${p && !fisso ? esc(p.name) + " · " + esc(p.club) : "—"}</option>
                 ${opzioni.map(x => `
                   <option value="${esc(x.key)}"${fisso && p && x.key === p.key ? " selected" : ""}>${esc(x.name)} · ${esc(x.club)}</option>`).join("")}
               </select>
