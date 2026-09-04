@@ -212,6 +212,15 @@
     .reparto-head .conto.over { background: rgba(255,255,255,0.92); color: #b23a30; }
     /* in mantra i ruoli sono più lunghi: il pallino diventa una pillola */
     .dot.wide { width: auto; min-width: 26px; padding: 0 0.45rem; border-radius: 999px; font-size: 0.72rem; }
+    .modulo .undici select.scelta {
+      flex: 1; min-width: 0; font-size: 0.9rem; padding: 0.35rem 0.5rem;
+      border-radius: 9px; border: 1.5px solid transparent; background: #f5f9fb; color: var(--muted);
+    }
+    .modulo .undici select.scelta.fissa { color: var(--ink); font-weight: 600; border-color: #cfe2e6; background: #fff; }
+    .modulo .undici select.scelta:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(14,124,138,0.14); outline: none; }
+    .modulo .azzera { margin-top: 0.6rem; font-size: 0.8rem; color: var(--muted); }
+    .modulo .azzera:hover { color: var(--a); }
+
     .reparto ul { list-style: none; margin: 0; padding: 0.35rem 1rem 0.6rem; }
     .reparto li { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0; }
     .reparto li[data-open] { cursor: pointer; }
@@ -753,7 +762,7 @@
       budget: 500,
       slots: { P: 3, D: 8, C: 8, A: 6 },
       rep:   { P: 25, D: 75, C: 150, A: 250 },
-      rosa: [], fav: []
+      rosa: [], fav: [], undici: {}
     });
 
     // Storage con fallback in memoria (così funziona anche dove localStorage è bloccato)
@@ -773,6 +782,7 @@
     if (!Array.isArray(state.fav)) state.fav = [];
     if (!state.rep) state.rep = emptyState().rep;
     if (!state.mode) state.mode = "classic";
+    if (!state.undici) state.undici = {};
 
     let matches = [];    // suggerimenti mostrati
     let active = -1;     // suggerimento evidenziato
@@ -1054,16 +1064,28 @@
 
     // Assegna i giocatori alle caselle del modulo cercando la copertura migliore
     // (un giocatore con più ruoli può liberare la casella di un altro: algoritmo di Kuhn).
-    function assegna(slot, rosa) {
+    function assegna(slot, rosa, fissi) {
       const puo = slot.map(s => {
         const ammessi = s.split("/");
         return rosa.map(p => p.ruoli.some(r => ammessi.includes(r)));
       });
       const preso = new Array(slot.length).fill(-1);   // casella -> indice del giocatore
 
+      // le caselle scelte a mano restano dove le ha messe l'utente
+      const bloccati = new Set();
+      if (fissi) {
+        Object.entries(fissi).forEach(([i, key]) => {
+          const idx = rosa.findIndex(p => p.key === key);
+          if (idx >= 0 && puo[i] && puo[i][idx] && !bloccati.has(idx)) {
+            preso[i] = idx;
+            bloccati.add(idx);
+          }
+        });
+      }
+
       function prova(i, visti) {
         for (let j = 0; j < rosa.length; j++) {
-          if (!puo[i][j] || visti[j]) continue;
+          if (!puo[i][j] || visti[j] || bloccati.has(j)) continue;
           visti[j] = true;
           const dove = preso.indexOf(j);
           if (dove === -1 || prova(dove, visti)) { preso[i] = j; return true; }
@@ -1071,11 +1093,10 @@
         return false;
       }
 
-      let coperte = 0;
       for (let i = 0; i < slot.length; i++) {
-        if (prova(i, new Array(rosa.length).fill(false))) coperte++;
+        if (preso[i] === -1) prova(i, new Array(rosa.length).fill(false));
       }
-      return { preso, coperte };
+      return { preso, coperte: preso.filter(x => x >= 0).length, bloccati };
     }
 
     // il colore della casella segue il reparto del suo primo ruolo
@@ -1108,23 +1129,35 @@
       // in campo vanno solo i giocatori con un ruolo mantra (chi è aggiunto a mano non ce l'ha)
       const rosa = state.rosa.map(p => {
         const dal = p.id ? byId.get(p.id) : null;
-        return { name: p.name, club: p.club, ruoli: (dal ? dal.mantra : []).map(r => r.toUpperCase()) };
+        return { key: p.key, name: p.name, club: p.club, ruoli: (dal ? dal.mantra : []).map(r => r.toUpperCase()) };
       }).filter(p => p.ruoli.length);
 
       const esiti = MODULI.map(m => {
-        const { preso, coperte } = assegna(m.slot, rosa);
-        return { m, preso, coperte };
+        const e = assegna(m.slot, rosa, (state.undici || {})[m.nome]);
+        return { m, ...e };
       }).sort((a, b) => b.coperte - a.coperte || a.m.nome.localeCompare(b.m.nome));
 
       esitiModuli = esiti;
-      $("moduli").innerHTML = esiti.map(({ m, preso, coperte }) => {
+      $("moduli").innerHTML = esiti.map(({ m, preso, coperte, bloccati }) => {
         const pieno = coperte === m.slot.length;
+        const scelte = (state.undici || {})[m.nome] || {};
+        const aMano = Object.keys(scelte).length;
+
         const righe = m.slot.map((sl, i) => {
+          const ammessi = sl.split("/");
           const p = preso[i] >= 0 ? rosa[preso[i]] : null;
+          const fisso = preso[i] >= 0 && bloccati.has(preso[i]);
+          // i miei giocatori che possono giocare in questa casella
+          const opzioni = rosa.filter(x => x.ruoli.some(r => ammessi.includes(r)));
           return `
             <li>
               <span class="slot ${repartoDiSlot(sl)}">${esc(sl)}</span>
-              <span class="chi">${p ? `${esc(p.name)} <span class="cl">${esc(p.club)}</span>` : ""}</span>
+              <select class="scelta${fisso ? " fissa" : ""}" data-mod="${esc(m.nome)}" data-i="${i}"
+                      aria-label="Chi gioca in ${esc(sl)}">
+                <option value=""${fisso ? "" : " selected"}>${p && !fisso ? "Automatico · " + esc(p.name) : "Automatico"}</option>
+                ${opzioni.map(x => `
+                  <option value="${esc(x.key)}"${fisso && p && x.key === p.key ? " selected" : ""}>${esc(x.name)} · ${esc(x.club)}</option>`).join("")}
+              </select>
             </li>`;
         }).join("");
 
@@ -1135,6 +1168,7 @@
               <span class="quanti">${coperte}/${m.slot.length}</span>
             </summary>
             <ul class="undici">${righe}</ul>
+            ${aMano ? `<button class="btn-ghost azzera" data-mod="${esc(m.nome)}">azzera le ${aMano === 1 ? "scelte" : "scelte"} fatte a mano</button>` : ""}
           </details>`;
       }).join("");
     }
@@ -1390,6 +1424,8 @@
       const del = e.target.closest("[data-del]");
       if (del) {
         state.rosa = state.rosa.filter(p => p.key !== del.dataset.del);
+        Object.values(state.undici).forEach(scelte =>
+          Object.keys(scelte).forEach(k => { if (scelte[k] === del.dataset.del) delete scelte[k]; }));
         save(); render();
         return;
       }
@@ -1403,6 +1439,29 @@
     });
     ricordaAperti($("consigli"));
     ricordaAperti($("moduli"));
+
+    // scelgo a mano chi mettere in una casella del modulo
+    $("moduli").addEventListener("change", e => {
+      const sel = e.target.closest("select.scelta");
+      if (!sel) return;
+      const mod = sel.dataset.mod, i = sel.dataset.i, key = sel.value;
+      const scelte = state.undici[mod] || (state.undici[mod] = {});
+      if (!key) delete scelte[i];
+      else {
+        // se quel giocatore era fissato altrove, lo libero
+        Object.keys(scelte).forEach(k => { if (scelte[k] === key) delete scelte[k]; });
+        scelte[i] = key;
+      }
+      if (!Object.keys(scelte).length) delete state.undici[mod];
+      senzaSaltare(() => { save(); render(); });
+    });
+
+    $("moduli").addEventListener("click", e => {
+      const btn = e.target.closest("button.azzera");
+      if (!btn) return;
+      delete state.undici[btn.dataset.mod];
+      senzaSaltare(() => { save(); render(); });
+    });
 
     $("fav-list").addEventListener("click", e => {
       const un = e.target.closest("[data-unfav]");
