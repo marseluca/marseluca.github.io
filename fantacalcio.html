@@ -788,11 +788,21 @@
     // sigla mostrata accanto al nome: in mantra i ruoli veri, in classic il reparto
     const tagOf = p => (isMantra() && p.mantra && p.mantra.length) ? p.mantra.join("/") : p.role;
 
+    // In Mantra il reparto segue i ruoli veri: chi gioca da esterno (E, anche E/W)
+    // è un centrocampista, non un difensore come lo classifica il listone Classic.
+    const repartoDi = p => {
+      if (!p) return "C";
+      if (isMantra() && p.mantra && p.mantra.some(r => r.toUpperCase() === "E")) return "C";
+      return p.role;
+    };
+    // per i giocatori già in rosa parto dalla scheda del listone, se c'è
+    const repartoRosa = x => repartoDi(x.id ? byId.get(x.id) || x : x);
+
     const spent = () => state.rosa.reduce((n, p) => n + p.price, 0);
     const rest = () => state.budget - spent();
     const slotsTotal = () => ROLES.reduce((n, r) => n + state.slots[r], 0);
-    const taken = role => state.rosa.filter(p => p.role === role).length;
-    const spentIn = role => state.rosa.filter(p => p.role === role).reduce((n, p) => n + p.price, 0);
+    const taken = role => state.rosa.filter(p => repartoRosa(p) === role).length;
+    const spentIn = role => state.rosa.filter(p => repartoRosa(p) === role).reduce((n, p) => n + p.price, 0);
     // con l'ultimo slot devi comunque poter coprire gli altri a 1 credito
     const maxBid = () => Math.max(1, rest() - (slotsTotal() - state.rosa.length - 1));
 
@@ -842,7 +852,7 @@
         const pref = state.fav.includes(p.id);
         return `
         <li role="option" data-i="${i}" aria-selected="${i === active}">
-          <span class="dot ${p.role} wide">${esc(tagOf(p))}</span>
+          <span class="dot ${repartoDi(p)} wide">${esc(tagOf(p))}</span>
           <span class="nm">${esc(p.name)} <span class="cl">${esc(p.club)}</span>${preso ? ' <span class="cl">· in rosa</span>' : ""}</span>
           ${pref ? '<span class="star">&#9733;</span>' : ""}
           <span class="qt">${fvmOf(p)}</span>
@@ -994,7 +1004,7 @@
 
     function renderFav() {
       const men = state.fav.map(id => byId.get(id)).filter(Boolean)
-        .sort((a, b) => ROLES.indexOf(a.role) - ROLES.indexOf(b.role) || fvmOf(b) - fvmOf(a));
+        .sort((a, b) => ROLES.indexOf(repartoDi(a)) - ROLES.indexOf(repartoDi(b)) || fvmOf(b) - fvmOf(a));
 
       const n = men.length;
       $("tab-fav-n").textContent = n;
@@ -1010,7 +1020,7 @@
       // quanto valgono i preferiti, secondo il FVM
       const totale = men.reduce((t, p) => t + fvmOf(p), 0);
       const perReparto = ROLES.map(r => {
-        const q = men.filter(p => p.role === r);
+        const q = men.filter(p => repartoDi(p) === r);
         return { r, n: q.length, costo: q.reduce((t, p) => t + fvmOf(p), 0) };
       });
 
@@ -1028,7 +1038,7 @@
           </li>`).join("")}</ul>`;
       $("fav-list").innerHTML = "<ul>" + men.map(p => `
         <li data-open="${p.id}">
-          <span class="dot ${p.role} wide">${esc(tagOf(p))}</span>
+          <span class="dot ${repartoDi(p)} wide">${esc(tagOf(p))}</span>
           <span class="who">${esc(p.name)} <span class="cl">${esc(p.club)}</span></span>
           <span class="qt">${fvmOf(p)}<small>fvm</small></span>
           <button class="btn-ghost" data-unfav="${p.id}" title="Togli dai preferiti" aria-label="Togli ${esc(p.name)} dai preferiti">&times;</button>
@@ -1162,7 +1172,7 @@
 
       if (chiave.startsWith("consC-")) {
         const r = chiave.slice(6);
-        const elenco = PLAYERS.filter(p => p.role === r)
+        const elenco = PLAYERS.filter(p => repartoDi(p) === r)
           .sort((a, b) => fvmOf(b) - fvmOf(a) || a.name.localeCompare(b.name))
           .slice(0, QUANTI_CONSIGLI);
         corpo.innerHTML = blocco(r, elenco, chiave + "|" + r);
@@ -1217,7 +1227,7 @@
       const scorrimento = corpo ? corpo.scrollTop : 0;
 
       $("rosa").innerHTML = ROLES.map(r => {
-        const men = state.rosa.filter(p => p.role === r)
+        const men = state.rosa.filter(p => repartoRosa(p) === r)
           .sort((a, b) => b.price - a.price || a.name.localeCompare(b.name));
         const usati = spentIn(r);
         const sforato = usati > state.rep[r];
@@ -1270,7 +1280,7 @@
       }
 
       const manuale = !current.id;
-      const role = manuale ? $("p-role").value : current.role;
+      const role = manuale ? $("p-role").value : repartoDi(current);
       const club = manuale ? $("p-club").value.trim() : current.club;
       const price = priceNow();
 
@@ -1473,7 +1483,7 @@
     // I posti da riempire: in Classic sono i reparti del modulo, in Mantra le caselle.
     function postiClassic(d, c, a) {
       const posti = [{ sigla: "P", ok: p => p.role === "P" }];
-      const agg = (r, n) => { for (let i = 0; i < n; i++) posti.push({ sigla: r, ok: p => p.role === r }); };
+      const agg = (r, n) => { for (let i = 0; i < n; i++) posti.push({ sigla: r, ok: p => repartoDi(p) === r }); };
       agg("D", d); agg("C", c); agg("A", a);
       return posti;
     }
@@ -1594,11 +1604,11 @@
       titolari.forEach(p => { if (!diPorta(p)) conto.set(p.club, (conto.get(p.club) || 0) + 1); });
 
       const serve = {};
-      ROLES.forEach(r => { serve[r] = state.slots[r] - titolari.filter(p => p.role === r).length; });
+      ROLES.forEach(r => { serve[r] = state.slots[r] - titolari.filter(p => repartoDi(p) === r).length; });
 
       const scelti = [];
       ROLES.forEach(r => {
-        const disponibili = PLAYERS.filter(p => p.role === r && !presi.has(p.id))
+        const disponibili = PLAYERS.filter(p => repartoDi(p) === r && !presi.has(p.id))
           .sort((a, b) => fvmOf(b) - fvmOf(a));
         for (let n = 0; n < serve[r]; n++) {
           let scelto = null;
@@ -1641,7 +1651,7 @@
     const rigaIdeale = (p, sigla) => `
       <div class="riga">
         ${sigla ? `<span class="slot ${repartoDiSlot(sigla)}">${esc(sigla)}</span>`
-                : `<span class="dot ${p.role} wide">${esc(tagOf(p))}</span>`}
+                : `<span class="dot ${repartoDi(p)} wide">${esc(tagOf(p))}</span>`}
         <span class="chi">${esc(p.name)} <span class="cl">${esc(p.club)}</span></span>
         <span class="num"><span class="f">${fvmOf(p)}</span><small>fvm</small></span>
       </div>`;
@@ -1685,7 +1695,7 @@
       if (!e.target.closest("#usa-ideale") || !ideale) return;
       if (!confirm(`Sostituire la rosa attuale con lo schema ${ideale.nome}? I giocatori vengono inseriti al loro FVM.`)) return;
       state.rosa = ideale.giocatori.map(p => ({
-        key: uid(), id: p.id, name: p.name, club: p.club, role: p.role,
+        key: uid(), id: p.id, name: p.name, club: p.club, role: repartoDi(p),
         price: fvmOf(p), fvm: fvmOf(p)
       }));
       save(); render();
