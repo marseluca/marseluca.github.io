@@ -788,11 +788,17 @@
     // sigla mostrata accanto al nome: in mantra i ruoli veri, in classic il reparto
     const tagOf = p => (isMantra() && p.mantra && p.mantra.length) ? p.mantra.join("/") : p.role;
 
-    // In Mantra il reparto segue i ruoli veri: chi gioca da esterno (E, anche E/W)
-    // è un centrocampista, non un difensore come lo classifica il listone Classic.
+    // In Mantra il reparto segue i ruoli veri e non la classificazione del listone
+    // Classic: chi ha A o Pc è un attaccante, chi gioca da esterno (E, anche E/W)
+    // è un centrocampista.
     const repartoDi = p => {
       if (!p) return "C";
-      if (isMantra() && p.mantra && p.mantra.some(r => r.toUpperCase() === "E")) return "C";
+      if (isMantra() && p.mantra && p.mantra.length) {
+        const r = p.mantra.map(x => x.toUpperCase());
+        if (r.includes("POR")) return "P";
+        if (r.includes("A") || r.includes("PC")) return "A";
+        if (r.includes("E")) return "C";
+      }
       return p.role;
     };
     // per i giocatori già in rosa parto dalla scheda del listone, se c'è
