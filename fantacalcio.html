@@ -1143,9 +1143,9 @@
 
     const QUANTI_CONSIGLI = 50;
 
-    function blocco(sigla, elenco) {
+    function blocco(sigla, elenco, chiave) {
       return `
-        <details class="cons-ruolo">
+        <details class="cons-ruolo" data-chiave="${chiave}"${aperti.has(chiave) ? " open" : ""}>
           <summary>
             <span class="slot ${repartoDiSlot(sigla)}">${esc(sigla)}</span>
             <span class="quanti-r">${elenco.length} nomi</span>
@@ -1165,12 +1165,12 @@
         const elenco = PLAYERS.filter(p => p.role === r)
           .sort((a, b) => fvmOf(b) - fvmOf(a) || a.name.localeCompare(b.name))
           .slice(0, QUANTI_CONSIGLI);
-        corpo.innerHTML = blocco(r, elenco);
+        corpo.innerHTML = blocco(r, elenco, chiave + "|" + r);
       } else if (chiave.startsWith("cons-")) {
         const m = MODULI.find(x => x.nome === chiave.slice(5));
         if (!m) return;
         corpo.innerHTML = [...new Set(m.slot)]
-          .map(sl => blocco(sl, consigli(sl, QUANTI_CONSIGLI))).join("");
+          .map(sl => blocco(sl, consigli(sl, QUANTI_CONSIGLI), chiave + "|" + sl)).join("");
       }
       corpo.dataset.pieno = "1";
     }
@@ -1202,7 +1202,20 @@
       $("consigli").querySelectorAll("details[open]").forEach(riempiConsiglio);
     }
 
+    // tiene ferma la posizione di scorrimento del pannello attorno a un ridisegno
+    function senzaSaltare(azione) {
+      const corpo = document.querySelector(".panel-body");
+      const y = corpo ? corpo.scrollTop : 0;
+      azione();
+      if (!corpo) return;
+      corpo.scrollTop = y;
+      requestAnimationFrame(() => { corpo.scrollTop = y; });
+    }
+
     function render() {
+      const corpo = document.querySelector(".panel-body");
+      const scorrimento = corpo ? corpo.scrollTop : 0;
+
       $("rosa").innerHTML = ROLES.map(r => {
         const men = state.rosa.filter(p => p.role === r)
           .sort((a, b) => b.price - a.price || a.name.localeCompare(b.name));
@@ -1237,6 +1250,8 @@
       renderConsigli(esitiModuli);
       updateStats();
       if (!$("suggest").hidden) renderSuggest();
+
+      if (corpo) corpo.scrollTop = scorrimento;
     }
 
     function save() { store.save(state); }
@@ -1290,10 +1305,8 @@
         state.fav.push(current.id);
         toast(`${current.name} messo tra i preferiti`);
       }
-      const prezzo = priceNow();
-      save(); render();
-      openPlayer(current);   // ridisegna il pannello aggiornato
-      setPrice(prezzo);
+      // il pannello si chiude e sotto resta tutto com'era: elenchi aperti e posizione
+      senzaSaltare(() => { save(); render(); closeSheet(); });
     }
 
     // ---------- eventi ----------
