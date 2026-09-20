@@ -802,13 +802,17 @@ L.Tooltip.prototype._initLayout=function(){
 };
 
 const mappa = L.map('tela',{zoomSnap:.25,zoomDelta:.5,wheelPxPerZoomLevel:90,maxZoom:20,zoomControl:false});
+// niente CARTO: dal 2026 marchia le tile servite senza API key
+// ("API KEY REQUIRED" stampato su ogni tile). Le Esri Canvas hanno lo
+// stesso stile minimale e non richiedono chiave; si fermano a z16,
+// quindi maxNativeZoom le fa ingrandire oltre.
 const BASEMAPS={
-  chiaro:{nome:'Chiara',url:'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-    opt:{attribution:'&copy; OpenStreetMap &copy; CARTO',maxZoom:20,maxNativeZoom:19,updateWhenZooming:true,keepBuffer:4},scura:false},
-  voyager:{nome:'Voyager (stradale)',url:'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    opt:{attribution:'&copy; OpenStreetMap &copy; CARTO',maxZoom:20,maxNativeZoom:19,updateWhenZooming:true,keepBuffer:4},scura:false},
-  scuro:{nome:'Scura',url:'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    opt:{attribution:'&copy; OpenStreetMap &copy; CARTO',maxZoom:20,maxNativeZoom:19,updateWhenZooming:true,keepBuffer:4},scura:true},
+  chiaro:{nome:'Chiara',url:'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    opt:{attribution:'Esri, HERE, Garmin, &copy; OpenStreetMap',maxZoom:20,maxNativeZoom:16,updateWhenZooming:true,keepBuffer:4},scura:false},
+  stradale:{nome:'Stradale',url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+    opt:{attribution:'Esri, HERE, Garmin, &copy; OpenStreetMap',maxZoom:20,maxNativeZoom:19,updateWhenZooming:true,keepBuffer:4},scura:false},
+  scuro:{nome:'Scura',url:'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    opt:{attribution:'Esri, HERE, Garmin, &copy; OpenStreetMap',maxZoom:20,maxNativeZoom:16,updateWhenZooming:true,keepBuffer:4},scura:true},
   osm:{nome:'OSM classica',url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
     opt:{attribution:'&copy; OpenStreetMap',maxZoom:19,maxNativeZoom:19},scura:false},
   satellite:{nome:'Satellite',url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
