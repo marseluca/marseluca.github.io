@@ -1,0 +1,1691 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Elettrotecnica</title>
+<meta name="description" content="Lezioni di elettrotecnica dalle basi al livello intermedio, con esempi, simulatori e quiz." />
+<link rel="manifest" href="elettrotecnica.webmanifest" />
+<meta name="theme-color" content="#2457d6" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Elettrotecnica" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" />
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+:root {
+  --bg: #f5f7fa; --surface: #ffffff; --surface2: #eef1f6;
+  --ink: #141a22; --muted: #5d6876; --line: #e1e6ed;
+  --accent: #2457d6; --accent-l: #e7eefc;
+  --volt: #d99a00; --volt-l: #fdf3d6;
+  --ok: #1f8a5b; --ok-l: #e2f4eb;
+  --bad: #c2412d; --bad-l: #fbe8e4;
+  --lvl1: #1f8a5b; --lvl2: #7a4fd0;
+  --display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --body: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r: 14px; --maxw: 760px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0e1217; --surface: #161b22; --surface2: #1e252f;
+    --ink: #e6eaf0; --muted: #9aa5b2; --line: #29313c;
+    --accent: #7397ff; --accent-l: #1b2846;
+    --volt: #f2c14e; --volt-l: #382e14;
+    --ok: #4cc38a; --ok-l: #142d24;
+    --bad: #ff7a66; --bad-l: #3a1c18;
+    --lvl1: #4cc38a; --lvl2: #a985f0;
+  }
+}
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--body); font-size: 17px; line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: calc(72px + env(safe-area-inset-bottom));
+}
+a { color: var(--accent); }
+button { font-family: inherit; }
+
+/* ---------- testata ---------- */
+.top {
+  position: sticky; top: 0; z-index: 50;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.top-in {
+  max-width: var(--maxw); margin: 0 auto; padding: 0.8rem 16px;
+  display: flex; align-items: center; gap: 0.75rem;
+}
+.top .logo { display: flex; align-items: center; gap: 0.55rem; text-decoration: none; color: var(--ink); }
+.top .logo svg { width: 28px; height: 28px; flex-shrink: 0; }
+.top .logo b { font-family: var(--display); font-size: 1.1rem; letter-spacing: -0.02em; }
+.top .back {
+  display: none; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  text-decoration: none; font-size: 1.1rem; flex-shrink: 0;
+}
+body.in-lesson .top .back { display: flex; }
+.top .mini-prog { margin-left: auto; font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+.bar { height: 3px; background: var(--surface2); }
+.bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.4s ease; }
+
+.wrap { max-width: var(--maxw); margin: 0 auto; padding: 1.25rem 16px 2rem; }
+
+/* ---------- tab bar ---------- */
+.tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+  background: var(--surface); border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.tabs-in { max-width: var(--maxw); margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); }
+.tabs a {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 0.55rem 0 0.5rem; text-decoration: none; color: var(--muted);
+  font-size: 0.72rem; font-weight: 600;
+}
+.tabs a svg { width: 22px; height: 22px; }
+.tabs a[aria-current="page"] { color: var(--accent); }
+
+/* ---------- home ---------- */
+.hero { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 1.3rem; margin-bottom: 1.6rem; }
+.hero .k { font-family: var(--display); font-size: 0.75rem; letter-spacing: 0.09em; text-transform: uppercase; color: var(--accent); margin: 0 0 0.35rem; }
+.hero h1 { font-family: var(--display); font-size: clamp(1.6rem, 6vw, 2.1rem); line-height: 1.12; letter-spacing: -0.02em; margin: 0 0 0.5rem; }
+.hero p { margin: 0 0 1rem; color: var(--muted); }
+.hero .prog-row { display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap; }
+.hero .prog { flex: 1 1 160px; }
+.hero .prog .t { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--muted); margin-bottom: 0.3rem; }
+.track { height: 8px; border-radius: 99px; background: var(--surface2); overflow: hidden; }
+.track i { display: block; height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.4s ease; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+  font-weight: 600; font-size: 0.95rem; text-decoration: none; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  border-radius: 11px; padding: 0.62rem 1.1rem; min-height: 44px;
+}
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+@media (prefers-color-scheme: dark) { .btn.primary { color: #0e1217; } }
+.btn.primary:hover { filter: brightness(1.05); }
+.btn.done { background: var(--ok-l); border-color: transparent; color: var(--ok); }
+
+.level { margin: 0 0 1.8rem; }
+.level-h { display: flex; align-items: baseline; gap: 0.6rem; margin: 0 0 0.75rem; }
+.level-h h2 { font-family: var(--display); font-size: 1.15rem; margin: 0; letter-spacing: -0.01em; }
+.level-h .pill { font-size: 0.72rem; font-weight: 600; padding: 0.15rem 0.55rem; border-radius: 99px; color: #fff; }
+.level-h .cnt { margin-left: auto; font-size: 0.8rem; color: var(--muted); }
+.level-d { margin: -0.4rem 0 0.8rem; color: var(--muted); font-size: 0.92rem; }
+
+.lcard {
+  display: flex; align-items: center; gap: 0.9rem;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+  padding: 0.85rem 1rem; text-decoration: none; color: inherit;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.lcard + .lcard { margin-top: 0.55rem; }
+.lcard:hover { transform: translateY(-1px); border-color: var(--muted); }
+.lcard .num {
+  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--display); font-weight: 700; font-size: 0.95rem;
+  background: var(--surface2); color: var(--muted);
+}
+.lcard.is-done .num { background: var(--ok-l); color: var(--ok); }
+.lcard .txt { min-width: 0; flex: 1; }
+.lcard .txt b { display: block; font-weight: 600; line-height: 1.3; }
+.lcard .txt span { display: block; font-size: 0.85rem; color: var(--muted); line-height: 1.4; margin-top: 0.1rem; }
+.lcard .meta { font-size: 0.75rem; color: var(--muted); text-align: right; flex-shrink: 0; }
+.lcard .meta .sc { display: block; font-weight: 600; color: var(--ok); }
+
+/* ---------- lezione ---------- */
+.l-head { margin: 0.5rem 0 1.4rem; }
+.l-head .k { font-family: var(--display); font-size: 0.75rem; letter-spacing: 0.09em; text-transform: uppercase; margin: 0 0 0.4rem; }
+.l-head h1 { font-family: var(--display); font-size: clamp(1.6rem, 6.5vw, 2.2rem); line-height: 1.12; letter-spacing: -0.02em; margin: 0 0 0.5rem; }
+.l-head p { margin: 0; color: var(--muted); }
+.l-head .goals { margin: 1rem 0 0; padding: 0.85rem 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); font-size: 0.92rem; }
+.l-head .goals b { display: block; font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.25rem; }
+.l-head .goals ul { margin: 0; padding-left: 1.1rem; }
+
+.content h2 { font-family: var(--display); font-size: 1.3rem; letter-spacing: -0.01em; margin: 2rem 0 0.6rem; line-height: 1.25; }
+.content h3 { font-size: 1.02rem; margin: 1.4rem 0 0.4rem; }
+.content p { margin: 0 0 0.9rem; }
+.content ul, .content ol { margin: 0 0 0.9rem; padding-left: 1.3rem; }
+.content li { margin-bottom: 0.3rem; }
+.content table { width: 100%; border-collapse: collapse; margin: 0 0 1rem; font-size: 0.92rem; }
+.content th, .content td { text-align: left; padding: 0.45rem 0.55rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.content th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.tbl { overflow-x: auto; }
+
+.f {
+  font-family: var(--display); font-weight: 600; font-size: 1.2rem; text-align: center;
+  background: var(--accent-l); color: var(--ink); border-radius: 12px;
+  padding: 0.85rem 1rem; margin: 0.4rem 0 1rem; overflow-x: auto;
+}
+.f small { display: block; font-family: var(--body); font-weight: 400; font-size: 0.82rem; color: var(--muted); margin-top: 0.2rem; }
+.box { border-radius: 12px; padding: 0.85rem 1rem; margin: 0 0 1rem; font-size: 0.95rem; border: 1px solid var(--line); background: var(--surface); }
+.box > b:first-child { display: block; font-size: 0.75rem; letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 0.3rem; }
+.box p:last-child, .box ul:last-child, .box ol:last-child { margin-bottom: 0; }
+.box.ex > b:first-child { color: var(--accent); }
+.box.tip { background: var(--volt-l); border-color: transparent; }
+.box.tip > b:first-child { color: var(--volt); }
+@media (prefers-color-scheme: dark) { .box.tip > b:first-child { color: var(--volt); } }
+.box.warn { background: var(--bad-l); border-color: transparent; }
+.box.warn > b:first-child { color: var(--bad); }
+
+.g {
+  border-bottom: 1.5px dotted var(--accent); cursor: help;
+  text-decoration: none; color: inherit;
+}
+.g:hover { background: var(--accent-l); }
+
+.fig { margin: 0.4rem 0 1.1rem; text-align: center; }
+.fig svg { width: 100%; max-width: 420px; height: auto; color: var(--ink); }
+.fig figcaption { font-size: 0.82rem; color: var(--muted); margin-top: 0.3rem; }
+
+/* ---------- simulatori ---------- */
+.wdg { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 1rem; margin: 0.4rem 0 1.3rem; }
+.wdg-h { display: flex; align-items: center; gap: 0.5rem; margin: 0 0 0.8rem; font-weight: 600; font-size: 0.95rem; }
+.wdg-h .tag { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.15rem 0.5rem; border-radius: 99px; background: var(--volt-l); color: var(--volt); }
+.ctl { margin: 0 0 0.7rem; }
+.ctl .lb { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--muted); }
+.ctl .lb output { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.ctl input[type=range] { width: 100%; accent-color: var(--accent); margin: 0.2rem 0 0; height: 28px; }
+.ctl input[type=number], .ctl select {
+  width: 100%; font: inherit; font-size: 0.98rem; color: var(--ink); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 10px; padding: 0.5rem 0.65rem; margin-top: 0.2rem;
+}
+.ctls-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 0.8rem; }
+.out { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 0.5rem; margin: 0.4rem 0 0.2rem; }
+.out div { background: var(--surface2); border-radius: 10px; padding: 0.5rem 0.65rem; }
+.out div span { display: block; font-size: 0.72rem; color: var(--muted); }
+.out div b { font-family: var(--display); font-size: 1.12rem; font-variant-numeric: tabular-nums; }
+.out div.hl { background: var(--accent-l); }
+.viz { margin-top: 0.7rem; }
+.viz svg { width: 100%; height: auto; display: block; }
+.wdg .note { font-size: 0.85rem; color: var(--muted); margin: 0.6rem 0 0; }
+.seg { display: inline-flex; background: var(--surface2); border-radius: 10px; padding: 3px; margin-bottom: 0.8rem; }
+.seg button { border: 0; background: none; padding: 0.4rem 0.9rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; color: var(--muted); cursor: pointer; min-height: 36px; }
+.seg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+.rlist { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.7rem; }
+.rlist label { display: flex; align-items: center; gap: 0.3rem; background: var(--surface2); border-radius: 10px; padding: 0.3rem 0.5rem; font-size: 0.85rem; color: var(--muted); }
+.rlist input { width: 74px; font: inherit; font-size: 0.95rem; border: 1px solid var(--line); border-radius: 7px; padding: 0.25rem 0.4rem; background: var(--bg); color: var(--ink); }
+.rlist button, .mini { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; cursor: pointer; font-weight: 600; min-width: 32px; min-height: 32px; }
+
+/* elementi dei grafici */
+.plot .grid line { stroke: var(--line); stroke-width: 1; }
+.plot .axis { stroke: var(--muted); stroke-width: 1; }
+.plot text { fill: var(--muted); font-size: 10px; font-family: var(--body); }
+.plot .ln { fill: none; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.c-a { stroke: var(--accent); } .c-b { stroke: var(--volt); } .c-c { stroke: var(--ok); } .c-d { stroke: var(--lvl2); }
+.c-ref { stroke: var(--muted); stroke-dasharray: 4 4; stroke-width: 1.5 !important; }
+.plot .mk { stroke: var(--bad); stroke-dasharray: 3 3; stroke-width: 1.3; }
+.plot .mk-t { fill: var(--bad); font-weight: 600; }
+.legend { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; font-size: 0.8rem; color: var(--muted); margin-top: 0.3rem; }
+.legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 0.35rem; }
+
+/* circuito animato */
+.wire { fill: none; stroke: var(--ink); stroke-width: 2.2; }
+.flow { fill: none; stroke: var(--volt); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 0.1 14; animation: flow 1s linear infinite; }
+@keyframes flow { to { stroke-dashoffset: -14.1; } }
+@media (prefers-reduced-motion: reduce) { .flow { animation: none; } }
+.comp { fill: var(--surface); stroke: var(--ink); stroke-width: 2.2; }
+.lbl { fill: var(--ink); font-size: 13px; font-family: var(--display); font-weight: 600; }
+.lbl-m { fill: var(--muted); font-size: 11px; font-family: var(--body); }
+
+/* ---------- quiz ---------- */
+.quiz { margin-top: 2.2rem; }
+.quiz > h2 { margin-top: 0; }
+.q { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 1rem; margin-bottom: 0.8rem; }
+.q .qt { font-weight: 600; margin: 0 0 0.7rem; }
+.q .qt span { color: var(--muted); font-weight: 500; margin-right: 0.3rem; }
+.opts { display: grid; gap: 0.45rem; }
+.opt {
+  text-align: left; font-size: 0.95rem; line-height: 1.4; color: var(--ink);
+  background: var(--bg); border: 1px solid var(--line); border-radius: 10px;
+  padding: 0.6rem 0.8rem; cursor: pointer; min-height: 44px;
+}
+.opt:hover:not(:disabled) { border-color: var(--accent); }
+.opt:disabled { cursor: default; }
+.opt.right { background: var(--ok-l); border-color: var(--ok); color: var(--ink); }
+.opt.wrong { background: var(--bad-l); border-color: var(--bad); }
+.why { font-size: 0.9rem; margin: 0.7rem 0 0; padding-left: 0.75rem; border-left: 3px solid var(--ok); color: var(--muted); }
+.why.no { border-color: var(--bad); }
+.why b { color: var(--ink); }
+.qres { text-align: center; padding: 1rem; border-radius: var(--r); background: var(--accent-l); margin-bottom: 1rem; }
+.qres b { font-family: var(--display); font-size: 1.4rem; display: block; }
+
+.l-foot { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.6rem; align-items: center; }
+.l-foot .sp { flex: 1; }
+.pn { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-top: 1rem; }
+.pn a { display: block; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 0.75rem 0.9rem; text-decoration: none; color: inherit; min-width: 0; }
+.pn a span { display: block; font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.pn a b { display: block; font-size: 0.92rem; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; }
+.pn a.nx { text-align: right; grid-column: 2; }
+
+/* ---------- formulario e glossario ---------- */
+.page-h h1 { font-family: var(--display); font-size: clamp(1.6rem, 6vw, 2.1rem); letter-spacing: -0.02em; margin: 0.5rem 0 0.3rem; line-height: 1.15; }
+.page-h p { color: var(--muted); margin: 0 0 1.2rem; }
+.fgroup { margin-bottom: 1.5rem; }
+.fgroup h2 { font-family: var(--display); font-size: 1.05rem; margin: 0 0 0.6rem; }
+.frow { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 0.65rem 0.9rem; }
+.frow + .frow { margin-top: 0.45rem; }
+.frow .fx { font-family: var(--display); font-weight: 600; white-space: nowrap; overflow-x: auto; }
+.frow .fd { font-size: 0.85rem; color: var(--muted); text-align: right; }
+.frow a { font-size: 0.75rem; white-space: nowrap; }
+.search { width: 100%; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 0.7rem 0.9rem; margin-bottom: 1rem; }
+.search:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+.gi { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 0.8rem 1rem; }
+.gi + .gi { margin-top: 0.5rem; }
+.gi b { display: block; font-family: var(--display); }
+.gi p { margin: 0.15rem 0 0; font-size: 0.93rem; color: var(--muted); }
+.empty { text-align: center; color: var(--muted); padding: 2rem 1rem; border: 1px dashed var(--line); border-radius: var(--r); }
+
+/* ---------- foglio glossario ---------- */
+.sheet-bg { position: fixed; inset: 0; background: rgba(8,12,18,0.45); z-index: 90; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 100;
+  max-width: 560px; margin: 0 auto; background: var(--surface);
+  border-radius: 18px 18px 0 0; padding: 1.1rem 1.2rem calc(1.4rem + env(safe-area-inset-bottom));
+  transform: translateY(105%); visibility: hidden; transition: transform 0.25s ease, visibility 0s 0.25s;
+  box-shadow: 0 -8px 30px rgba(0,0,0,0.18);
+}
+.sheet.open { transform: none; visibility: visible; transition: transform 0.25s ease; }
+.sheet-bg.open { opacity: 1; pointer-events: auto; }
+.sheet .grip { width: 40px; height: 4px; border-radius: 4px; background: var(--line); margin: 0 auto 0.8rem; }
+.sheet h3 { font-family: var(--display); font-size: 1.25rem; margin: 0 0 0.4rem; }
+.sheet p { margin: 0 0 1rem; color: var(--ink); }
+.sheet .row { display: flex; gap: 0.5rem; justify-content: flex-end; }
+
+@media (max-width: 520px) {
+  .ctls-2 { grid-template-columns: 1fr; }
+  .lcard .meta { display: none; }
+  .frow { flex-direction: column; gap: 0.15rem; }
+  .frow .fd { text-align: left; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .view { animation: rise 0.35s ease both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <a class="back" href="#" aria-label="Torna alle lezioni">&#8592;</a>
+    <a class="logo" href="#">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#2457d6"/><path d="M18.5 4 8 18h7l-1.5 10L24 14h-7z" fill="#ffd34d"/></svg>
+      <b>Elettrotecnica</b>
+    </a>
+    <span class="mini-prog" id="mini-prog"></span>
+  </div>
+  <div class="bar"><i id="bar"></i></div>
+</header>
+
+<main class="wrap" id="app"></main>
+
+<nav class="tabs" aria-label="Sezioni">
+  <div class="tabs-in">
+    <a href="#" data-tab="lezioni">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/><path d="M9 7h6"/></svg>
+      Lezioni
+    </a>
+    <a href="#formule" data-tab="formule">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 12h2M14 12h2M8 16h2M14 16h2"/></svg>
+      Formule
+    </a>
+    <a href="#glossario" data-tab="glossario">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      Glossario
+    </a>
+  </div>
+</nav>
+
+<div class="sheet-bg" id="sheet-bg"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-t">
+  <div class="grip"></div>
+  <h3 id="sheet-t"></h3>
+  <p id="sheet-d"></p>
+  <div class="row">
+    <a class="btn" href="#glossario" id="sheet-all">Tutto il glossario</a>
+    <button class="btn primary" id="sheet-x">Ho capito</button>
+  </div>
+</div>
+
+<script>
+/* ===========================================================
+   GLOSSARIO — ogni termine tecnico usato nelle lezioni.
+   Nei testi si scrive [[chiave]] oppure [[chiave|testo visibile]].
+   =========================================================== */
+const GLOSSARY = {
+  atomo: ["Atomo", "La più piccola parte di un elemento chimico. Ha un nucleo centrale (protoni positivi e neutroni neutri) e, attorno, gli elettroni negativi."],
+  elettrone: ["Elettrone", "Particella con carica negativa che si trova attorno al nucleo dell'atomo. Nei metalli alcuni elettroni sono liberi di muoversi: sono loro a formare la corrente."],
+  carica: ["Carica elettrica", "Proprietà della materia che fa attrarre o respingere i corpi: cariche uguali si respingono, cariche opposte si attraggono. Si misura in coulomb (C)."],
+  coulomb: ["Coulomb (C)", "Unità di misura della carica elettrica. 1 C corrisponde alla carica di circa 6,25 miliardi di miliardi di elettroni."],
+  conduttore: ["Conduttore", "Materiale in cui le cariche si muovono facilmente, come rame, alluminio e argento. Si usa per i fili."],
+  isolante: ["Isolante", "Materiale in cui le cariche quasi non si muovono, come plastica, gomma, vetro e aria secca. Si usa per proteggere e separare i conduttori."],
+  corrente: ["Corrente elettrica", "Quantità di carica che attraversa un conduttore in un secondo. È il «flusso» di elettricità. Si misura in ampere (A)."],
+  ampere: ["Ampere (A)", "Unità di misura della corrente: 1 A significa che passa 1 coulomb di carica ogni secondo."],
+  dc: ["Corrente continua (DC)", "Corrente che scorre sempre nello stesso verso e con valore costante, come quella di pile e batterie. DC sta per «direct current»."],
+  ac: ["Corrente alternata (AC)", "Corrente che cambia verso periodicamente seguendo una sinusoide, come quella delle prese di casa (50 volte al secondo in Europa). AC sta per «alternating current»."],
+  tensione: ["Tensione (differenza di potenziale)", "La «spinta» che fa muovere le cariche tra due punti. Indica quanta energia riceve ogni coulomb passando da un punto all'altro. Si misura in volt (V)."],
+  volt: ["Volt (V)", "Unità di misura della tensione: 1 V = 1 joule di energia per ogni coulomb di carica."],
+  joule: ["Joule (J)", "Unità di misura dell'energia. Per avere un'idea: sollevare una mela di 100 g di un metro richiede circa 1 J."],
+  potenziale: ["Potenziale elettrico", "Il «livello» elettrico di un punto rispetto a un riferimento. Conta solo la differenza tra due potenziali, cioè la tensione."],
+  massa: ["Massa (riferimento)", "Il punto del circuito scelto come riferimento a 0 V, rispetto al quale si misurano le altre tensioni. Spesso è il polo negativo dell'alimentazione."],
+  generatore: ["Generatore", "Componente che fornisce energia al circuito mantenendo una tensione (generatore di tensione) o una corrente (generatore di corrente). Esempi: pila, batteria, alimentatore."],
+  multimetro: ["Multimetro (tester)", "Strumento che misura tensione (come voltmetro), corrente (come amperometro) e resistenza (come ohmmetro)."],
+  voltmetro: ["Voltmetro", "Strumento che misura la tensione. Si collega in parallelo, cioè ai due capi del componente."],
+  amperometro: ["Amperometro", "Strumento che misura la corrente. Si collega in serie, cioè «aprendo» il circuito e facendo passare la corrente attraverso lo strumento."],
+  resistenza: ["Resistenza", "Quanto un componente si oppone al passaggio della corrente. Più è alta, meno corrente passa a parità di tensione. Si misura in ohm (Ω)."],
+  ohm: ["Ohm (Ω)", "Unità di misura della resistenza: un componente ha 1 Ω se con 1 V lo attraversa 1 A."],
+  resistore: ["Resistore", "Componente costruito apposta per avere un certo valore di resistenza. Nel linguaggio comune si chiama spesso «resistenza»."],
+  resistivita: ["Resistività (ρ)", "Proprietà di un materiale che indica quanto si oppone alla corrente, indipendentemente dalla forma del filo. Il rame ha una resistività bassissima, la gomma altissima."],
+  ohmico: ["Componente ohmico", "Componente in cui corrente e tensione sono proporzionali: se raddoppi la tensione, raddoppia la corrente. Vale per i resistori, non per diodi o lampade a incandescenza fredde."],
+  potenza: ["Potenza", "Quanta energia viene trasferita o consumata ogni secondo. Si misura in watt (W)."],
+  watt: ["Watt (W)", "Unità di misura della potenza: 1 W = 1 joule al secondo. 1 kW = 1000 W."],
+  energia: ["Energia", "La capacità di compiere un lavoro (scaldare, muovere, illuminare). Energia = potenza × tempo."],
+  kwh: ["Chilowattora (kWh)", "Unità di energia usata in bolletta: l'energia consumata da un apparecchio di 1000 W acceso per un'ora. 1 kWh = 3,6 milioni di joule."],
+  joule_eff: ["Effetto Joule", "Riscaldamento di un conduttore attraversato da corrente. È utile in stufe e bollitori, ma è uno spreco (e un pericolo) nei cavi."],
+  serie: ["Collegamento in serie", "Componenti collegati uno dopo l'altro, sullo stesso percorso: sono attraversati dalla stessa corrente."],
+  parallelo: ["Collegamento in parallelo", "Componenti collegati tutti tra gli stessi due punti: hanno ai capi la stessa tensione. Le prese di casa sono in parallelo."],
+  req: ["Resistenza equivalente", "La singola resistenza che, messa al posto di un gruppo di resistenze, si comporterebbe esattamente allo stesso modo verso il resto del circuito."],
+  nodo: ["Nodo", "Punto del circuito in cui si collegano tre o più conduttori."],
+  ramo: ["Ramo", "Tratto di circuito tra due nodi, attraversato da un'unica corrente."],
+  maglia: ["Maglia", "Qualsiasi percorso chiuso nel circuito: partendo da un punto e seguendo i fili si torna allo stesso punto."],
+  cortocircuito: ["Cortocircuito", "Collegamento a resistenza quasi nulla tra due punti a tensione diversa: la corrente diventa enorme. Come elemento ideale, un corto ha tensione zero ai capi."],
+  aperto: ["Circuito aperto", "Interruzione del percorso: la corrente non può passare (corrente zero), anche se ai capi può esserci tensione."],
+  differenziale: ["Interruttore differenziale («salvavita»)", "Dispositivo che confronta la corrente che va verso l'impianto con quella che torna. Se una parte «si perde» (per esempio attraverso una persona verso terra) e supera la soglia, di solito 30 mA, stacca la corrente in pochi centesimi di secondo."],
+  magnetotermico: ["Interruttore magnetotermico", "Dispositivo che stacca la corrente se è troppo alta: in modo lento in caso di sovraccarico (parte termica) e istantaneo in caso di cortocircuito (parte magnetica). Protegge i cavi dal surriscaldamento."],
+  terra: ["Messa a terra", "Collegamento delle parti metalliche degli apparecchi al terreno tramite il filo giallo-verde. Se un guasto mette sotto tensione la carcassa, la corrente va a terra e fa scattare il differenziale."],
+  fibrillazione: ["Fibrillazione ventricolare", "Contrazione disordinata del cuore che smette di pompare sangue. È il principale rischio mortale della folgorazione."],
+  tetanizzazione: ["Tetanizzazione", "Contrazione involontaria dei muscoli causata dalla corrente: la mano si chiude e non si riesce più a lasciare l'oggetto in tensione."],
+  partitore: ["Partitore di tensione", "Due resistenze in serie che «dividono» la tensione di ingresso: dal punto di mezzo si preleva una tensione più bassa."],
+  carico: ["Carico", "Il dispositivo alimentato dal circuito, cioè quello che «usa» l'energia: una lampada, un motore, una resistenza."],
+  r_interna: ["Resistenza interna", "La piccola resistenza presente dentro ogni generatore reale. Fa calare la tensione ai morsetti quando il generatore eroga corrente."],
+  morsetti: ["Morsetti", "I punti di collegamento di un componente o di un circuito, ai quali si attaccano i fili."],
+  thevenin: ["Teorema di Thévenin", "Qualsiasi circuito lineare visto da due morsetti si può sostituire con un solo generatore di tensione con in serie una sola resistenza."],
+  norton: ["Teorema di Norton", "Come Thévenin, ma l'equivalente è un generatore di corrente con in parallelo una resistenza."],
+  sovrapposizione: ["Principio di sovrapposizione", "In un circuito lineare con più generatori, l'effetto totale è la somma degli effetti di ciascun generatore preso da solo (con gli altri spenti)."],
+  lineare: ["Circuito lineare", "Circuito fatto di componenti in cui gli effetti sono proporzionali alle cause (resistori, condensatori, induttori, generatori). Se raddoppi le sorgenti, raddoppiano tutte le correnti."],
+  condensatore: ["Condensatore", "Componente formato da due superfici conduttrici separate da un isolante. Accumula carica e quindi energia nel campo elettrico."],
+  capacita: ["Capacità", "Quanta carica un condensatore accumula per ogni volt applicato. Si misura in farad (F); valori tipici: microfarad (µF) e nanofarad (nF)."],
+  farad: ["Farad (F)", "Unità di misura della capacità: 1 F accumula 1 coulomb con 1 volt. È un valore molto grande, per questo si usano µF (milionesimi) e nF (miliardesimi)."],
+  dielettrico: ["Dielettrico", "Il materiale isolante tra le armature di un condensatore (aria, ceramica, plastica…). Un buon dielettrico aumenta la capacità."],
+  armature: ["Armature", "Le due superfici conduttrici affacciate di un condensatore."],
+  tau: ["Costante di tempo (τ)", "Il tempo caratteristico con cui un circuito RC o RL si carica o scarica. Dopo 1 τ si è fatto il 63% del cambiamento, dopo 5 τ praticamente tutto."],
+  esponenziale: ["Andamento esponenziale", "Curva che cambia velocemente all'inizio e sempre più lentamente dopo, avvicinandosi a un valore finale senza mai raggiungerlo del tutto."],
+  transitorio: ["Transitorio", "Il periodo, di solito breve, in cui un circuito passa da una condizione all'altra dopo una manovra (accensione, spegnimento)."],
+  regime: ["Regime (stazionario)", "La condizione che il circuito raggiunge quando il transitorio è finito e i valori non cambiano più (in DC) o si ripetono uguali (in AC)."],
+  campo_mag: ["Campo magnetico", "La regione attorno a un magnete o a una corrente in cui si sentono forze magnetiche. Ogni corrente crea un campo magnetico attorno a sé."],
+  induttore: ["Induttore (bobina)", "Filo avvolto a spirale, spesso attorno a un nucleo di ferro. Accumula energia nel campo magnetico e si oppone alle variazioni di corrente."],
+  induttanza: ["Induttanza", "Quanto un induttore si oppone alle variazioni della corrente che lo attraversa. Si misura in henry (H)."],
+  henry: ["Henry (H)", "Unità di misura dell'induttanza: con 1 H, una corrente che cresce di 1 A al secondo produce 1 V ai capi."],
+  flusso: ["Flusso magnetico", "Misura di «quanto campo magnetico» attraversa una superficie, per esempio una spira. Si misura in weber (Wb)."],
+  faraday: ["Legge di Faraday", "Una variazione di flusso magnetico attraverso un circuito vi induce una tensione. È il principio di generatori, trasformatori e induttori."],
+  spira: ["Spira", "Un singolo giro di filo di una bobina."],
+  sinusoide: ["Sinusoide", "La curva a onda regolare che sale e scende in modo morbido, descritta dalla funzione seno. È la forma della tensione di rete."],
+  frequenza: ["Frequenza (f)", "Quante volte al secondo un fenomeno si ripete. Si misura in hertz (Hz): la rete europea è a 50 Hz."],
+  hertz: ["Hertz (Hz)", "Unità della frequenza: 1 Hz = una ripetizione al secondo."],
+  periodo: ["Periodo (T)", "La durata di una ripetizione completa dell'onda. T = 1/f: a 50 Hz dura 20 millisecondi."],
+  ampiezza: ["Ampiezza (valore di picco)", "Il valore massimo raggiunto dalla sinusoide."],
+  rms: ["Valore efficace (RMS)", "Il valore di una tensione continua che scalderebbe una resistenza esattamente come la tensione alternata. Per una sinusoide è il picco diviso √2. I «230 V» della presa sono efficaci."],
+  pulsazione: ["Pulsazione (ω)", "La frequenza espressa in radianti al secondo: ω = 2π·f. A 50 Hz vale circa 314 rad/s."],
+  radiante: ["Radiante", "Unità di misura degli angoli usata in matematica: un giro completo (360°) vale 2π radianti, circa 6,28."],
+  fase: ["Fase / sfasamento", "La fase indica in che punto del suo ciclo si trova l'onda. Lo sfasamento è il ritardo o l'anticipo di un'onda rispetto a un'altra, in gradi."],
+  fasore: ["Fasore", "Una freccia che rappresenta una sinusoide: la lunghezza è l'ampiezza (o il valore efficace), l'angolo è la fase. Permette di sommare onde con semplici somme di vettori."],
+  complessi: ["Numeri complessi", "Numeri formati da una parte reale e una parte «immaginaria» indicata con j (in elettrotecnica si usa j invece di i). Si disegnano come punti su un piano e servono a rappresentare i fasori."],
+  reattanza: ["Reattanza (X)", "L'opposizione alla corrente alternata dovuta a induttori e condensatori. Non dissipa energia (non scalda): la immagazzina e la restituisce. Si misura in ohm."],
+  impedenza: ["Impedenza (Z)", "L'opposizione totale alla corrente alternata: unisce resistenza e reattanza. È l'equivalente della resistenza per l'AC e si misura in ohm."],
+  risonanza: ["Risonanza", "La frequenza alla quale la reattanza induttiva e quella capacitiva si annullano a vicenda: il circuito si comporta come una pura resistenza."],
+  pot_attiva: ["Potenza attiva (P)", "La potenza «utile» realmente trasformata in calore, luce o lavoro meccanico. Si misura in watt (W)."],
+  pot_reattiva: ["Potenza reattiva (Q)", "La potenza che fa avanti e indietro tra rete e induttori o condensatori senza essere consumata. Si misura in voltampere reattivi (var)."],
+  pot_apparente: ["Potenza apparente (S)", "Il prodotto tensione × corrente, senza tener conto dello sfasamento. Determina quanto devono essere grandi cavi e trasformatori. Si misura in voltampere (VA)."],
+  cosfi: ["Fattore di potenza (cos φ)", "Il rapporto tra potenza attiva e apparente: indica quanta parte della potenza in gioco è davvero utile. Vale 1 nel caso migliore."],
+  rifasamento: ["Rifasamento", "Aggiunta di condensatori vicino a carichi induttivi (motori) per compensare la loro potenza reattiva e avvicinare il cos φ a 1."],
+  trifase: ["Sistema trifase", "Distribuzione dell'energia con tre tensioni alternate uguali ma sfasate di 120° l'una dall'altra. È lo standard per produzione, trasporto e industria."],
+  fase_cond: ["Fase (conduttore)", "Ciascuno dei conduttori «in tensione» di un impianto. In casa è il filo marrone (o nero/grigio); nel trifase sono tre, chiamati L1, L2, L3."],
+  neutro: ["Neutro", "Il conduttore di ritorno, a potenziale vicino a zero rispetto a terra. In casa è il filo blu."],
+  concatenata: ["Tensione concatenata", "Nel trifase, la tensione misurata tra due fasi (400 V nelle reti europee in bassa tensione). La tensione tra una fase e il neutro si chiama «di fase» (230 V)."],
+  stella: ["Collegamento a stella (Y)", "I tre carichi hanno un capo collegato in un punto comune (centro stella, spesso unito al neutro): ognuno riceve la tensione di fase."],
+  triangolo: ["Collegamento a triangolo (Δ)", "I tre carichi sono collegati in un anello, ognuno tra due fasi: ognuno riceve la tensione concatenata."],
+  trasformatore: ["Trasformatore", "Macchina elettrica senza parti in movimento che alza o abbassa una tensione alternata grazie all'induzione tra due avvolgimenti."],
+  nucleo: ["Nucleo magnetico", "Il blocco di lamierini di ferro su cui sono avvolte le bobine di un trasformatore o di un induttore: «guida» il campo magnetico."],
+  primario: ["Primario e secondario", "Il primario è l'avvolgimento del trasformatore collegato alla sorgente; il secondario quello collegato al carico."],
+  rendimento: ["Rendimento (η)", "Rapporto tra potenza in uscita e potenza in ingresso. Indica quanta energia non va persa: i grandi trasformatori superano il 98%."],
+  parassite: ["Correnti parassite", "Correnti indesiderate che un campo magnetico variabile induce dentro i materiali metallici, scaldandoli. Si riducono costruendo i nuclei con lamierini sottili e isolati."]
+};
+
+/* ===========================================================
+   LEZIONI
+   =========================================================== */
+const LEVELS = {
+  base:  { n: 1, name: "Le basi", color: "var(--lvl1)", desc: "Cariche, tensione, corrente, resistenza e le leggi fondamentali dei circuiti in continua." },
+  inter: { n: 2, name: "Livello intermedio", color: "var(--lvl2)", desc: "Metodi di analisi, condensatori e induttori, corrente alternata, potenza, trifase e trasformatore." }
+};
+
+const LESSONS = [
+/* ---------------------------------------------------- 1 */
+{ id: "carica-corrente", level: "base", min: 8,
+  title: "Carica e corrente elettrica",
+  sub: "Da dove nasce l'elettricità e cosa scorre nei fili",
+  goals: ["Capire cos'è la carica elettrica", "Distinguere conduttori e isolanti", "Calcolare una corrente con I = Q/t"],
+  body: `
+<h2>Tutto parte dall'atomo</h2>
+<p>Ogni materiale è fatto di [[atomo|atomi]]. Al centro di ogni atomo c'è un nucleo con cariche positive (protoni); attorno si muovono gli [[elettrone|elettroni]], con carica negativa. La [[carica]] è la proprietà che fa attrarre le cariche opposte e respingere quelle uguali.</p>
+<p>La carica si misura in [[coulomb]] (C). Un singolo elettrone ha una carica minuscola: circa 1,6 × 10<sup>−19</sup> C. Per fare 1 C servono circa 6,25 miliardi di miliardi di elettroni.</p>
+
+<h2>Conduttori e isolanti</h2>
+<p>Nei metalli alcuni elettroni non sono legati a un singolo atomo: sono «liberi» di spostarsi. Per questo i metalli sono buoni [[conduttore|conduttori]]. In plastica, gomma o vetro gli elettroni restano legati: sono [[isolante|isolanti]].</p>
+<div class="tbl"><table>
+<tr><th>Conduttori</th><th>Isolanti</th></tr>
+<tr><td>Rame, alluminio, argento, oro, acqua salata, corpo umano</td><td>Plastica, gomma, vetro, ceramica, legno secco, aria secca</td></tr>
+</table></div>
+<p>Un cavo elettrico unisce le due cose: un'anima di rame per condurre e una guaina di plastica per isolare.</p>
+
+<h2>La corrente elettrica</h2>
+<p>Se gli elettroni liberi vengono «spinti» tutti nella stessa direzione, si crea una [[corrente]]. La corrente misura quanta carica attraversa una sezione del filo ogni secondo:</p>
+<div class="f">I = Q / t<small>I = corrente in ampere (A) · Q = carica in coulomb (C) · t = tempo in secondi (s)</small></div>
+<p>L'unità è l'[[ampere]]: 1 A significa che ogni secondo passa 1 coulomb di carica.</p>
+<div class="box ex"><b>Esempio</b><p>In un filo passano 30 C in 10 secondi. La corrente è I = 30 / 10 = <b>3 A</b>.</p></div>
+
+<div class="box tip"><b>Analogia idraulica</b><p>Immagina i fili come tubi pieni d'acqua. La corrente è la <i>portata</i>: quanti litri al secondo passano in un punto. Non conta quanto è veloce la singola goccia, ma quanta acqua passa in totale.</p></div>
+
+<h2>Il verso della corrente</h2>
+<p>Per convenzione storica la corrente si disegna come se uscisse dal polo <b>positivo</b> del generatore e rientrasse da quello negativo. In realtà gli elettroni, che sono negativi, si muovono nel verso opposto. Nei calcoli si usa sempre il <b>verso convenzionale</b>: il risultato non cambia.</p>
+
+<h2>Continua e alternata</h2>
+<ul>
+<li><b>[[dc|Corrente continua (DC)]]</b>: scorre sempre nello stesso verso. È quella di pile, batterie e caricabatterie USB.</li>
+<li><b>[[ac|Corrente alternata (AC)]]</b>: inverte il verso molte volte al secondo. È quella delle prese di casa. La studieremo nel livello intermedio.</li>
+</ul>`,
+  quiz: [
+    { q: "A cosa corrisponde 1 ampere?", o: ["1 volt per ogni ohm", "1 coulomb che passa ogni secondo", "1 joule al secondo", "1 elettrone al secondo"], a: 1, w: "La corrente è carica diviso tempo: 1 A = 1 C/s." },
+    { q: "Quale di questi materiali è un isolante?", o: ["Rame", "Alluminio", "Gomma", "Acqua salata"], a: 2, w: "Nella gomma gli elettroni restano legati agli atomi, quindi non si crea corrente." },
+    { q: "In un filo passano 12 C in 4 s. Quanto vale la corrente?", o: ["48 A", "3 A", "0,33 A", "16 A"], a: 1, w: "I = Q/t = 12/4 = 3 A." }
+  ] },
+
+/* ---------------------------------------------------- 2 */
+{ id: "tensione", level: "base", min: 8,
+  title: "Tensione e generatori",
+  sub: "La «spinta» che mette in moto le cariche",
+  goals: ["Capire cos'è la tensione", "Conoscere i generatori più comuni", "Sapere come si misurano tensione e corrente"],
+  body: `
+<h2>Cos'è la tensione</h2>
+<p>Gli elettroni liberi non si muovono da soli in una direzione: serve qualcosa che li spinga. Questa spinta è la [[tensione]], chiamata anche <i>differenza di [[potenziale]]</i>. Si misura in [[volt]] (V).</p>
+<p>Più precisamente, la tensione dice quanta energia (in [[joule]]) riceve ogni coulomb di carica che passa da un punto all'altro:</p>
+<div class="f">V = E / Q<small>1 volt = 1 joule per coulomb</small></div>
+
+<div class="box tip"><b>Analogia idraulica</b><p>La tensione è come il <i>dislivello</i> tra due serbatoi d'acqua, o la pressione di una pompa. Senza dislivello l'acqua resta ferma; più è grande, più forte è la spinta.</p></div>
+
+<h2>La tensione è sempre «tra due punti»</h2>
+<p>Non ha senso dire «la tensione di un punto» da sola: va sempre misurata tra due punti. Per comodità si sceglie un punto di riferimento a 0 V, chiamato [[massa]], e si danno le tensioni degli altri punti rispetto a quello.</p>
+<p>Conseguenza utile: due punti collegati da un filo ideale (senza resistenza) hanno la stessa tensione, quindi tra loro ci sono 0 V.</p>
+
+<h2>I generatori</h2>
+<p>Un [[generatore]] di tensione mantiene una tensione costante tra i suoi due poli, + e −, trasformando un'altra forma di energia in energia elettrica.</p>
+<div class="tbl"><table>
+<tr><th>Sorgente</th><th>Tensione tipica</th><th>Tipo</th></tr>
+<tr><td>Pila stilo AA</td><td>1,5 V</td><td>DC</td></tr>
+<tr><td>Porta USB</td><td>5 V</td><td>DC</td></tr>
+<tr><td>Batteria auto</td><td>12 V</td><td>DC</td></tr>
+<tr><td>Presa di casa</td><td>230 V</td><td>AC</td></tr>
+<tr><td>Linee dell'alta tensione</td><td>132 000 – 380 000 V</td><td>AC</td></tr>
+</table></div>
+
+<h2>Il circuito chiuso</h2>
+<p>Perché scorra corrente serve un percorso chiuso: dal polo + del generatore, attraverso il [[carico]] (per esempio una lampadina), fino al polo −. Se il percorso è interrotto, per esempio con un interruttore aperto, la corrente si ferma: si parla di [[aperto|circuito aperto]].</p>
+
+<h2>Come si misurano</h2>
+<p>Lo strumento più usato è il [[multimetro]]. Attenzione a come lo si collega:</p>
+<ul>
+<li>Il <b>[[voltmetro]]</b> (tensione) va collegato <b>in parallelo</b>: i due puntali ai due capi del componente.</li>
+<li>L'<b>[[amperometro]]</b> (corrente) va collegato <b>in serie</b>: bisogna aprire il circuito e far passare la corrente dentro lo strumento.</li>
+</ul>
+<div class="box warn"><b>Attenzione</b><p>Mai collegare il multimetro in modalità amperometro direttamente ai capi di una presa o di una batteria: ha una resistenza bassissima e provocherebbe un [[cortocircuito]].</p></div>`,
+  quiz: [
+    { q: "Come si collega un voltmetro?", o: ["In serie al componente", "In parallelo al componente", "Solo al polo negativo", "Indifferentemente"], a: 1, w: "La tensione è tra due punti: il voltmetro si collega ai due capi del componente, cioè in parallelo." },
+    { q: "Cosa significa che una batteria ha 12 V?", o: ["Che eroga 12 A", "Che contiene 12 coulomb", "Che fornisce 12 joule per ogni coulomb che la attraversa", "Che dura 12 ore"], a: 2, w: "1 V = 1 J/C: la tensione è l'energia data a ogni unità di carica." },
+    { q: "Due punti collegati da un filo ideale hanno tra loro una tensione di…", o: ["0 V", "La tensione del generatore", "Dipende dalla corrente", "Infinita"], a: 0, w: "Un filo ideale non ha resistenza, quindi non c'è caduta di tensione: i due punti sono allo stesso potenziale." }
+  ] },
+
+/* ---------------------------------------------------- 3 */
+{ id: "ohm", level: "base", min: 10,
+  title: "Resistenza e legge di Ohm",
+  sub: "La relazione più importante dell'elettrotecnica",
+  goals: ["Capire cos'è la resistenza", "Usare la legge di Ohm V = R·I", "Calcolare la resistenza di un filo"],
+  body: `
+<h2>La resistenza</h2>
+<p>Ogni materiale ostacola un po' il passaggio delle cariche. Questa opposizione si chiama [[resistenza]] e si misura in [[ohm]] (simbolo Ω, la lettera greca omega maiuscola).</p>
+<p>Un [[resistore]] è un componente costruito per avere un valore di resistenza preciso. Nei circuiti si disegna come un rettangolo (simbolo europeo) o come una linea a zig-zag (simbolo americano).</p>
+
+<h2>La legge di Ohm</h2>
+<p>Il fisico Georg Ohm scoprì che, in molti materiali, la corrente è proporzionale alla tensione applicata. La costante di proporzionalità è proprio la resistenza:</p>
+<div class="f">V = R · I<small>V = tensione (V) · R = resistenza (Ω) · I = corrente (A)</small></div>
+<p>La stessa formula si può girare in tre modi, a seconda di cosa cerchi:</p>
+<div class="tbl"><table>
+<tr><th>Cerchi</th><th>Formula</th></tr>
+<tr><td>Tensione</td><td>V = R · I</td></tr>
+<tr><td>Corrente</td><td>I = V / R</td></tr>
+<tr><td>Resistenza</td><td>R = V / I</td></tr>
+</table></div>
+<div class="box ex"><b>Esempio</b><p>Una resistenza da 6 Ω è collegata a una batteria da 12 V. La corrente è I = 12 / 6 = <b>2 A</b>.</p><p>Con una resistenza da 1 kΩ (cioè 1000 Ω) e una tensione di 5 V: I = 5 / 1000 = 0,005 A = <b>5 mA</b> (milliampere).</p></div>
+
+<div data-w="ohm"></div>
+
+<div class="box tip"><b>Analogia idraulica</b><p>La resistenza è come un tubo stretto: a parità di pressione (tensione), un tubo più stretto lascia passare meno acqua (corrente).</p></div>
+
+<h2>Da cosa dipende la resistenza di un filo</h2>
+<p>Un filo è più resistente se è lungo e sottile, meno se è corto e grosso. Conta anche il materiale, attraverso la sua [[resistivita|resistività]] ρ (la lettera greca «rho»):</p>
+<div class="f">R = ρ · L / S<small>ρ = resistività (Ω·m) · L = lunghezza (m) · S = sezione (m²)</small></div>
+<div class="box ex"><b>Esempio</b><p>Un filo di rame (ρ ≈ 1,7 × 10<sup>−8</sup> Ω·m) lungo 10 m con sezione di 1,5 mm² (= 1,5 × 10<sup>−6</sup> m²) ha R = 1,7×10<sup>−8</sup> · 10 / 1,5×10<sup>−6</sup> ≈ <b>0,11 Ω</b>. Ecco perché nei calcoli i fili si considerano quasi sempre ideali.</p></div>
+<p>La resistenza dei metalli cresce anche con la temperatura: un filo caldo conduce un po' peggio di un filo freddo.</p>
+
+<h2>Prefissi da ricordare</h2>
+<div class="tbl"><table>
+<tr><th>Prefisso</th><th>Simbolo</th><th>Valore</th><th>Esempio</th></tr>
+<tr><td>mega</td><td>M</td><td>1 000 000</td><td>1 MΩ</td></tr>
+<tr><td>kilo</td><td>k</td><td>1 000</td><td>4,7 kΩ</td></tr>
+<tr><td>milli</td><td>m</td><td>0,001</td><td>20 mA</td></tr>
+<tr><td>micro</td><td>µ</td><td>0,000 001</td><td>100 µF</td></tr>
+</table></div>
+<p>La legge di Ohm vale per i componenti detti [[ohmico|ohmici]], come i resistori. Diodi, LED e transistor non la seguono: la corrente non cresce in modo proporzionale alla tensione.</p>`,
+  quiz: [
+    { q: "Una resistenza da 3 Ω è collegata a 9 V. Quanta corrente passa?", o: ["27 A", "3 A", "0,33 A", "6 A"], a: 1, w: "I = V/R = 9/3 = 3 A." },
+    { q: "Se raddoppi la lunghezza di un filo (stesso materiale e sezione), la sua resistenza…", o: ["Si dimezza", "Resta uguale", "Raddoppia", "Quadruplica"], a: 2, w: "R = ρ·L/S: R è proporzionale alla lunghezza L." },
+    { q: "In un resistore passano 20 mA con 10 V ai capi. Quanto vale R?", o: ["200 Ω", "500 Ω", "2 Ω", "0,2 Ω"], a: 1, w: "R = V/I = 10 / 0,020 = 500 Ω. Ricorda di convertire i milliampere in ampere." }
+  ] },
+
+/* ---------------------------------------------------- 4 */
+{ id: "potenza", level: "base", min: 9,
+  title: "Potenza ed energia",
+  sub: "Watt, chilowattora e quanto costa accendere un elettrodomestico",
+  goals: ["Calcolare la potenza con P = V·I", "Distinguere potenza ed energia", "Stimare il costo in bolletta"],
+  body: `
+<h2>La potenza elettrica</h2>
+<p>La [[potenza]] indica quanta energia viene consumata (o fornita) ogni secondo. Si misura in [[watt]] (W). In un circuito si calcola moltiplicando tensione e corrente:</p>
+<div class="f">P = V · I<small>P = potenza (W) · V = tensione (V) · I = corrente (A)</small></div>
+<p>Unendo questa formula alla legge di Ohm (V = R·I) si ottengono altre due forme, molto comode per i resistori:</p>
+<div class="f">P = R · I² &nbsp;&nbsp;·&nbsp;&nbsp; P = V² / R</div>
+<div class="box ex"><b>Esempio</b><p>Una lampadina da 60 W alimentata a 230 V assorbe I = P / V = 60 / 230 ≈ <b>0,26 A</b>.</p><p>Un phon da 2000 W assorbe circa 2000 / 230 ≈ <b>8,7 A</b>: ecco perché gli elettrodomestici potenti usano prese e cavi più robusti.</p></div>
+
+<h2>L'effetto Joule</h2>
+<p>Quando la corrente attraversa una resistenza, l'energia si trasforma in calore. È l'[[joule_eff|effetto Joule]]: fa funzionare stufette, bollitori, forni e asciugacapelli. Nei cavi invece è uno spreco: per questo i cavi devono avere sezione adeguata alla corrente, altrimenti si scaldano troppo.</p>
+<div class="box tip"><b>Da notare</b><p>Nella formula P = R·I² la corrente è al quadrato: se la corrente raddoppia, il calore prodotto <b>quadruplica</b>.</p></div>
+
+<h2>Energia: potenza per tempo</h2>
+<p>La potenza dice «quanto in fretta» si consuma energia; l'[[energia]] totale dipende anche da per quanto tempo l'apparecchio resta acceso:</p>
+<div class="f">E = P · t</div>
+<p>In fisica l'energia si misura in joule (watt × secondi). In bolletta si usa invece il [[kwh|chilowattora]] (kWh): l'energia di un apparecchio da 1000 W acceso per un'ora. 1 kWh = 3 600 000 J.</p>
+<div class="box ex"><b>Esempio</b><p>Il phon da 2000 W (2 kW) acceso per 10 minuti (1/6 di ora) consuma E = 2 × 1/6 ≈ <b>0,33 kWh</b>. Con l'energia a 0,25 €/kWh costa circa 8 centesimi.</p></div>
+
+<div data-w="bolletta"></div>
+
+<h2>Potenza impegnata</h2>
+<p>I contratti domestici italiani hanno di solito una potenza disponibile di 3 kW (spesso con una tolleranza oltre questo valore). Se accendi insieme forno (2 kW), lavatrice (2 kW) e phon (2 kW) superi il limite e il contatore stacca: non è un guasto, è la potenza totale troppo alta.</p>`,
+  quiz: [
+    { q: "Un bollitore assorbe 10 A a 230 V. Qual è la sua potenza?", o: ["23 W", "230 W", "2300 W", "24 W"], a: 2, w: "P = V·I = 230 × 10 = 2300 W." },
+    { q: "Quanti joule ci sono in 1 kWh?", o: ["1000 J", "3600 J", "3 600 000 J", "60 000 J"], a: 2, w: "1 kWh = 1000 W × 3600 s = 3 600 000 J." },
+    { q: "Se la corrente in una resistenza raddoppia, la potenza dissipata…", o: ["Raddoppia", "Quadruplica", "Si dimezza", "Resta uguale"], a: 1, w: "P = R·I²: con la corrente doppia il fattore è 2² = 4." }
+  ] },
+
+/* ---------------------------------------------------- 5 */
+{ id: "serie-parallelo", level: "base", min: 10,
+  title: "Resistenze in serie e in parallelo",
+  sub: "Come semplificare un circuito",
+  goals: ["Riconoscere serie e parallelo", "Calcolare la resistenza equivalente", "Capire perché le prese di casa sono in parallelo"],
+  body: `
+<h2>Il collegamento in serie</h2>
+<p>Due o più componenti sono in [[serie]] quando sono collegati uno dopo l'altro, senza diramazioni: la corrente che attraversa il primo deve per forza attraversare anche gli altri.</p>
+<figure class="fig"><svg viewBox="0 0 320 70" aria-label="Tre resistenze in serie">
+  <path class="wire" d="M10 35 H300"/>
+  <rect class="comp" x="45" y="25" width="50" height="20" rx="2"/><rect class="comp" x="135" y="25" width="50" height="20" rx="2"/><rect class="comp" x="225" y="25" width="50" height="20" rx="2"/>
+  <text class="lbl" x="70" y="18" text-anchor="middle">R1</text><text class="lbl" x="160" y="18" text-anchor="middle">R2</text><text class="lbl" x="250" y="18" text-anchor="middle">R3</text>
+  <text class="lbl-m" x="160" y="64" text-anchor="middle">stessa corrente in tutte</text>
+</svg></figure>
+<ul>
+<li>La <b>corrente</b> è la stessa in tutte le resistenze.</li>
+<li>Le <b>tensioni</b> ai capi di ciascuna si sommano e danno la tensione totale.</li>
+<li>La [[req|resistenza equivalente]] è la somma:</li>
+</ul>
+<div class="f">R<sub>eq</sub> = R<sub>1</sub> + R<sub>2</sub> + R<sub>3</sub> + …</div>
+<p>In serie la resistenza totale è sempre <b>più grande</b> della più grande delle resistenze.</p>
+
+<h2>Il collegamento in parallelo</h2>
+<p>I componenti sono in [[parallelo]] quando sono collegati tra gli stessi due punti: la corrente si divide tra i vari rami.</p>
+<figure class="fig"><svg viewBox="0 0 320 130" aria-label="Tre resistenze in parallelo">
+  <path class="wire" d="M10 65 H70 M70 20 V110 M250 20 V110 M250 65 H310 M70 20 H250 M70 65 H250 M70 110 H250"/>
+  <rect class="comp" x="135" y="10" width="50" height="20" rx="2"/><rect class="comp" x="135" y="55" width="50" height="20" rx="2"/><rect class="comp" x="135" y="100" width="50" height="20" rx="2"/>
+  <text class="lbl" x="205" y="25">R1</text><text class="lbl" x="205" y="70">R2</text><text class="lbl" x="205" y="115">R3</text>
+  <circle cx="70" cy="65" r="3.5" fill="currentColor"/><circle cx="250" cy="65" r="3.5" fill="currentColor"/>
+</svg><figcaption>Stessa tensione ai capi di tutte</figcaption></figure>
+<ul>
+<li>La <b>tensione</b> è la stessa su tutte le resistenze.</li>
+<li>Le <b>correnti</b> dei rami si sommano e danno la corrente totale.</li>
+<li>Si sommano gli <i>inversi</i> delle resistenze:</li>
+</ul>
+<div class="f">1 / R<sub>eq</sub> = 1/R<sub>1</sub> + 1/R<sub>2</sub> + 1/R<sub>3</sub> + …</div>
+<p>Per due sole resistenze c'è una scorciatoia, «prodotto diviso somma»:</p>
+<div class="f">R<sub>eq</sub> = (R<sub>1</sub> · R<sub>2</sub>) / (R<sub>1</sub> + R<sub>2</sub>)</div>
+<p>In parallelo la resistenza totale è sempre <b>più piccola</b> della più piccola delle resistenze: ogni ramo in più è una strada in più per la corrente. Il parallelo si indica anche con il simbolo ∥: R<sub>1</sub> ∥ R<sub>2</sub>.</p>
+<div class="box ex"><b>Esempio</b><p>Due resistenze da 100 Ω: in serie danno 200 Ω, in parallelo 100·100/(100+100) = 50 Ω. In generale, <i>n</i> resistenze uguali in parallelo danno R/<i>n</i>.</p></div>
+
+<div data-w="serpar"></div>
+
+<h2>Circuiti misti</h2>
+<p>Molti circuiti mescolano serie e parallelo. Si risolvono a pezzi, partendo dal gruppo più «interno» e sostituendolo con la sua equivalente.</p>
+<div class="box ex"><b>Esempio</b><p>Una resistenza da 100 Ω è in serie a un parallelo di due resistenze da 200 Ω.</p><ol><li>Parallelo: 200 ∥ 200 = 100 Ω.</li><li>Serie: 100 + 100 = <b>200 Ω</b>.</li></ol></div>
+
+<h2>Perché in casa si usa il parallelo</h2>
+<p>Tutte le prese e le lampade di casa sono collegate in parallelo. Così ogni apparecchio riceve la stessa tensione di 230 V e funziona indipendentemente dagli altri: se spegni il televisore, il frigorifero continua ad andare. Con le vecchie lucine di Natale in serie, invece, bastava una lampadina bruciata per spegnere tutta la fila.</p>`,
+  quiz: [
+    { q: "Tre resistenze da 30 Ω in parallelo equivalgono a…", o: ["90 Ω", "30 Ω", "10 Ω", "3 Ω"], a: 2, w: "n resistenze uguali in parallelo danno R/n = 30/3 = 10 Ω." },
+    { q: "In un collegamento in serie, cosa è uguale per tutti i componenti?", o: ["La tensione", "La corrente", "La potenza", "Nulla"], a: 1, w: "In serie c'è un solo percorso, quindi la stessa corrente attraversa tutto." },
+    { q: "Aggiungendo una resistenza in parallelo, la resistenza totale…", o: ["Aumenta", "Diminuisce", "Resta uguale", "Diventa zero"], a: 1, w: "Ogni ramo in più è un percorso in più per la corrente: la resistenza equivalente scende." }
+  ] },
+
+/* ---------------------------------------------------- 6 */
+{ id: "kirchhoff", level: "base", min: 10,
+  title: "Le leggi di Kirchhoff",
+  sub: "Le due regole per risolvere qualsiasi circuito",
+  goals: ["Riconoscere nodi, rami e maglie", "Applicare la legge dei nodi", "Applicare la legge delle maglie"],
+  body: `
+<h2>Un po' di vocabolario</h2>
+<ul>
+<li><b>[[nodo|Nodo]]</b>: un punto in cui si incontrano tre o più fili.</li>
+<li><b>[[ramo|Ramo]]</b>: il tratto di circuito tra due nodi; è percorso da un'unica corrente.</li>
+<li><b>[[maglia|Maglia]]</b>: un qualsiasi percorso chiuso.</li>
+</ul>
+<p>Quando serie e parallelo non bastano, perché il circuito è troppo intrecciato, si usano le due leggi formulate da Gustav Kirchhoff nel 1845.</p>
+
+<h2>1ª legge: legge dei nodi (LKC)</h2>
+<p>La carica non si crea e non si distrugge. Quindi in un nodo tutta la corrente che entra deve anche uscire:</p>
+<div class="f">Σ I<sub>entranti</sub> = Σ I<sub>uscenti</sub><small>Σ (sigma) significa «somma di tutte»</small></div>
+<figure class="fig"><svg viewBox="0 0 320 130" aria-label="Nodo con correnti">
+  <path class="wire" d="M40 30 L160 65 M40 100 L160 65 M160 65 H290"/>
+  <circle cx="160" cy="65" r="5" fill="currentColor"/>
+  <path d="M95 46 l12 4 -9 8" fill="none" stroke="var(--accent)" stroke-width="2.4"/>
+  <path d="M95 84 l12 -4 -9 -8" fill="none" stroke="var(--accent)" stroke-width="2.4"/>
+  <path d="M225 58 l10 7 -10 7" fill="none" stroke="var(--accent)" stroke-width="2.4"/>
+  <text class="lbl" x="58" y="24">3 A</text><text class="lbl" x="58" y="122">2 A</text><text class="lbl" x="250" y="54">? = 5 A</text>
+</svg><figcaption>Entrano 3 A e 2 A: devono uscire 5 A</figcaption></figure>
+<div class="box tip"><b>Analogia idraulica</b><p>Un incrocio di tubi: l'acqua che arriva dai tubi in ingresso esce tutta dai tubi in uscita. Non si accumula e non sparisce.</p></div>
+
+<h2>2ª legge: legge delle maglie (LKT)</h2>
+<p>Anche l'energia si conserva. Se percorri una maglia e torni al punto di partenza, sei tornato allo stesso potenziale: le tensioni incontrate lungo il giro, sommate con il loro segno, danno zero.</p>
+<div class="f">Σ V = 0 &nbsp;lungo ogni maglia</div>
+<p>In pratica: la tensione fornita dai generatori è uguale alla somma delle cadute di tensione sulle resistenze.</p>
+<figure class="fig"><svg viewBox="0 0 320 150" aria-label="Maglia con generatore e due resistenze">
+  <path class="wire" d="M50 30 H270 V120 H50 Z"/>
+  <rect x="38" y="60" width="24" height="30" fill="var(--surface)"/>
+  <line x1="34" y1="68" x2="66" y2="68" stroke="currentColor" stroke-width="2.4"/><line x1="42" y1="80" x2="58" y2="80" stroke="currentColor" stroke-width="4"/>
+  <rect class="comp" x="125" y="20" width="50" height="20" rx="2"/>
+  <rect class="comp" x="260" y="55" width="20" height="40" rx="2"/>
+  <text class="lbl" x="12" y="79">12 V</text><text class="lbl" x="150" y="14" text-anchor="middle">4 Ω</text><text class="lbl" x="288" y="80">2 Ω</text>
+  <text class="lbl-m" x="160" y="140" text-anchor="middle">I = 12 / (4 + 2) = 2 A</text>
+</svg></figure>
+<div class="box ex"><b>Esempio</b><p>Generatore da 12 V con due resistenze in serie da 4 Ω e 2 Ω.</p><ol><li>Corrente: I = 12 / (4 + 2) = 2 A.</li><li>Cadute: V<sub>1</sub> = 4 × 2 = 8 V e V<sub>2</sub> = 2 × 2 = 4 V.</li><li>Verifica con la legge delle maglie: 12 − 8 − 4 = <b>0</b>. ✓</li></ol></div>
+
+<h2>Come usarle in un problema</h2>
+<ol>
+<li>Dai un nome a ogni corrente di ramo e scegli un verso (se è sbagliato, il risultato verrà negativo: nessun problema).</li>
+<li>Scrivi la legge dei nodi per tutti i nodi tranne uno.</li>
+<li>Scrivi la legge delle maglie per le maglie indipendenti (quelle che non si possono ottenere combinando le altre).</li>
+<li>Risolvi il sistema di equazioni.</li>
+</ol>
+<p>Le due leggi valgono sempre, per qualsiasi componente: sono la base di tutti i metodi che vedremo nel livello intermedio.</p>`,
+  quiz: [
+    { q: "In un nodo entrano 4 A e 1 A, ed esce una corrente da 2 A. Quanto vale l'altra corrente uscente?", o: ["7 A", "3 A", "5 A", "1 A"], a: 1, w: "Entranti = uscenti: 4 + 1 = 2 + x, quindi x = 3 A." },
+    { q: "La legge delle maglie deriva dalla conservazione…", o: ["della carica", "dell'energia", "della massa", "della corrente"], a: 1, w: "Tornando al punto di partenza si torna allo stesso potenziale: l'energia guadagnata dai generatori è uguale a quella spesa nei carichi." },
+    { q: "Un generatore da 9 V alimenta due resistenze in serie. Su una cadono 6 V. Quanto cade sull'altra?", o: ["15 V", "6 V", "3 V", "9 V"], a: 2, w: "9 − 6 − x = 0, quindi x = 3 V." }
+  ] },
+
+/* ---------------------------------------------------- 7 */
+{ id: "sicurezza", level: "base", min: 8,
+  title: "Sicurezza elettrica",
+  sub: "Perché la corrente è pericolosa e come ci si protegge",
+  goals: ["Conoscere gli effetti della corrente sul corpo", "Capire a cosa servono differenziale, magnetotermico e messa a terra", "Imparare le regole base di sicurezza"],
+  body: `
+<h2>Cosa fa male: la corrente</h2>
+<p>A essere pericolosa è la <b>corrente</b> che attraversa il corpo; la tensione conta perché è lei a spingerla (secondo la legge di Ohm). Il corpo umano ha una resistenza che va da circa mille a qualche migliaio di ohm, e scende molto con pelle bagnata. A 230 V possono passare centinaia di milliampere: molto più del necessario per uccidere.</p>
+<div class="tbl"><table>
+<tr><th>Corrente (AC 50 Hz)</th><th>Effetto tipico</th></tr>
+<tr><td>circa 0,5 – 1 mA</td><td>Soglia di percezione: un leggero formicolio</td></tr>
+<tr><td>circa 10 mA</td><td>[[tetanizzazione|Tetanizzazione]]: i muscoli si contraggono e non si riesce più a lasciare la presa</td></tr>
+<tr><td>oltre circa 30 mA</td><td>Difficoltà respiratorie; se dura abbastanza, rischio di [[fibrillazione]] del cuore</td></tr>
+<tr><td>centinaia di mA</td><td>Fibrillazione molto probabile e ustioni gravi</td></tr>
+</table></div>
+<p>Contano anche il <b>tempo</b> (più a lungo dura, peggio è) e il <b>percorso</b>: una corrente da una mano all'altra, o da una mano ai piedi, attraversa il torace ed è la più pericolosa.</p>
+
+<h2>Le tre protezioni dell'impianto di casa</h2>
+<h3>Interruttore magnetotermico</h3>
+<p>Il [[magnetotermico]] interviene quando la corrente è troppo alta: lentamente in caso di sovraccarico (troppi apparecchi accesi) e istantaneamente in caso di [[cortocircuito]]. Protegge soprattutto <b>i cavi</b>, che altrimenti si scalderebbero fino a rischiare un incendio. Non protegge le persone: una corrente mortale di 50 mA è troppo piccola perché lui se ne accorga.</p>
+<h3>Interruttore differenziale («salvavita»)</h3>
+<p>Il [[differenziale]] confronta la corrente che entra nell'impianto dalla [[fase_cond|fase]] con quella che ritorna dal [[neutro]]. Normalmente sono uguali. Se una parte manca, vuol dire che sta andando a terra da un'altra strada, magari attraverso una persona. Quando la differenza supera la soglia, tipicamente 30 mA, stacca tutto in pochi centesimi di secondo.</p>
+<h3>Messa a terra</h3>
+<p>Le parti metalliche degli elettrodomestici (lavatrice, forno, frigorifero) sono collegate al terreno con il filo giallo-verde. È la [[terra|messa a terra]]. Se un guasto mette sotto tensione la carcassa, la corrente trova subito una strada verso terra e il differenziale scatta prima che qualcuno la tocchi.</p>
+<div class="tbl"><table>
+<tr><th>Colore del filo</th><th>Funzione</th></tr>
+<tr><td>Marrone, nero o grigio</td><td>Fase (in tensione)</td></tr>
+<tr><td>Blu</td><td>Neutro</td></tr>
+<tr><td>Giallo-verde</td><td>Terra (protezione)</td></tr>
+</table></div>
+
+<h2>Regole d'oro</h2>
+<div class="box warn"><b>Prima di mettere le mani su un impianto</b><ol>
+<li>Stacca l'interruttore generale (o quello della linea interessata).</li>
+<li>Assicurati che nessuno possa riattaccarlo mentre lavori.</li>
+<li>Verifica l'assenza di tensione con uno strumento adatto: non fidarti dell'etichetta dell'interruttore.</li>
+<li>Lavora con mani asciutte e su un pavimento asciutto.</li>
+<li>Per gli interventi sull'impianto fisso affidati a un elettricista abilitato.</li>
+</ol></div>
+<p>Basse tensioni come i 5 V dell'USB o i 12 V di una batteria non sono pericolose per la folgorazione, ma una batteria d'auto in cortocircuito può erogare centinaia di ampere: scalda gli attrezzi metallici fino a fonderli e provoca ustioni.</p>`,
+  quiz: [
+    { q: "Qual è la soglia di intervento tipica di un differenziale domestico?", o: ["30 A", "30 mA", "300 mA", "3 A"], a: 1, w: "I differenziali «salvavita» per uso domestico intervengono con una dispersione di 30 mA, sotto la soglia di fibrillazione." },
+    { q: "Il magnetotermico protegge principalmente…", o: ["le persone dalla folgorazione", "i cavi da sovraccarichi e cortocircuiti", "dai fulmini", "il contatore"], a: 1, w: "Interviene su correnti di diversi ampere: protegge l'impianto, non le persone." },
+    { q: "Di che colore è il conduttore di terra?", o: ["Blu", "Marrone", "Giallo-verde", "Nero"], a: 2, w: "Il giallo-verde è riservato alla terra di protezione." }
+  ] },
+
+/* ---------------------------------------------------- 8 */
+{ id: "partitori", level: "inter", min: 10,
+  title: "Partitori e generatori reali",
+  sub: "Dividere tensioni e correnti, e la resistenza interna",
+  goals: ["Usare le formule del partitore di tensione e di corrente", "Capire l'effetto del carico", "Conoscere il massimo trasferimento di potenza"],
+  body: `
+<h2>Il partitore di tensione</h2>
+<p>Due resistenze in serie si «spartiscono» la tensione in proporzione al loro valore. Prendendo la tensione ai capi di una sola delle due si ottiene una tensione più bassa: è il [[partitore]] di tensione, uno dei circuiti più usati in elettronica.</p>
+<div class="f">V<sub>out</sub> = V<sub>in</sub> · R<sub>2</sub> / (R<sub>1</sub> + R<sub>2</sub>)<small>V<sub>out</sub> è la tensione ai capi di R<sub>2</sub></small></div>
+<div class="box ex"><b>Esempio</b><p>V<sub>in</sub> = 12 V, R<sub>1</sub> = 2 kΩ, R<sub>2</sub> = 1 kΩ: V<sub>out</sub> = 12 · 1 / 3 = <b>4 V</b>.</p></div>
+
+<h2>Attenzione al carico</h2>
+<p>La formula vale solo se dall'uscita non si preleva corrente. Se colleghi un [[carico]] R<sub>L</sub> all'uscita, questo si mette in parallelo a R<sub>2</sub> e la tensione scende.</p>
+<div class="box ex"><b>Esempio</b><p>Nel partitore di prima colleghiamo un carico da 1 kΩ. Ora in basso c'è 1 kΩ ∥ 1 kΩ = 500 Ω, quindi V<sub>out</sub> = 12 · 0,5 / 2,5 = <b>2,4 V</b> invece di 4 V.</p><p>Regola pratica: perché il partitore «regga», il carico deve essere almeno una decina di volte più grande di R<sub>2</sub>.</p></div>
+
+<div data-w="partitore"></div>
+
+<h2>Il partitore di corrente</h2>
+<p>Due resistenze in parallelo si dividono la corrente, ma al contrario: ne passa di più nella resistenza <b>più piccola</b>.</p>
+<div class="f">I<sub>1</sub> = I · R<sub>2</sub> / (R<sub>1</sub> + R<sub>2</sub>)<small>Nota: al numeratore c'è l'<i>altra</i> resistenza</small></div>
+
+<h2>Il generatore reale</h2>
+<p>Un generatore ideale mantiene la sua tensione qualunque corrente eroghi. Un generatore reale, come una pila, ha invece una piccola [[r_interna|resistenza interna]] <i>r</i>: quando eroga corrente, parte della tensione si perde al suo interno.</p>
+<div class="f">V = E − r · I<small>E = tensione a vuoto (senza carico) · V = tensione ai [[morsetti]]</small></div>
+<div class="box ex"><b>Esempio</b><p>Una pila da 9 V con r = 2 Ω che eroga 0,5 A fornisce ai morsetti V = 9 − 2 · 0,5 = <b>8 V</b>. È il motivo per cui la tensione di una batteria scarica «crolla» appena colleghi un carico.</p></div>
+
+<h2>Massimo trasferimento di potenza</h2>
+<p>Quale resistenza di carico ottiene da un generatore la potenza più alta? La risposta è: quella uguale alla resistenza interna.</p>
+<div class="f">P<sub>max</sub> quando R<sub>L</sub> = r</div>
+<p>In quella condizione, però, metà della potenza si spreca dentro il generatore (rendimento del 50%). Per questo si sfrutta nelle telecomunicazioni e nell'audio, dove conta trasferire il segnale, mentre nelle reti di potenza si cerca il contrario: carichi molto più grandi della resistenza interna, per sprecare poco.</p>`,
+  quiz: [
+    { q: "Partitore con Vin = 10 V, R1 = R2 = 5 kΩ. Quanto vale Vout?", o: ["10 V", "2 V", "5 V", "2,5 V"], a: 2, w: "Con resistenze uguali la tensione si divide a metà: 10 · 5/10 = 5 V." },
+    { q: "Collegando un carico all'uscita di un partitore, la tensione di uscita…", o: ["aumenta", "diminuisce", "resta uguale", "si inverte"], a: 1, w: "Il carico si mette in parallelo a R2 e abbassa la resistenza «in basso»." },
+    { q: "Per il massimo trasferimento di potenza, il carico deve essere…", o: ["molto più grande della resistenza interna", "uguale alla resistenza interna", "zero", "la metà della resistenza interna"], a: 1, w: "La potenza sul carico è massima con RL = r, al prezzo di un rendimento del 50%." }
+  ] },
+
+/* ---------------------------------------------------- 9 */
+{ id: "thevenin", level: "inter", min: 12,
+  title: "Thévenin, Norton e sovrapposizione",
+  sub: "Ridurre un circuito complesso a due componenti",
+  goals: ["Calcolare l'equivalente di Thévenin", "Passare da Thévenin a Norton", "Usare il principio di sovrapposizione"],
+  body: `
+<h2>L'idea di base</h2>
+<p>Spesso di un circuito ci interessa solo cosa succede su un componente, per esempio un carico che vogliamo cambiare più volte. Il [[thevenin|teorema di Thévenin]] dice che tutto il resto, per quanto complicato, si comporta come un solo generatore di tensione V<sub>th</sub> con in serie una sola resistenza R<sub>th</sub>.</p>
+<p>Il teorema vale per i circuiti [[lineare|lineari]], cioè fatti di resistori, generatori, condensatori e induttori.</p>
+
+<h2>Come si calcola</h2>
+<ol>
+<li><b>V<sub>th</sub></b>: togli il carico e misura (o calcola) la tensione tra i due [[morsetti]] a vuoto.</li>
+<li><b>R<sub>th</sub></b>: «spegni» tutti i generatori e calcola la resistenza vista dai morsetti.
+  <ul><li>Un generatore di tensione spento diventa un [[cortocircuito]] (un filo).</li><li>Un generatore di corrente spento diventa un [[aperto|circuito aperto]] (si toglie).</li></ul></li>
+<li>Ricollega il carico all'equivalente: I = V<sub>th</sub> / (R<sub>th</sub> + R<sub>L</sub>).</li>
+</ol>
+<div class="box ex"><b>Esempio</b><p>Un generatore da 12 V alimenta un partitore con R<sub>1</sub> = 6 Ω e R<sub>2</sub> = 3 Ω; il carico va collegato ai capi di R<sub>2</sub>.</p>
+<ol><li>V<sub>th</sub> = 12 · 3 / (6 + 3) = 4 V.</li><li>Spegnendo il generatore (corto), R<sub>1</sub> e R<sub>2</sub> risultano in parallelo: R<sub>th</sub> = 6 ∥ 3 = 18/9 = 2 Ω.</li><li>Con un carico da 2 Ω: I = 4 / (2 + 2) = <b>1 A</b>. Con un carico da 6 Ω: I = 4 / 8 = 0,5 A. Ogni nuovo carico si risolve in un passaggio.</li></ol></div>
+<figure class="fig"><svg viewBox="0 0 320 130" aria-label="Equivalente di Thévenin">
+  <path class="wire" d="M50 25 H230 M50 105 H230 M50 25 V105"/>
+  <rect x="38" y="52" width="24" height="26" fill="var(--surface)"/>
+  <line x1="34" y1="58" x2="66" y2="58" stroke="currentColor" stroke-width="2.4"/><line x1="42" y1="70" x2="58" y2="70" stroke="currentColor" stroke-width="4"/>
+  <rect class="comp" x="110" y="15" width="50" height="20" rx="2"/>
+  <circle cx="230" cy="25" r="4" fill="var(--surface)" stroke="currentColor" stroke-width="2"/><circle cx="230" cy="105" r="4" fill="var(--surface)" stroke="currentColor" stroke-width="2"/>
+  <text class="lbl" x="8" y="69">V<tspan dy="4" font-size="9">th</tspan></text><text class="lbl" x="135" y="55" text-anchor="middle">R<tspan dy="4" font-size="9">th</tspan></text>
+  <text class="lbl-m" x="240" y="29">A</text><text class="lbl-m" x="240" y="109">B</text>
+</svg><figcaption>Qualsiasi rete lineare vista dai morsetti A e B</figcaption></figure>
+
+<h2>L'equivalente di Norton</h2>
+<p>Il [[norton|teorema di Norton]] dice la stessa cosa in forma «duale»: un generatore di corrente I<sub>n</sub> con in parallelo R<sub>n</sub>. Si passa dall'uno all'altro facilmente:</p>
+<div class="f">R<sub>n</sub> = R<sub>th</sub> &nbsp;&nbsp;·&nbsp;&nbsp; I<sub>n</sub> = V<sub>th</sub> / R<sub>th</sub></div>
+<p>I<sub>n</sub> è la corrente che scorrerebbe cortocircuitando i morsetti. Nell'esempio di prima: I<sub>n</sub> = 4 / 2 = 2 A.</p>
+
+<h2>Il principio di sovrapposizione</h2>
+<p>Quando un circuito lineare ha più generatori, si può studiare l'effetto di <b>uno alla volta</b>, spegnendo gli altri, e poi sommare i risultati. È il [[sovrapposizione|principio di sovrapposizione]].</p>
+<div class="box ex"><b>Esempio</b><p>Su una resistenza, il generatore A da solo produce 3 V e il generatore B da solo ne produce −1 V. Con entrambi accesi la tensione è 3 + (−1) = <b>2 V</b>.</p></div>
+<div class="box tip"><b>Attenzione</b><p>La sovrapposizione vale per tensioni e correnti, <b>non per le potenze</b>, perché la potenza dipende dal quadrato della corrente. Prima si somma la corrente totale, poi si calcola la potenza.</p></div>`,
+  quiz: [
+    { q: "Per calcolare Rth, un generatore di tensione ideale va sostituito con…", o: ["un circuito aperto", "un cortocircuito", "una resistenza da 1 Ω", "un generatore di corrente"], a: 1, w: "Spegnere un generatore di tensione significa imporre 0 V: equivale a un filo." },
+    { q: "Un equivalente di Thévenin ha Vth = 10 V e Rth = 5 Ω. Quanto vale In di Norton?", o: ["50 A", "2 A", "0,5 A", "15 A"], a: 1, w: "In = Vth/Rth = 10/5 = 2 A." },
+    { q: "Il principio di sovrapposizione si può usare per sommare direttamente…", o: ["le potenze", "le correnti e le tensioni", "le resistenze", "le energie"], a: 1, w: "Vale per le grandezze lineari: tensioni e correnti. Le potenze no, perché dipendono dal quadrato." }
+  ] },
+
+/* ---------------------------------------------------- 10 */
+{ id: "condensatori", level: "inter", min: 12,
+  title: "Condensatori e circuito RC",
+  sub: "Immagazzinare carica e il tempo di carica",
+  goals: ["Capire capacità e farad", "Calcolare la costante di tempo τ = RC", "Descrivere carica e scarica"],
+  body: `
+<h2>Cos'è un condensatore</h2>
+<p>Un [[condensatore]] è fatto di due superfici conduttrici, le [[armature]], separate da un isolante detto [[dielettrico]]. Se applichi una tensione, su un'armatura si accumula carica positiva e sull'altra negativa. Tra le due la corrente non passa, ma il condensatore immagazzina energia.</p>
+<p>La [[capacita|capacità]] C indica quanta carica si accumula per ogni volt:</p>
+<div class="f">C = Q / V<small>C in [[farad]] (F) · Q in coulomb · V in volt</small></div>
+<p>Il farad è un'unità enorme: i condensatori comuni vanno dai picofarad (pF, 10<sup>−12</sup>) alle migliaia di microfarad (µF, 10<sup>−6</sup>).</p>
+<div class="f">E = ½ · C · V²<small>Energia immagazzinata, in joule</small></div>
+<div class="box ex"><b>Esempio</b><p>Un condensatore da 1000 µF caricato a 12 V contiene E = ½ · 0,001 · 144 = <b>0,072 J</b>. È poca energia, ma si può scaricare in un istante: così funziona il flash delle fotocamere.</p></div>
+
+<h2>Serie e parallelo: tutto al contrario</h2>
+<p>Con i condensatori le regole sono invertite rispetto ai resistori:</p>
+<ul><li><b>In parallelo</b> le capacità si sommano: C<sub>eq</sub> = C<sub>1</sub> + C<sub>2</sub>.</li><li><b>In serie</b> si sommano gli inversi: 1/C<sub>eq</sub> = 1/C<sub>1</sub> + 1/C<sub>2</sub>.</li></ul>
+
+<h2>La carica attraverso una resistenza</h2>
+<p>Se carichi un condensatore attraverso una resistenza R, la tensione non sale di colpo: cresce prima in fretta e poi sempre più piano, con un andamento [[esponenziale]]. La velocità è fissata dalla [[tau|costante di tempo]]:</p>
+<div class="f">τ = R · C<small>τ (tau) in secondi · R in ohm · C in farad</small></div>
+<div class="f">v<sub>C</sub>(t) = V · (1 − e<sup>−t/τ</sup>)<small>e ≈ 2,718 è il numero di Nepero, base degli esponenziali</small></div>
+<div class="tbl"><table>
+<tr><th>Tempo trascorso</th><th>1 τ</th><th>2 τ</th><th>3 τ</th><th>5 τ</th></tr>
+<tr><td>Carica raggiunta</td><td>63%</td><td>86%</td><td>95%</td><td>99%</td></tr>
+</table></div>
+<p>In pratica dopo 5 τ il condensatore si considera carico. In scarica succede il contrario: v<sub>C</sub>(t) = V · e<sup>−t/τ</sup>, e dopo 1 τ resta il 37%.</p>
+<div class="box ex"><b>Esempio</b><p>R = 10 kΩ e C = 100 µF: τ = 10 000 · 0,0001 = <b>1 s</b>. Il condensatore è carico dopo circa 5 secondi.</p></div>
+
+<div data-w="rc"></div>
+
+<h2>Comportamento in DC e in AC</h2>
+<ul>
+<li>In corrente continua, finito il [[transitorio]], il condensatore è carico e non passa più corrente: <b>a [[regime]] si comporta come un circuito aperto</b>.</li>
+<li>La tensione su un condensatore non può cambiare istantaneamente: serve tempo per spostare la carica.</li>
+<li>In corrente alternata, invece, si carica e scarica in continuazione e lascia «passare» la corrente, tanto più facilmente quanto più alta è la frequenza. Lo vedremo con la reattanza.</li>
+</ul>
+<p>Usi tipici: livellare la tensione negli alimentatori, filtrare i disturbi, temporizzare, rifasare i motori.</p>`,
+  quiz: [
+    { q: "R = 10 kΩ e C = 100 µF. Quanto vale τ?", o: ["0,1 s", "1 s", "10 s", "1000 s"], a: 1, w: "τ = R·C = 10 000 × 0,000 1 = 1 s." },
+    { q: "Dopo un tempo pari a τ, quanto è carico il condensatore?", o: ["50%", "63%", "99%", "100%"], a: 1, w: "1 − e^(−1) ≈ 0,63: il 63% della tensione finale." },
+    { q: "In DC, a regime, un condensatore si comporta come…", o: ["un cortocircuito", "un circuito aperto", "una resistenza da 1 Ω", "un generatore"], a: 1, w: "Una volta carico non passa più corrente: è come un'interruzione." }
+  ] },
+
+/* ---------------------------------------------------- 11 */
+{ id: "induttori", level: "inter", min: 11,
+  title: "Magnetismo e induttori",
+  sub: "Correnti che creano campi, campi che creano tensioni",
+  goals: ["Collegare corrente e campo magnetico", "Capire la legge di Faraday", "Usare v = L·Δi/Δt e τ = L/R"],
+  body: `
+<h2>La corrente crea un campo magnetico</h2>
+<p>Ogni filo percorso da corrente crea attorno a sé un [[campo_mag|campo magnetico]]. Se avvolgi il filo in tante [[spira|spire]] ottieni una bobina, il cui campo è molto più intenso; con un [[nucleo]] di ferro all'interno diventa un elettromagnete. Così funzionano relè, motori, altoparlanti e campanelli.</p>
+
+<h2>La legge di Faraday</h2>
+<p>Vale anche il contrario: se il campo magnetico che attraversa un circuito <b>cambia</b>, nel circuito nasce una tensione. È la [[faraday|legge di Faraday]] dell'induzione. Quello che conta è la variazione del [[flusso]] magnetico nel tempo: un magnete fermo vicino a una bobina non fa nulla, un magnete in movimento sì.</p>
+<p>È il principio su cui si basano gli alternatori delle centrali, i trasformatori, i piani a induzione e le ricariche wireless.</p>
+
+<h2>L'induttore</h2>
+<p>Un [[induttore]] è una bobina usata come componente. Quando la corrente che lo attraversa cambia, cambia anche il suo campo magnetico, e questo induce ai suoi capi una tensione che <b>si oppone alla variazione</b>. L'[[induttanza]] L, misurata in [[henry]] (H), dice quanto è forte questo effetto:</p>
+<div class="f">v = L · Δi / Δt<small>Δ (delta) significa «variazione»: Δi/Δt è quanto in fretta cambia la corrente</small></div>
+<div class="box ex"><b>Esempio</b><p>Un induttore da 0,5 H in cui la corrente passa da 2 A a 0 in 10 ms produce v = 0,5 · 2 / 0,01 = <b>100 V</b>. Da una corrente modesta nasce una tensione alta: è il motivo delle scintille quando si interrompe il circuito di un motore o di un relè. In elettronica si mette un «diodo di ricircolo» per proteggere i componenti.</p></div>
+<div class="box tip"><b>Analogia meccanica</b><p>L'induttore è come un volano: è difficile metterlo in rotazione e, una volta lanciato, è difficile fermarlo. Allo stesso modo l'induttore si oppone sia all'aumento sia alla diminuzione della corrente.</p></div>
+<div class="f">E = ½ · L · I²<small>Energia immagazzinata nel campo magnetico</small></div>
+
+<h2>Il circuito RL</h2>
+<p>Collegando un induttore in serie a una resistenza e chiudendo l'interruttore, la corrente non sale di colpo: cresce con lo stesso andamento esponenziale del circuito RC, con costante di tempo:</p>
+<div class="f">τ = L / R</div>
+<div class="box ex"><b>Esempio</b><p>L = 0,5 H e R = 10 Ω: τ = 0,05 s = 50 ms. La corrente arriva a regime in circa 5 τ = 250 ms.</p></div>
+
+<h2>Confronto con il condensatore</h2>
+<div class="tbl"><table>
+<tr><th></th><th>Condensatore</th><th>Induttore</th></tr>
+<tr><td>Accumula energia nel</td><td>campo elettrico</td><td>campo magnetico</td></tr>
+<tr><td>Non può cambiare di colpo</td><td>la tensione</td><td>la corrente</td></tr>
+<tr><td>In DC a regime è</td><td>un circuito aperto</td><td>un cortocircuito</td></tr>
+<tr><td>Costante di tempo</td><td>τ = R·C</td><td>τ = L/R</td></tr>
+</table></div>`,
+  quiz: [
+    { q: "Secondo la legge di Faraday, una tensione viene indotta quando…", o: ["c'è un magnete vicino", "il flusso magnetico varia", "la corrente è costante", "il circuito è aperto"], a: 1, w: "Conta la variazione del flusso nel tempo, non la sua presenza." },
+    { q: "In DC, a regime, un induttore ideale si comporta come…", o: ["un circuito aperto", "un cortocircuito", "un condensatore", "un generatore"], a: 1, w: "Con corrente costante Δi/Δt = 0, quindi la tensione ai capi è zero: è come un filo." },
+    { q: "Un circuito RL ha L = 2 H e R = 100 Ω. Quanto vale τ?", o: ["200 s", "0,02 s", "50 s", "2 s"], a: 1, w: "τ = L/R = 2/100 = 0,02 s = 20 ms." }
+  ] },
+
+/* ---------------------------------------------------- 12 */
+{ id: "alternata", level: "inter", min: 11,
+  title: "La corrente alternata",
+  sub: "Sinusoidi, frequenza e valore efficace",
+  goals: ["Descrivere una sinusoide: ampiezza, frequenza, fase", "Calcolare periodo e pulsazione", "Capire il valore efficace"],
+  body: `
+<h2>Perché l'alternata</h2>
+<p>La rete elettrica usa la [[ac|corrente alternata]] perché con il [[trasformatore]] è facile alzarne e abbassarne la tensione, e trasportare energia ad alta tensione spreca molto meno. Gli alternatori delle centrali, inoltre, la producono naturalmente facendo ruotare una bobina in un campo magnetico.</p>
+
+<h2>La sinusoide</h2>
+<p>La tensione di rete segue una [[sinusoide]]:</p>
+<div class="f">v(t) = V<sub>max</sub> · sin(ω t + φ)</div>
+<ul>
+<li><b>V<sub>max</sub></b>: l'[[ampiezza]], cioè il valore di picco.</li>
+<li><b>f</b>: la [[frequenza]], quante volte al secondo si ripete il ciclo, in [[hertz]] (Hz). In Europa è 50 Hz, negli Stati Uniti 60 Hz.</li>
+<li><b>T</b>: il [[periodo]], la durata di un ciclo: T = 1 / f. A 50 Hz, T = 20 ms.</li>
+<li><b>ω</b> (omega): la [[pulsazione]], ω = 2π f, in [[radiante|radianti]] al secondo. A 50 Hz vale circa 314 rad/s.</li>
+<li><b>φ</b> (fi): la [[fase]], che dice di quanto l'onda è spostata in avanti o indietro.</li>
+</ul>
+
+<h2>Il valore efficace</h2>
+<p>La tensione alternata cambia di continuo: quale valore scegliere per descriverla? Si usa il [[rms|valore efficace]] (detto anche RMS): la tensione continua che scalderebbe una resistenza nello stesso modo. Per una sinusoide:</p>
+<div class="f">V<sub>eff</sub> = V<sub>max</sub> / √2 ≈ 0,707 · V<sub>max</sub></div>
+<div class="box ex"><b>Esempio</b><p>I «230 V» della presa sono un valore efficace. Il picco è 230 · √2 ≈ <b>325 V</b>, e la tensione oscilla tra +325 V e −325 V cinquanta volte al secondo.</p></div>
+<p>Quando si parla di tensioni e correnti alternate, se non è specificato altro, si intende sempre il valore efficace. Le formule della potenza dei resistori (P = V·I, P = R·I²) continuano a valere usando i valori efficaci.</p>
+
+<div data-w="ac"></div>
+
+<h2>Lo sfasamento</h2>
+<p>Due sinusoidi con la stessa frequenza possono essere spostate l'una rispetto all'altra: si dice che sono sfasate. Lo sfasamento si misura in gradi: 360° corrispondono a un intero periodo, quindi a 50 Hz uno sfasamento di 90° equivale a un ritardo di 5 ms.</p>
+<p>Lo sfasamento tra tensione e corrente è fondamentale: in una resistenza sono in fase, ma con induttori e condensatori no. Lo vediamo nella prossima lezione.</p>`,
+  quiz: [
+    { q: "Qual è il periodo di una sinusoide a 50 Hz?", o: ["50 ms", "20 ms", "2 ms", "0,5 s"], a: 1, w: "T = 1/f = 1/50 = 0,02 s = 20 ms." },
+    { q: "Una tensione ha valore efficace 230 V. Il valore di picco è circa…", o: ["163 V", "230 V", "325 V", "460 V"], a: 2, w: "Vmax = Veff · √2 ≈ 230 · 1,414 ≈ 325 V." },
+    { q: "La pulsazione ω a 50 Hz vale circa…", o: ["50 rad/s", "157 rad/s", "314 rad/s", "628 rad/s"], a: 2, w: "ω = 2π·f = 6,28 · 50 ≈ 314 rad/s." }
+  ] },
+
+/* ---------------------------------------------------- 13 */
+{ id: "impedenza", level: "inter", min: 13,
+  title: "Fasori, reattanza e impedenza",
+  sub: "La «resistenza» dei circuiti in alternata",
+  goals: ["Rappresentare sinusoidi con i fasori", "Calcolare le reattanze XL e XC", "Calcolare modulo e fase dell'impedenza"],
+  body: `
+<h2>I fasori</h2>
+<p>Fare i conti con le sinusoidi istante per istante è scomodo. Siccome in un circuito tutte le grandezze hanno la stessa frequenza, basta tener conto di due cose: quanto sono grandi e quanto sono sfasate. Le si rappresenta quindi con una freccia, il [[fasore]]: la lunghezza è il valore efficace, l'angolo è la fase.</p>
+<p>Matematicamente i fasori sono [[complessi|numeri complessi]]: hanno una parte reale (orizzontale) e una parte immaginaria (verticale), indicata con la lettera <b>j</b>. Non spaventarti: per ora basta pensarli come frecce su un piano.</p>
+
+<h2>Tre componenti, tre comportamenti</h2>
+<div class="tbl"><table>
+<tr><th>Componente</th><th>Opposizione</th><th>Corrente rispetto alla tensione</th></tr>
+<tr><td>Resistore R</td><td>R</td><td>In fase</td></tr>
+<tr><td>Induttore L</td><td>X<sub>L</sub> = ω L</td><td>In ritardo di 90°</td></tr>
+<tr><td>Condensatore C</td><td>X<sub>C</sub> = 1 / (ω C)</td><td>In anticipo di 90°</td></tr>
+</table></div>
+<p>X<sub>L</sub> e X<sub>C</sub> sono le [[reattanza|reattanze]]. Si misurano in ohm come le resistenze, ma non dissipano energia: la immagazzinano e la restituiscono a ogni ciclo.</p>
+<ul>
+<li>La reattanza induttiva <b>cresce</b> con la frequenza: alle alte frequenze l'induttore «blocca».</li>
+<li>La reattanza capacitiva <b>diminuisce</b> con la frequenza: alle alte frequenze il condensatore «lascia passare».</li>
+</ul>
+<div class="box ex"><b>Esempio</b><p>A 50 Hz (ω ≈ 314 rad/s) un induttore da 0,1 H ha X<sub>L</sub> = 314 · 0,1 ≈ 31,4 Ω. Un condensatore da 100 µF ha X<sub>C</sub> = 1 / (314 · 0,0001) ≈ 31,8 Ω.</p></div>
+
+<h2>L'impedenza</h2>
+<p>L'[[impedenza]] Z mette insieme resistenza e reattanza ed è la generalizzazione della resistenza per l'alternata. La legge di Ohm resta valida:</p>
+<div class="f">V = Z · I</div>
+<p>Per un circuito R-L-C in serie, la reattanza totale è X = X<sub>L</sub> − X<sub>C</sub> (gli effetti di induttore e condensatore sono opposti), e:</p>
+<div class="f">Z = R + jX &nbsp;&nbsp;→&nbsp;&nbsp; |Z| = √(R² + X²) &nbsp;&nbsp;·&nbsp;&nbsp; φ = arctan(X / R)<small>|Z| è il modulo (la lunghezza della freccia) · φ è lo sfasamento tra tensione e corrente</small></div>
+<p>R, X e |Z| formano un triangolo rettangolo: è il «triangolo dell'impedenza», e |Z| si trova con il teorema di Pitagora.</p>
+<div class="box ex"><b>Esempio</b><p>Un carico con R = 30 Ω e X<sub>L</sub> = 40 Ω ha |Z| = √(900 + 1600) = <b>50 Ω</b> e φ = arctan(40/30) ≈ <b>53°</b>. A 230 V assorbe I = 230 / 50 = 4,6 A, in ritardo di 53° sulla tensione.</p></div>
+
+<div data-w="rlc"></div>
+
+<h2>La risonanza</h2>
+<p>A una certa frequenza X<sub>L</sub> e X<sub>C</sub> sono uguali e si annullano: il circuito si comporta come una pura resistenza e, in serie, la corrente è massima. È la [[risonanza]]:</p>
+<div class="f">f<sub>0</sub> = 1 / (2π √(L C))</div>
+<p>Su questo principio si basano i circuiti di sintonia delle radio, che «scelgono» una stazione regolando L o C.</p>`,
+  quiz: [
+    { q: "Se la frequenza raddoppia, la reattanza di un induttore…", o: ["raddoppia", "si dimezza", "resta uguale", "quadruplica"], a: 0, w: "XL = ωL = 2πfL: è proporzionale alla frequenza." },
+    { q: "Un carico ha R = 6 Ω e X = 8 Ω. Quanto vale |Z|?", o: ["14 Ω", "2 Ω", "10 Ω", "48 Ω"], a: 2, w: "|Z| = √(36 + 64) = √100 = 10 Ω." },
+    { q: "In un condensatore la corrente rispetto alla tensione è…", o: ["in fase", "in ritardo di 90°", "in anticipo di 90°", "in opposizione (180°)"], a: 2, w: "Nel condensatore la corrente anticipa la tensione di 90°; nell'induttore la segue con 90° di ritardo." }
+  ] },
+
+/* ---------------------------------------------------- 14 */
+{ id: "potenza-ac", level: "inter", min: 12,
+  title: "Potenza in alternata e rifasamento",
+  sub: "Potenza attiva, reattiva, apparente e cos φ",
+  goals: ["Distinguere P, Q e S", "Capire il fattore di potenza", "Dimensionare un rifasamento"],
+  body: `
+<h2>Tre potenze</h2>
+<p>In alternata, se tensione e corrente sono sfasate, non tutta la potenza in gioco viene davvero usata. Per questo si distinguono tre potenze:</p>
+<div class="tbl"><table>
+<tr><th>Potenza</th><th>Formula</th><th>Unità</th><th>Significato</th></tr>
+<tr><td>[[pot_attiva|Attiva]] P</td><td>V · I · cos φ</td><td>W</td><td>Si trasforma in calore, luce, lavoro</td></tr>
+<tr><td>[[pot_reattiva|Reattiva]] Q</td><td>V · I · sin φ</td><td>var</td><td>Va avanti e indietro, non viene consumata</td></tr>
+<tr><td>[[pot_apparente|Apparente]] S</td><td>V · I</td><td>VA</td><td>Quella che cavi e trasformatori devono sopportare</td></tr>
+</table></div>
+<p>Le tre formano il <b>triangolo delle potenze</b>, un altro triangolo rettangolo:</p>
+<div class="f">S² = P² + Q²</div>
+<div class="box ex"><b>Esempio</b><p>Un carico a 230 V assorbe 10 A con cos φ = 0,8 (quindi sin φ = 0,6). S = 230 · 10 = 2300 VA; P = 2300 · 0,8 = <b>1840 W</b>; Q = 2300 · 0,6 = <b>1380 var</b>. Verifica: √(1840² + 1380²) = 2300. ✓</p></div>
+<div class="box tip"><b>Analogia della birra</b><p>In un boccale, la birra è la potenza attiva (quella che bevi), la schiuma è la reattiva (occupa spazio ma non disseta), il boccale intero è l'apparente. Più schiuma c'è, più grande deve essere il boccale per la stessa quantità di birra.</p></div>
+
+<h2>Il fattore di potenza</h2>
+<p>Il [[cosfi|fattore di potenza]] cos φ = P / S dice quanta parte della potenza apparente è utile. Vale 1 per i carichi puramente resistivi (stufe, forni) e scende con i carichi induttivi come i motori, che hanno bisogno di potenza reattiva per creare il campo magnetico.</p>
+<p>Un cos φ basso è un problema: a parità di potenza utile serve più corrente, quindi cavi più grossi e più perdite per effetto Joule. Per questo i distributori fanno pagare l'energia reattiva alle utenze con un fattore di potenza troppo basso (in genere sotto 0,9).</p>
+
+<h2>Il rifasamento</h2>
+<p>La soluzione è il [[rifasamento]]: si mettono dei condensatori in parallelo al carico. I condensatori producono potenza reattiva di segno opposto a quella dei motori e la compensano «sul posto», così la rete fornisce solo la potenza attiva (o quasi).</p>
+<div class="f">Q<sub>C</sub> = P · (tan φ<sub>1</sub> − tan φ<sub>2</sub>)<small>φ<sub>1</sub> = angolo prima del rifasamento · φ<sub>2</sub> = angolo desiderato</small></div>
+<div class="box ex"><b>Esempio</b><p>Un motore da 10 kW ha cos φ = 0,7 e lo vogliamo portare a 0,95.</p><ol><li>cos φ<sub>1</sub> = 0,7 → φ<sub>1</sub> ≈ 45,6° → tan φ<sub>1</sub> ≈ 1,020.</li><li>cos φ<sub>2</sub> = 0,95 → φ<sub>2</sub> ≈ 18,2° → tan φ<sub>2</sub> ≈ 0,329.</li><li>Q<sub>C</sub> = 10 · (1,020 − 0,329) ≈ <b>6,9 kvar</b> di condensatori.</li></ol><p>La potenza apparente scende da 14,3 a 10,5 kVA: circa il 26% di corrente in meno nei cavi, a parità di lavoro svolto dal motore.</p></div>
+
+<div data-w="rifasa"></div>`,
+  quiz: [
+    { q: "In quale unità si misura la potenza reattiva?", o: ["W", "VA", "var", "J"], a: 2, w: "W per l'attiva, var (voltampere reattivi) per la reattiva, VA per l'apparente." },
+    { q: "Un carico ha P = 3 kW e Q = 4 kvar. Quanto vale S?", o: ["7 kVA", "5 kVA", "1 kVA", "12 kVA"], a: 1, w: "S = √(P² + Q²) = √(9 + 16) = 5 kVA." },
+    { q: "Per rifasare un impianto con molti motori si aggiungono…", o: ["induttori in serie", "resistenze in parallelo", "condensatori in parallelo", "fusibili"], a: 2, w: "I condensatori forniscono la potenza reattiva che chiedono i motori e alzano il cos φ." }
+  ] },
+
+/* ---------------------------------------------------- 15 */
+{ id: "trifase", level: "inter", min: 11,
+  title: "Sistemi trifase",
+  sub: "Come viaggia l'energia dalle centrali alle fabbriche",
+  goals: ["Capire com'è fatto un sistema trifase", "Distinguere tensione di fase e concatenata", "Calcolare la potenza trifase"],
+  body: `
+<h2>Tre sinusoidi sfasate</h2>
+<p>Un [[trifase|sistema trifase]] usa tre tensioni alternate con la stessa ampiezza e frequenza, sfasate tra loro di 120° (un terzo di periodo). Le tre [[fase_cond|fasi]] si chiamano L1, L2 e L3 (oppure R, S, T).</p>
+
+<div data-w="trifase"></div>
+
+<p>Una proprietà notevole: in ogni istante la somma delle tre tensioni è zero. Se i tre carichi sono uguali («carico equilibrato»), anche la somma delle correnti è zero e il filo di ritorno non serve, oppure può essere molto sottile.</p>
+
+<h2>Perché si usa</h2>
+<ul>
+<li><b>Meno rame</b>: a parità di potenza trasportata servono meno conduttori che con tre linee monofase separate.</li>
+<li><b>Potenza costante</b>: la potenza totale non pulsa come in monofase, quindi i motori girano in modo regolare.</li>
+<li><b>Campo magnetico rotante</b>: tre bobine alimentate in trifase creano un campo che gira da solo. È così che funzionano i motori asincroni, i più diffusi nell'industria.</li>
+</ul>
+
+<h2>Tensione di fase e concatenata</h2>
+<p>In un sistema trifase con [[neutro]] ci sono due tensioni:</p>
+<ul>
+<li><b>Tensione di fase</b> (tra una fase e il neutro): <b>230 V</b>. È quella che arriva nelle case, che di solito ricevono una sola fase più il neutro.</li>
+<li><b>[[concatenata|Tensione concatenata]]</b> (tra due fasi): <b>400 V</b>.</li>
+</ul>
+<div class="f">V<sub>concatenata</sub> = √3 · V<sub>fase</sub><small>230 · 1,732 ≈ 398 V, arrotondato a 400 V</small></div>
+
+<h2>Stella e triangolo</h2>
+<p>I tre carichi di un utilizzatore trifase si possono collegare in due modi:</p>
+<ul>
+<li><b>[[stella|A stella (Y)]]</b>: ogni carico è tra una fase e il centro stella, quindi riceve 230 V. La corrente di linea è uguale a quella nel carico.</li>
+<li><b>[[triangolo|A triangolo (Δ)]]</b>: ogni carico è tra due fasi, quindi riceve 400 V. La corrente di linea è √3 volte quella nel carico.</li>
+</ul>
+<p>Alcuni motori partono a stella, con meno corrente allo spunto, e poi passano a triangolo per lavorare a piena potenza: è l'avviamento «stella-triangolo».</p>
+
+<h2>La potenza trifase</h2>
+<p>Per un carico equilibrato, con tensione concatenata V<sub>L</sub> e corrente di linea I<sub>L</sub>, vale in entrambi i collegamenti:</p>
+<div class="f">P = √3 · V<sub>L</sub> · I<sub>L</sub> · cos φ</div>
+<div class="box ex"><b>Esempio</b><p>Un motore trifase a 400 V assorbe 10 A per fase con cos φ = 0,85. P = 1,732 · 400 · 10 · 0,85 ≈ <b>5,9 kW</b>.</p></div>`,
+  quiz: [
+    { q: "Di quanti gradi sono sfasate tra loro le tensioni di un sistema trifase?", o: ["90°", "120°", "180°", "60°"], a: 1, w: "Tre fasi equamente distribuite su 360°: 360/3 = 120°." },
+    { q: "Con tensione di fase 230 V, la tensione concatenata è circa…", o: ["460 V", "690 V", "400 V", "325 V"], a: 2, w: "Vconc = √3 · 230 ≈ 400 V." },
+    { q: "In un collegamento a triangolo, ogni carico riceve…", o: ["la tensione di fase", "la tensione concatenata", "zero volt", "metà della tensione concatenata"], a: 1, w: "A triangolo ogni carico è collegato tra due fasi, quindi alla tensione concatenata." }
+  ] },
+
+/* ---------------------------------------------------- 16 */
+{ id: "trasformatore", level: "inter", min: 10,
+  title: "Il trasformatore",
+  sub: "Alzare e abbassare la tensione senza parti in movimento",
+  goals: ["Capire il principio di funzionamento", "Usare il rapporto spire", "Capire perché si trasporta energia in alta tensione"],
+  body: `
+<h2>Com'è fatto</h2>
+<p>Un [[trasformatore]] è formato da due bobine avvolte sullo stesso [[nucleo]] di ferro. La bobina collegata alla sorgente si chiama [[primario]], quella collegata al carico secondario. Le due bobine non si toccano: l'energia passa dall'una all'altra attraverso il campo magnetico.</p>
+<figure class="fig"><svg viewBox="0 0 320 140" aria-label="Schema di un trasformatore">
+  <rect x="95" y="15" width="130" height="110" rx="6" fill="none" stroke="var(--muted)" stroke-width="14" opacity="0.35"/>
+  <g fill="none" stroke="var(--accent)" stroke-width="3">
+    <path d="M95 35 h-16 M95 50 h-16 M95 65 h-16 M95 80 h-16 M95 95 h-16 M95 110 h-16"/>
+  </g>
+  <g fill="none" stroke="var(--volt)" stroke-width="3">
+    <path d="M225 50 h16 M225 70 h16 M225 90 h16"/>
+  </g>
+  <path class="wire" d="M79 35 H30 M79 110 H30 M241 50 H290 M241 90 H290"/>
+  <text class="lbl" x="18" y="77">V<tspan dy="4" font-size="9">1</tspan></text><text class="lbl" x="292" y="77">V<tspan dy="4" font-size="9">2</tspan></text>
+  <text class="lbl-m" x="62" y="132" text-anchor="middle">N₁ spire</text><text class="lbl-m" x="258" y="132" text-anchor="middle">N₂ spire</text>
+  <text class="lbl-m" x="160" y="74" text-anchor="middle">nucleo</text>
+</svg></figure>
+
+<h2>Come funziona</h2>
+<ol>
+<li>La tensione alternata sul primario fa circolare una corrente alternata.</li>
+<li>Questa crea nel nucleo un flusso magnetico che varia continuamente.</li>
+<li>Il flusso variabile attraversa anche il secondario e, per la [[faraday|legge di Faraday]], vi induce una tensione.</li>
+</ol>
+<p>Ne segue una cosa importante: <b>il trasformatore funziona solo in alternata</b>. Con una tensione continua il flusso non varia e sul secondario non arriva nulla.</p>
+
+<h2>Il rapporto spire</h2>
+<p>In un trasformatore ideale le tensioni stanno nello stesso rapporto del numero di [[spira|spire]], mentre le correnti stanno nel rapporto inverso (la potenza in ingresso è uguale a quella in uscita):</p>
+<div class="f">V<sub>1</sub> / V<sub>2</sub> = N<sub>1</sub> / N<sub>2</sub> = I<sub>2</sub> / I<sub>1</sub></div>
+<div class="box ex"><b>Esempio</b><p>Un trasformatore per una lampada alogena ha 1150 spire al primario e 60 al secondario. Collegato a 230 V dà V<sub>2</sub> = 230 · 60 / 1150 = <b>12 V</b>. Se la lampada assorbe 2 A, dalla rete si preleva solo I<sub>1</sub> = 2 · 60 / 1150 ≈ <b>0,10 A</b>.</p></div>
+
+<div data-w="trasf"></div>
+
+<h2>Perché le linee sono ad alta tensione</h2>
+<p>Le perdite in una linea sono P<sub>perdita</sub> = R · I². A parità di potenza trasportata (P = V · I), alzando la tensione si abbassa la corrente, e le perdite scendono con il quadrato.</p>
+<div class="box ex"><b>Esempio</b><p>Trasportare 10 MW a 10 kV richiede 1000 A; a 400 kV ne bastano 25. La corrente è 40 volte più piccola e le perdite 40² = <b>1600 volte</b> più piccole.</p></div>
+<p>Per questo l'energia esce dalle centrali, viene alzata a centinaia di migliaia di volt per il trasporto e poi abbassata a gradini fino ai 400/230 V delle nostre case.</p>
+
+<h2>Perdite e rendimento</h2>
+<p>Un trasformatore reale perde un po' di energia in calore:</p>
+<ul>
+<li><b>Perdite nel rame</b>: effetto Joule negli avvolgimenti, crescono con il carico.</li>
+<li><b>Perdite nel ferro</b>: dovute alle [[parassite|correnti parassite]] e alla continua magnetizzazione del nucleo. Per ridurle il nucleo è fatto di lamierini sottili isolati tra loro.</li>
+</ul>
+<p>Nonostante questo i trasformatori sono macchine molto efficienti: quelli grandi hanno un [[rendimento]] superiore al 98%.</p>`,
+  quiz: [
+    { q: "Un trasformatore ha N1 = 1000 e N2 = 100. Con 230 V al primario, quanto vale V2?", o: ["2300 V", "23 V", "2,3 V", "230 V"], a: 1, w: "V2 = V1 · N2/N1 = 230 · 100/1000 = 23 V." },
+    { q: "Cosa succede se alimenti un trasformatore con una tensione continua?", o: ["Funziona normalmente", "Sul secondario non si induce tensione", "Raddoppia la tensione", "Inverte la polarità"], a: 1, w: "Senza variazione di flusso non c'è induzione. In più, il primario si comporterebbe quasi come un corto e si scalderebbe." },
+    { q: "Se alzi di 10 volte la tensione di trasmissione, a parità di potenza le perdite nella linea…", o: ["calano di 10 volte", "calano di 100 volte", "restano uguali", "aumentano di 10 volte"], a: 1, w: "La corrente scende di 10 volte e le perdite R·I² di 10² = 100 volte." }
+  ] }
+];
+
+/* ===========================================================
+   FORMULARIO
+   =========================================================== */
+const FORMULAS = [
+  { g: "Grandezze di base", items: [
+    ["I = Q / t", "Corrente", "carica-corrente"],
+    ["V = E / Q", "Tensione", "tensione"],
+    ["V = R · I", "Legge di Ohm", "ohm"],
+    ["R = ρ · L / S", "Resistenza di un filo", "ohm"] ] },
+  { g: "Potenza ed energia", items: [
+    ["P = V · I", "Potenza", "potenza"],
+    ["P = R · I² = V² / R", "Potenza su un resistore", "potenza"],
+    ["E = P · t", "Energia", "potenza"],
+    ["1 kWh = 3,6 MJ", "Chilowattora", "potenza"] ] },
+  { g: "Reti", items: [
+    ["Rs = R₁ + R₂ + …", "Resistenze in serie", "serie-parallelo"],
+    ["1/Rp = 1/R₁ + 1/R₂ + …", "Resistenze in parallelo", "serie-parallelo"],
+    ["Rp = R₁R₂ / (R₁ + R₂)", "Due resistenze in parallelo", "serie-parallelo"],
+    ["Σ I entranti = Σ I uscenti", "Legge dei nodi", "kirchhoff"],
+    ["Σ V = 0", "Legge delle maglie", "kirchhoff"],
+    ["Vout = Vin · R₂ / (R₁ + R₂)", "Partitore di tensione", "partitori"],
+    ["I₁ = I · R₂ / (R₁ + R₂)", "Partitore di corrente", "partitori"],
+    ["V = E − r · I", "Generatore reale", "partitori"],
+    ["In = Vth / Rth", "Thévenin ↔ Norton", "thevenin"] ] },
+  { g: "Condensatori e induttori", items: [
+    ["C = Q / V", "Capacità", "condensatori"],
+    ["E = ½ C V²", "Energia nel condensatore", "condensatori"],
+    ["τ = R C", "Costante di tempo RC", "condensatori"],
+    ["v = V (1 − e^(−t/τ))", "Carica del condensatore", "condensatori"],
+    ["v = L · Δi / Δt", "Tensione sull'induttore", "induttori"],
+    ["E = ½ L I²", "Energia nell'induttore", "induttori"],
+    ["τ = L / R", "Costante di tempo RL", "induttori"] ] },
+  { g: "Corrente alternata", items: [
+    ["T = 1 / f", "Periodo", "alternata"],
+    ["ω = 2π f", "Pulsazione", "alternata"],
+    ["Veff = Vmax / √2", "Valore efficace", "alternata"],
+    ["XL = ω L", "Reattanza induttiva", "impedenza"],
+    ["XC = 1 / (ω C)", "Reattanza capacitiva", "impedenza"],
+    ["|Z| = √(R² + X²)", "Modulo dell'impedenza", "impedenza"],
+    ["φ = arctan(X / R)", "Sfasamento", "impedenza"],
+    ["f₀ = 1 / (2π √(LC))", "Frequenza di risonanza", "impedenza"] ] },
+  { g: "Potenze in AC, trifase e trasformatore", items: [
+    ["P = V I cos φ", "Potenza attiva", "potenza-ac"],
+    ["Q = V I sin φ", "Potenza reattiva", "potenza-ac"],
+    ["S = V I = √(P² + Q²)", "Potenza apparente", "potenza-ac"],
+    ["Qc = P (tan φ₁ − tan φ₂)", "Rifasamento", "potenza-ac"],
+    ["Vconc = √3 · Vfase", "Tensione concatenata", "trifase"],
+    ["P = √3 · VL · IL · cos φ", "Potenza trifase", "trifase"],
+    ["V₁/V₂ = N₁/N₂ = I₂/I₁", "Trasformatore ideale", "trasformatore"] ] }
+];
+
+/* ===========================================================
+   SALVATAGGIO PROGRESSI
+   (fallback in memoria se localStorage non è disponibile)
+   =========================================================== */
+const KEY = "luca_elettrotecnica";
+const store = {
+  mem: { done: [], quiz: {} },
+  load() {
+    try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.done)) return { done: d.done, quiz: d.quiz || {} }; } catch {}
+    return this.mem;
+  },
+  save(d) { this.mem = d; try { localStorage.setItem(KEY, JSON.stringify(d)); } catch {} }
+};
+let state = store.load();
+const isDone = id => state.done.includes(id);
+function setDone(id, on) {
+  state.done = state.done.filter(x => x !== id);
+  if (on) state.done.push(id);
+  store.save(state);
+  updateProgress();
+}
+
+/* ===========================================================
+   UTILITÀ
+   =========================================================== */
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const num = (n, d = 2) => Number(n).toLocaleString("it-IT", { maximumFractionDigits: d });
+// formatta con prefisso: 0.005 A -> "5 mA"
+function eng(v, unit, d = 3) {
+  if (!isFinite(v)) return "∞ " + unit;
+  if (v === 0) return "0 " + unit;
+  const P = [[1e9,"G"],[1e6,"M"],[1e3,"k"],[1,""],[1e-3,"m"],[1e-6,"µ"],[1e-9,"n"]];
+  const a = Math.abs(v);
+  const [f, p] = P.find(([f]) => a >= f * 0.9995) || P[P.length - 1];
+  return Number((v / f).toPrecision(d)).toLocaleString("it-IT") + " " + p + unit;
+}
+const linkTerms = html => html.replace(/\[\[([a-z_]+)(?:\|([^\]]+))?\]\]/g, (m, k, t) => {
+  const e = GLOSSARY[k];
+  return e ? `<a class="g" href="#" data-g="${k}">${t || e[0].split(" (")[0].toLowerCase()}</a>` : (t || k);
+});
+
+/* ===========================================================
+   GRAFICI SVG
+   =========================================================== */
+function ticks(a, b, n = 5) {
+  const span = b - a, raw = span / n, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1, 2, 2.5, 5, 10].map(s => s * mag).find(s => span / s <= n) || mag * 10;
+  const out = []; for (let v = Math.ceil(a / step) * step; v <= b + 1e-9; v += step) out.push(+v.toFixed(10));
+  return out;
+}
+function plot(o) {
+  const W = 340, H = o.h || 190, pl = 40, pr = 10, pt = 10, pb = 30;
+  const sx = x => pl + (x - o.x[0]) / (o.x[1] - o.x[0]) * (W - pl - pr);
+  const sy = y => pt + (o.y[1] - y) / (o.y[1] - o.y[0]) * (H - pt - pb);
+  let s = `<svg viewBox="0 0 ${W} ${H}" class="plot" role="img" aria-label="${esc(o.label || "grafico")}"><g class="grid">`;
+  const xt = ticks(o.x[0], o.x[1], 5), yt = ticks(o.y[0], o.y[1], 4);
+  xt.forEach(v => s += `<line x1="${sx(v)}" x2="${sx(v)}" y1="${pt}" y2="${H - pb}"/>`);
+  yt.forEach(v => s += `<line x1="${pl}" x2="${W - pr}" y1="${sy(v)}" y2="${sy(v)}"/>`);
+  s += `</g>`;
+  const y0 = o.y[0] <= 0 && o.y[1] >= 0 ? sy(0) : H - pb;
+  s += `<line class="axis" x1="${pl}" x2="${W - pr}" y1="${y0}" y2="${y0}"/><line class="axis" x1="${pl}" x2="${pl}" y1="${pt}" y2="${H - pb}"/>`;
+  xt.forEach(v => s += `<text x="${sx(v)}" y="${H - pb + 13}" text-anchor="middle">${num(v, 2)}</text>`);
+  yt.forEach(v => s += `<text x="${pl - 5}" y="${sy(v) + 3}" text-anchor="end">${num(v, 2)}</text>`);
+  if (o.xl) s += `<text x="${W - pr}" y="${H - 3}" text-anchor="end">${esc(o.xl)}</text>`;
+  if (o.yl) s += `<text x="${pl + 4}" y="${pt + 9}">${esc(o.yl)}</text>`;
+  (o.marks || []).forEach(m => {
+    if (m.x < o.x[0] || m.x > o.x[1]) return;
+    s += `<line class="mk" x1="${sx(m.x)}" x2="${sx(m.x)}" y1="${pt}" y2="${H - pb}"/><text class="mk-t" x="${sx(m.x) + 4}" y="${pt + 20}">${esc(m.t)}</text>`;
+  });
+  (o.lines || []).forEach(l => {
+    const d = l.pts.map((p, i) => (i ? "L" : "M") + sx(p[0]).toFixed(1) + " " + sy(Math.max(o.y[0], Math.min(o.y[1], p[1]))).toFixed(1)).join("");
+    s += `<path class="ln ${l.c}" d="${d}"/>`;
+  });
+  (o.dots || []).forEach(p => s += `<circle cx="${sx(p[0])}" cy="${sy(p[1])}" r="4" fill="var(--${p[2]})"/>`);
+  return s + `</svg>`;
+}
+const sample = (a, b, f, n = 160) => Array.from({ length: n + 1 }, (_, i) => { const x = a + (b - a) * i / n; return [x, f(x)]; });
+
+/* ===========================================================
+   SIMULATORI
+   ctrl: { k, l (etichetta), min, max, step, v, u (unità), t: "num" per input numerico }
+   =========================================================== */
+function makeWidget(el, title, ctrls, update, extra = "") {
+  const rows = ctrls.map(c => c.t === "num"
+    ? `<div class="ctl"><div class="lb"><label for="w-${c.k}">${c.l}</label></div><input type="number" id="w-${c.k}" data-k="${c.k}" min="${c.min}" max="${c.max}" step="${c.step}" value="${c.v}" inputmode="decimal"></div>`
+    : `<div class="ctl"><div class="lb"><label for="w-${c.k}">${c.l}</label><output data-o="${c.k}"></output></div><input type="range" id="w-${c.k}" data-k="${c.k}" min="${c.min}" max="${c.max}" step="${c.step}" value="${c.v}"></div>`).join("");
+  el.innerHTML = `<div class="wdg"><div class="wdg-h"><span class="tag">Prova tu</span>${title}</div>${extra}<div class="ctls-2">${rows}</div><div class="out"></div><div class="viz"></div><p class="note"></p></div>`;
+  const run = () => {
+    const v = {};
+    ctrls.forEach(c => {
+      const inp = el.querySelector(`[data-k="${c.k}"]`);
+      v[c.k] = parseFloat(String(inp.value).replace(",", ".")) || 0;
+      const o = el.querySelector(`[data-o="${c.k}"]`);
+      if (o) o.textContent = (c.f ? c.f(v[c.k]) : num(v[c.k], 2)) + (c.u ? " " + c.u : "");
+    });
+    update(v, el.querySelector(".out"), el.querySelector(".viz"), el.querySelector(".note"), el);
+  };
+  el.addEventListener("input", run);
+  run();
+  return run;
+}
+const outs = arr => arr.map(([l, v, hl]) => `<div${hl ? ' class="hl"' : ""}><span>${l}</span><b>${v}</b></div>`).join("");
+const legend = arr => `<div class="legend">${arr.map(([c, t]) => `<span><i style="background:var(--${c})"></i>${t}</span>`).join("")}</div>`;
+
+const WIDGETS = {
+  ohm(el) {
+    makeWidget(el, "Legge di Ohm", [
+      { k: "V", l: "Tensione", min: 0, max: 24, step: 0.5, v: 12, u: "V" },
+      { k: "R", l: "Resistenza", min: 1, max: 100, step: 1, v: 6, u: "Ω" }
+    ], (v, out, viz, note) => {
+      const I = v.V / v.R, P = v.V * I;
+      out.innerHTML = outs([["Corrente I = V/R", eng(I, "A"), 1], ["Potenza P = V·I", eng(P, "W")]]);
+      const dur = I > 0 ? Math.max(0.15, Math.min(8, 1.6 / I)) : 0;
+      viz.innerHTML = `<svg viewBox="0 0 320 150" aria-label="Circuito con generatore e resistenza">
+        <path class="wire" d="M60 30 H260 V120 H60 Z"/>
+        <path class="flow" style="${dur ? `animation-duration:${dur}s` : "animation:none;opacity:0"}" d="M60 62 V30 H260 V120 H60 V88"/>
+        <rect x="44" y="62" width="32" height="26" fill="var(--surface)"/>
+        <line x1="42" y1="68" x2="78" y2="68" stroke="currentColor" stroke-width="2.4"/><line x1="50" y1="82" x2="70" y2="82" stroke="currentColor" stroke-width="4.5"/>
+        <text class="lbl-m" x="84" y="66">+</text><text class="lbl-m" x="84" y="90">−</text>
+        <rect class="comp" x="245" y="45" width="30" height="60" rx="2"/>
+        <text class="lbl" x="22" y="80" text-anchor="middle">${num(v.V, 1)} V</text>
+        <text class="lbl" x="290" y="80">${num(v.R, 0)} Ω</text>
+        <text class="lbl" x="160" y="22" text-anchor="middle" style="fill:var(--volt)">I = ${eng(I, "A")}</text>
+      </svg>`;
+      note.textContent = "I puntini gialli si muovono più veloci quando la corrente aumenta: prova ad alzare la tensione o ad abbassare la resistenza.";
+    });
+  },
+
+  bolletta(el) {
+    makeWidget(el, "Quanto consuma un apparecchio?", [
+      { k: "P", l: "Potenza (W)", min: 1, max: 10000, step: 1, v: 2000, t: "num" },
+      { k: "h", l: "Ore di uso al giorno", min: 0, max: 24, step: 0.1, v: 0.5, t: "num" },
+      { k: "c", l: "Prezzo energia (€/kWh)", min: 0, max: 2, step: 0.01, v: 0.25, t: "num" }
+    ], (v, out, viz, note) => {
+      const day = v.P / 1000 * v.h;
+      out.innerHTML = outs([["Energia al giorno", num(day, 2) + " kWh"], ["Energia al mese", num(day * 30, 1) + " kWh"], ["Costo al mese", num(day * 30 * v.c, 2) + " €", 1], ["Costo all'anno", num(day * 365 * v.c, 0) + " €"]]);
+      note.textContent = `Corrente assorbita a 230 V: circa ${eng(v.P / 230, "A")}. Il mese è calcolato su 30 giorni.`;
+    });
+  },
+
+  serpar(el) {
+    let mode = "serie", list = [100, 220, 470];
+    el.innerHTML = `<div class="wdg"><div class="wdg-h"><span class="tag">Prova tu</span>Calcolatore di resistenza equivalente</div>
+      <div class="seg" role="group" aria-label="Tipo di collegamento"><button data-m="serie" class="on">Serie</button><button data-m="parallelo">Parallelo</button></div>
+      <div class="rlist"></div><div class="out"></div><p class="note"></p></div>`;
+    const draw = () => {
+      el.querySelector(".rlist").innerHTML = list.map((r, i) => `<label>R${i + 1}<input type="number" min="0.1" step="any" value="${r}" data-i="${i}" inputmode="decimal">Ω${list.length > 2 ? `<button data-del="${i}" aria-label="Rimuovi R${i + 1}">×</button>` : ""}</label>`).join("")
+        + (list.length < 6 ? `<button class="mini" data-add aria-label="Aggiungi resistenza">+</button>` : "");
+      calc();
+    };
+    const calc = () => {
+      const rs = list.filter(r => r > 0);
+      const req = mode === "serie" ? rs.reduce((a, b) => a + b, 0) : 1 / rs.reduce((a, b) => a + 1 / b, 0);
+      el.querySelector(".out").innerHTML = outs([["Resistenza equivalente", eng(req, "Ω"), 1], [mode === "serie" ? "Più grande della massima" : "Più piccola della minima", eng(mode === "serie" ? Math.max(...rs) : Math.min(...rs), "Ω")]]);
+      el.querySelector(".note").textContent = mode === "serie"
+        ? "In serie: " + rs.map(r => num(r)).join(" + ") + " = " + num(req) + " Ω."
+        : "In parallelo: 1/Req = " + rs.map(r => "1/" + num(r)).join(" + ") + ", quindi Req ≈ " + num(req) + " Ω.";
+    };
+    el.addEventListener("click", e => {
+      const m = e.target.closest("[data-m]"), d = e.target.closest("[data-del]"), a = e.target.closest("[data-add]");
+      if (m) { mode = m.dataset.m; el.querySelectorAll("[data-m]").forEach(b => b.classList.toggle("on", b === m)); calc(); }
+      if (d) { e.preventDefault(); list.splice(+d.dataset.del, 1); draw(); }
+      if (a) { list.push(100); draw(); }
+    });
+    el.addEventListener("input", e => { if (e.target.dataset.i != null) { list[+e.target.dataset.i] = parseFloat(e.target.value) || 0; calc(); } });
+    draw();
+  },
+
+  partitore(el) {
+    makeWidget(el, "Partitore di tensione con carico", [
+      { k: "Vin", l: "Vin", min: 0, max: 24, step: 0.5, v: 12, u: "V" },
+      { k: "R1", l: "R1", min: 0.1, max: 10, step: 0.1, v: 2, u: "kΩ" },
+      { k: "R2", l: "R2", min: 0.1, max: 10, step: 0.1, v: 1, u: "kΩ" },
+      { k: "RL", l: "Carico RL (0 = nessun carico)", min: 0, max: 100, step: 0.5, v: 0, u: "kΩ", f: x => x ? num(x, 1) : "—" }
+    ], (v, out, viz, note) => {
+      const ideal = v.Vin * v.R2 / (v.R1 + v.R2);
+      const r2l = v.RL > 0 ? v.R2 * v.RL / (v.R2 + v.RL) : v.R2;
+      const vo = v.Vin * r2l / (v.R1 + r2l);
+      out.innerHTML = outs([["Vout senza carico", eng(ideal, "V")], ["Vout reale", eng(vo, "V"), 1], ["Corrente in R1", eng(v.Vin / (v.R1 + r2l) / 1000, "A")]]);
+      note.textContent = v.RL > 0
+        ? `Il carico abbassa l'uscita del ${num((1 - vo / ideal) * 100, 1)}%. Prova a renderlo molto più grande di R2.`
+        : "Muovi il cursore del carico per vedere come cambia l'uscita quando colleghi qualcosa.";
+    });
+  },
+
+  rc(el) {
+    let mode = "carica";
+    const extra = `<div class="seg" role="group" aria-label="Fase"><button data-m="carica" class="on">Carica</button><button data-m="scarica">Scarica</button></div>`;
+    const run = makeWidget(el, "Carica e scarica di un circuito RC", [
+      { k: "V", l: "Tensione del generatore", min: 1, max: 12, step: 0.5, v: 10, u: "V" },
+      { k: "R", l: "Resistenza", min: 1, max: 100, step: 1, v: 10, u: "kΩ" },
+      { k: "C", l: "Capacità", min: 10, max: 100, step: 5, v: 100, u: "µF" }
+    ], (v, out, viz, note) => {
+      const tau = v.R * 1e3 * v.C * 1e-6, T = 5;
+      const f = mode === "carica" ? t => v.V * (1 - Math.exp(-t / tau)) : t => v.V * Math.exp(-t / tau);
+      out.innerHTML = outs([["τ = R·C", eng(tau, "s"), 1], ["Quasi completa (5τ)", eng(5 * tau, "s")], ["Tensione dopo 1 s", eng(f(1), "V")]]);
+      viz.innerHTML = plot({ x: [0, T], y: [0, 12], xl: "tempo (s)", yl: "v_C (V)", label: "Tensione sul condensatore nel tempo",
+        lines: [{ pts: sample(0, T, () => v.V, 2), c: "c-ref" }, { pts: sample(0, T, f), c: "c-a" }],
+        marks: [{ x: tau, t: "τ" }], dots: tau <= T ? [[tau, f(tau), "bad"]] : [] });
+      note.textContent = mode === "carica" ? "Al tempo τ la tensione ha raggiunto il 63% del valore finale (linea tratteggiata)." : "Al tempo τ resta il 37% della tensione iniziale.";
+    }, extra);
+    el.addEventListener("click", e => {
+      const m = e.target.closest("[data-m]"); if (!m) return;
+      mode = m.dataset.m; el.querySelectorAll("[data-m]").forEach(b => b.classList.toggle("on", b === m)); run();
+    });
+  },
+
+  ac(el) {
+    makeWidget(el, "Disegna una sinusoide", [
+      { k: "Ve", l: "Valore efficace", min: 0, max: 280, step: 5, v: 230, u: "V" },
+      { k: "f", l: "Frequenza", min: 10, max: 100, step: 1, v: 50, u: "Hz" },
+      { k: "ph", l: "Fase rispetto al riferimento", min: -180, max: 180, step: 5, v: 0, u: "°" }
+    ], (v, out, viz) => {
+      const vm = v.Ve * Math.SQRT2, w = 2 * Math.PI * v.f, ph = v.ph * Math.PI / 180;
+      out.innerHTML = outs([["Picco Vmax", eng(vm, "V"), 1], ["Periodo T", eng(1 / v.f, "s")], ["Pulsazione ω", num(w, 0) + " rad/s"], ["Sfasamento nel tempo", eng(v.ph / 360 / v.f, "s")]]);
+      viz.innerHTML = plot({ x: [0, 40], y: [-400, 400], xl: "tempo (ms)", yl: "v (V)", label: "Sinusoide",
+        lines: [
+          { pts: sample(0, 40, t => vm * Math.sin(w * t / 1000), 240), c: "c-ref" },
+          { pts: sample(0, 40, t => vm * Math.sin(w * t / 1000 + ph), 240), c: "c-a" },
+          { pts: sample(0, 40, () => v.Ve, 2), c: "c-b" } ] }) + legend([["accent", "la tua sinusoide"], ["muted", "riferimento (fase 0)"], ["volt", "valore efficace"]]);
+    });
+  },
+
+  rlc(el) {
+    makeWidget(el, "Impedenza di un circuito R-L-C in serie", [
+      { k: "R", l: "Resistenza R", min: 0, max: 100, step: 1, v: 30, u: "Ω" },
+      { k: "L", l: "Induttanza L", min: 0, max: 300, step: 5, v: 200, u: "mH" },
+      { k: "C", l: "Capacità C", min: 10, max: 1000, step: 10, v: 200, u: "µF" },
+      { k: "f", l: "Frequenza f", min: 10, max: 200, step: 1, v: 50, u: "Hz" }
+    ], (v, out, viz, note) => {
+      const w = 2 * Math.PI * v.f, XL = w * v.L / 1000, XC = 1 / (w * v.C * 1e-6), X = XL - XC;
+      const Z = Math.hypot(v.R, X), phi = Math.atan2(X, v.R) * 180 / Math.PI;
+      const f0 = v.L > 0 ? 1 / (2 * Math.PI * Math.sqrt(v.L / 1000 * v.C * 1e-6)) : NaN;
+      out.innerHTML = outs([["XL = ωL", eng(XL, "Ω")], ["XC = 1/(ωC)", eng(XC, "Ω")], ["|Z|", eng(Z, "Ω"), 1], ["φ", num(phi, 1) + "°", 1], ["Risonanza f₀", isFinite(f0) ? eng(f0, "Hz") : "—"]]);
+      const s = Math.min(200 / Math.max(v.R, 1), 70 / Math.max(Math.abs(X), 1)), ox = 50, oy = 85;
+      const xr = ox + v.R * s, yx = oy - X * s;
+      viz.innerHTML = `<svg viewBox="0 0 320 170" aria-label="Triangolo dell'impedenza">
+        <line x1="20" x2="300" y1="${oy}" y2="${oy}" stroke="var(--line)"/><line x1="${ox}" x2="${ox}" y1="10" y2="160" stroke="var(--line)"/>
+        <text class="lbl-m" x="298" y="${oy - 5}" text-anchor="end">reale (R)</text><text class="lbl-m" x="${ox + 4}" y="18">jX</text>
+        <line x1="${ox}" y1="${oy}" x2="${xr}" y2="${oy}" stroke="var(--ok)" stroke-width="3"/>
+        <line x1="${xr}" y1="${oy}" x2="${xr}" y2="${yx}" stroke="var(--volt)" stroke-width="3"/>
+        <line x1="${ox}" y1="${oy}" x2="${xr}" y2="${yx}" stroke="var(--accent)" stroke-width="3.5"/>
+        <circle cx="${xr}" cy="${yx}" r="4.5" fill="var(--accent)"/>
+      </svg>` + legend([["ok", "R"], ["volt", "X = XL − XC"], ["accent", "Z"]]);
+      note.textContent = Math.abs(X) < Z * 0.02 ? "Sei vicino alla risonanza: XL ≈ XC, il circuito si comporta come una resistenza pura."
+        : X > 0 ? "Prevale l'induttore: carico ohmico-induttivo, la corrente è in ritardo sulla tensione."
+        : "Prevale il condensatore: carico ohmico-capacitivo, la corrente è in anticipo sulla tensione.";
+    });
+  },
+
+  rifasa(el) {
+    makeWidget(el, "Calcolo del rifasamento", [
+      { k: "P", l: "Potenza attiva", min: 1, max: 100, step: 1, v: 10, u: "kW" },
+      { k: "c1", l: "cos φ attuale", min: 0.5, max: 0.99, step: 0.01, v: 0.7, f: x => num(x, 2) },
+      { k: "c2", l: "cos φ desiderato", min: 0.8, max: 1, step: 0.01, v: 0.95, f: x => num(x, 2) }
+    ], (v, out, viz, note) => {
+      const c2 = Math.max(v.c2, v.c1), t1 = Math.tan(Math.acos(v.c1)), t2 = Math.tan(Math.acos(c2));
+      const Q1 = v.P * t1, Q2 = v.P * t2, Qc = Q1 - Q2;
+      out.innerHTML = outs([["Condensatori Qc", num(Qc, 2) + " kvar", 1], ["S prima", num(v.P / v.c1, 2) + " kVA"], ["S dopo", num(v.P / c2, 2) + " kVA"], ["Corrente risparmiata", num((1 - v.c1 / c2) * 100, 0) + "%"]]);
+      const s = Math.min(240 / v.P, 120 / Math.max(Q1, 0.01)), ox = 30, oy = 145, xp = ox + v.P * s;
+      viz.innerHTML = `<svg viewBox="0 0 320 160" aria-label="Triangolo delle potenze prima e dopo il rifasamento">
+        <line x1="${ox}" y1="${oy}" x2="${xp}" y2="${oy}" stroke="var(--ok)" stroke-width="3"/>
+        <line x1="${xp}" y1="${oy}" x2="${xp}" y2="${oy - Q2 * s}" stroke="var(--volt)" stroke-width="3"/>
+        <line x1="${xp}" y1="${oy - Q2 * s}" x2="${xp}" y2="${oy - Q1 * s}" stroke="var(--bad)" stroke-width="3" stroke-dasharray="5 4"/>
+        <line x1="${ox}" y1="${oy}" x2="${xp}" y2="${oy - Q1 * s}" stroke="var(--muted)" stroke-width="2.5"/>
+        <line x1="${ox}" y1="${oy}" x2="${xp}" y2="${oy - Q2 * s}" stroke="var(--accent)" stroke-width="3.5"/>
+      </svg>` + legend([["ok", "P"], ["muted", "S prima"], ["accent", "S dopo"], ["bad", "Qc compensata"], ["volt", "Q residua"]]);
+      note.textContent = v.c2 < v.c1 ? "Il cos φ desiderato deve essere maggiore di quello attuale." : "";
+    });
+  },
+
+  trifase(el) {
+    makeWidget(el, "Le tre fasi istante per istante", [
+      { k: "t", l: "Istante", min: 0, max: 20, step: 0.1, v: 3, u: "ms" }
+    ], (v, out, viz, note) => {
+      const vm = 230 * Math.SQRT2, w = 2 * Math.PI * 50;
+      const fs = [0, -120, -240].map(d => t => vm * Math.sin(w * t / 1000 + d * Math.PI / 180));
+      const vals = fs.map(f => f(v.t));
+      out.innerHTML = outs([["L1", num(vals[0], 0) + " V"], ["L2", num(vals[1], 0) + " V"], ["L3", num(vals[2], 0) + " V"], ["Somma", num(Math.abs(vals[0] + vals[1] + vals[2]) < 0.5 ? 0 : vals[0] + vals[1] + vals[2], 0) + " V", 1]]);
+      viz.innerHTML = plot({ x: [0, 20], y: [-350, 350], xl: "tempo (ms)", yl: "v (V)", label: "Tensioni trifase",
+        lines: fs.map((f, i) => ({ pts: sample(0, 20, f, 200), c: ["c-a", "c-b", "c-d"][i] })),
+        marks: [{ x: v.t, t: "" }], dots: vals.map((y, i) => [v.t, y, ["accent", "volt", "lvl2"][i]]) })
+        + legend([["accent", "L1"], ["volt", "L2 (−120°)"], ["lvl2", "L3 (−240°)"]]);
+      note.textContent = "Muovi il cursore: in qualsiasi istante la somma delle tre tensioni è zero.";
+    });
+  },
+
+  trasf(el) {
+    makeWidget(el, "Trasformatore ideale", [
+      { k: "V1", l: "Tensione primario V1 (V)", min: 1, max: 400000, step: 1, v: 230, t: "num" },
+      { k: "N1", l: "Spire primario N1", min: 1, max: 100000, step: 1, v: 1150, t: "num" },
+      { k: "N2", l: "Spire secondario N2", min: 1, max: 100000, step: 1, v: 60, t: "num" },
+      { k: "I2", l: "Corrente del carico I2 (A)", min: 0, max: 10000, step: 0.1, v: 2, t: "num" }
+    ], (v, out, viz, note) => {
+      if (!v.N1 || !v.N2) { out.innerHTML = ""; note.textContent = "Inserisci un numero di spire maggiore di zero."; return; }
+      const k = v.N1 / v.N2, V2 = v.V1 / k, I1 = v.I2 / k;
+      out.innerHTML = outs([["Rapporto N1/N2", num(k, 2)], ["V2", eng(V2, "V"), 1], ["I1", eng(I1, "A"), 1], ["Potenza", eng(V2 * v.I2, "W")]]);
+      note.textContent = k > 1 ? "Trasformatore abbassatore: la tensione scende, la corrente sul secondario è più alta." : k < 1 ? "Trasformatore elevatore: la tensione sale, la corrente sul secondario è più bassa." : "Rapporto 1:1: è un trasformatore di isolamento.";
+    });
+  }
+};
+
+/* ===========================================================
+   VISTE
+   =========================================================== */
+const app = $("#app");
+const lessonIndex = id => LESSONS.findIndex(l => l.id === id);
+
+function updateProgress() {
+  const n = LESSONS.filter(l => isDone(l.id)).length, pct = Math.round(n / LESSONS.length * 100);
+  $("#bar").style.width = pct + "%";
+  $("#mini-prog").textContent = `${n}/${LESSONS.length} lezioni`;
+}
+
+function viewHome() {
+  const n = LESSONS.filter(l => isDone(l.id)).length, pct = Math.round(n / LESSONS.length * 100);
+  const next = LESSONS.find(l => !isDone(l.id));
+  const lvl = key => {
+    const L = LEVELS[key], ls = LESSONS.filter(l => l.level === key), d = ls.filter(l => isDone(l.id)).length;
+    return `<section class="level">
+      <div class="level-h"><span class="pill" style="background:${L.color}">Livello ${L.n}</span><h2>${L.name}</h2><span class="cnt">${d}/${ls.length}</span></div>
+      <p class="level-d">${L.desc}</p>
+      ${ls.map(l => {
+        const i = lessonIndex(l.id), sc = state.quiz[l.id];
+        return `<a class="lcard${isDone(l.id) ? " is-done" : ""}" href="#l/${l.id}">
+          <span class="num">${isDone(l.id) ? "✓" : i + 1}</span>
+          <span class="txt"><b>${esc(l.title)}</b><span>${esc(l.sub)}</span></span>
+          <span class="meta">${l.min} min${sc != null ? `<span class="sc">quiz ${sc}/${l.quiz.length}</span>` : ""}</span>
+        </a>`;
+      }).join("")}
+    </section>`;
+  };
+  app.innerHTML = `<div class="view">
+    <section class="hero">
+      <p class="k">Corso di elettrotecnica</p>
+      <h1>Dalla legge di Ohm al trifase</h1>
+      <p>${LESSONS.length} lezioni brevi con esempi svolti, simulatori interattivi e un quiz alla fine di ognuna. I termini <a class="g" href="#" data-g="corrente">sottolineati</a> si toccano per leggerne la spiegazione.</p>
+      <div class="prog-row">
+        <div class="prog"><div class="t"><span>I tuoi progressi</span><span>${pct}%</span></div><div class="track"><i style="width:${pct}%"></i></div></div>
+        ${next ? `<a class="btn primary" href="#l/${next.id}">${n ? "Continua" : "Inizia"}: lezione ${lessonIndex(next.id) + 1} →</a>` : `<span class="btn done">Corso completato 🎉</span>`}
+      </div>
+    </section>
+    ${lvl("base")}${lvl("inter")}
+    ${n ? `<p style="text-align:center"><button class="btn" id="reset">Azzera i progressi</button></p>` : ""}
+  </div>`;
+  const r = $("#reset");
+  if (r) r.onclick = () => { if (confirm("Vuoi davvero azzerare progressi e risultati dei quiz?")) { state = { done: [], quiz: {} }; store.save(state); updateProgress(); viewHome(); } };
+}
+
+function viewLesson(id) {
+  const i = lessonIndex(id), l = LESSONS[i];
+  if (!l) return viewHome();
+  const L = LEVELS[l.level], prev = LESSONS[i - 1], next = LESSONS[i + 1];
+  app.innerHTML = `<article class="view">
+    <header class="l-head">
+      <p class="k" style="color:${L.color}">Lezione ${i + 1} · ${L.name} · ${l.min} min</p>
+      <h1>${esc(l.title)}</h1>
+      <p>${esc(l.sub)}</p>
+      <div class="goals"><b>In questa lezione</b><ul>${l.goals.map(g => `<li>${esc(g)}</li>`).join("")}</ul></div>
+    </header>
+    <div class="content">${linkTerms(l.body)}</div>
+    <section class="quiz content" id="quiz"><h2>Verifica</h2><div id="qres"></div>${l.quiz.map((q, qi) => `
+      <div class="q" data-q="${qi}"><p class="qt"><span>${qi + 1}.</span>${esc(q.q)}</p>
+      <div class="opts">${q.o.map((o, oi) => `<button class="opt" data-o="${oi}">${esc(o)}</button>`).join("")}</div></div>`).join("")}
+    </section>
+    <div class="l-foot">
+      <button class="btn${isDone(id) ? " done" : ""}" id="mark">${isDone(id) ? "✓ Completata" : "Segna come completata"}</button>
+      <span class="sp"></span>
+      ${next ? `<a class="btn primary" href="#l/${next.id}">Lezione successiva →</a>` : `<a class="btn primary" href="#">Torna alle lezioni</a>`}
+    </div>
+    <nav class="pn">
+      ${prev ? `<a href="#l/${prev.id}"><span>← Precedente</span><b>${esc(prev.title)}</b></a>` : ""}
+      ${next ? `<a class="nx" href="#l/${next.id}"><span>Successiva →</span><b>${esc(next.title)}</b></a>` : ""}
+    </nav>
+  </article>`;
+
+  app.querySelectorAll("[data-w]").forEach(el => WIDGETS[el.dataset.w] && WIDGETS[el.dataset.w](el));
+
+  const mark = $("#mark");
+  const paintMark = () => { mark.className = "btn" + (isDone(id) ? " done" : ""); mark.textContent = isDone(id) ? "✓ Completata" : "Segna come completata"; };
+  mark.onclick = () => { setDone(id, !isDone(id)); paintMark(); };
+
+  let answered = 0, right = 0;
+  $("#quiz").addEventListener("click", e => {
+    const b = e.target.closest(".opt"); if (!b) return;
+    const box = b.closest(".q"), q = l.quiz[+box.dataset.q], pick = +b.dataset.o, ok = pick === q.a;
+    box.querySelectorAll(".opt").forEach((o, oi) => { o.disabled = true; if (oi === q.a) o.classList.add("right"); });
+    if (!ok) b.classList.add("wrong");
+    box.insertAdjacentHTML("beforeend", `<p class="why${ok ? "" : " no"}"><b>${ok ? "Esatto!" : "Non proprio."}</b> ${esc(q.w)}</p>`);
+    answered++; if (ok) right++;
+    if (answered === l.quiz.length) {
+      state.quiz[id] = Math.max(state.quiz[id] || 0, right);
+      if (right === l.quiz.length && !isDone(id)) { setDone(id, true); paintMark(); }
+      store.save(state);
+      $("#qres").innerHTML = `<div class="qres"><b>${right} / ${l.quiz.length}</b>${right === l.quiz.length ? "Perfetto: lezione completata!" : "Rileggi le parti che ti hanno messo in difficoltà e riprova."}
+        <div style="margin-top:.6rem"><button class="btn" id="retry">Rifai il quiz</button></div></div>`;
+      $("#retry").onclick = () => { viewLesson(id); $("#quiz").scrollIntoView(); };
+      $("#qres").scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  });
+}
+
+function viewFormule() {
+  const title = id => LESSONS[lessonIndex(id)].title;
+  app.innerHTML = `<div class="view">
+    <header class="page-h"><h1>Formulario</h1><p>Tutte le formule del corso in un posto solo. Tocca «lezione» per ripassare da dove vengono.</p></header>
+    ${FORMULAS.map(gr => `<section class="fgroup"><h2>${gr.g}</h2>${gr.items.map(([f, d, id]) => `
+      <div class="frow"><span class="fx">${esc(f)}</span><span class="fd">${esc(d)} · <a href="#l/${id}" title="${esc(title(id))}">lezione ${lessonIndex(id) + 1}</a></span></div>`).join("")}</section>`).join("")}
+  </div>`;
+}
+
+function viewGlossario() {
+  const keys = Object.keys(GLOSSARY).sort((a, b) => GLOSSARY[a][0].localeCompare(GLOSSARY[b][0], "it"));
+  app.innerHTML = `<div class="view">
+    <header class="page-h"><h1>Glossario</h1><p>${keys.length} termini spiegati in parole semplici.</p></header>
+    <input class="search" id="gq" type="search" placeholder="Cerca un termine…" aria-label="Cerca nel glossario">
+    <div id="gl"></div>
+  </div>`;
+  const draw = q => {
+    const n = q.trim().toLowerCase();
+    const ks = keys.filter(k => !n || GLOSSARY[k][0].toLowerCase().includes(n) || GLOSSARY[k][1].toLowerCase().includes(n));
+    $("#gl").innerHTML = ks.length ? ks.map(k => `<div class="gi"><b>${esc(GLOSSARY[k][0])}</b><p>${esc(GLOSSARY[k][1])}</p></div>`).join("") : `<div class="empty">Nessun termine trovato.</div>`;
+  };
+  $("#gq").addEventListener("input", e => draw(e.target.value));
+  draw("");
+}
+
+/* ===========================================================
+   FOGLIO DEL GLOSSARIO E ROUTING
+   =========================================================== */
+function openSheet(k) {
+  const e = GLOSSARY[k]; if (!e) return;
+  $("#sheet-t").textContent = e[0]; $("#sheet-d").textContent = e[1];
+  $("#sheet").classList.add("open"); $("#sheet-bg").classList.add("open");
+  $("#sheet-x").focus();
+}
+function closeSheet() { $("#sheet").classList.remove("open"); $("#sheet-bg").classList.remove("open"); }
+document.addEventListener("click", e => {
+  const g = e.target.closest(".g[data-g]");
+  if (g) { e.preventDefault(); openSheet(g.dataset.g); }
+});
+$("#sheet-x").onclick = closeSheet;
+$("#sheet-bg").onclick = closeSheet;
+$("#sheet-all").onclick = closeSheet;
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheet(); });
+
+function route() {
+  const h = location.hash.replace(/^#/, "");
+  const inLesson = h.startsWith("l/");
+  document.body.classList.toggle("in-lesson", inLesson);
+  const tab = inLesson || !h ? "lezioni" : h;
+  document.querySelectorAll(".tabs a").forEach(a => { if (a.dataset.tab === tab) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+  if (inLesson) viewLesson(h.slice(2));
+  else if (h === "formule") viewFormule();
+  else if (h === "glossario") viewGlossario();
+  else viewHome();
+  const l = inLesson && LESSONS[lessonIndex(h.slice(2))];
+  document.title = l ? l.title + " — Elettrotecnica" : "Elettrotecnica";
+  closeSheet();
+  window.scrollTo(0, 0);
+}
+window.addEventListener("hashchange", route);
+updateProgress();
+route();
+</script>
+</body>
+</html>
