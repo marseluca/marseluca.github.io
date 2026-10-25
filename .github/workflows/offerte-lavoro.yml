@@ -1,0 +1,40 @@
+name: Offerte di lavoro
+
+on:
+  schedule:
+    - cron: "43 5 * * *" # ogni giorno alle 05:43 UTC (07:43 ora italiana d'estate)
+  workflow_dispatch: # permette di avviarlo a mano da GitHub → Actions
+  push:
+    branches: [main]
+    paths: [lavoro/criteri.json] # riparte subito quando cambi i criteri
+
+permissions:
+  contents: write
+
+concurrency:
+  group: offerte-lavoro
+  cancel-in-progress: false
+
+jobs:
+  aggiorna:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Scarica le offerte da JSearch
+        env:
+          JSEARCH_API_KEY: ${{ secrets.JSEARCH_API_KEY }}
+        run: python .github/scripts/fetch_jobs.py
+
+      - name: Salva i risultati
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898315+github-actions[bot]@users.noreply.github.com"
+          git add lavoro/offerte.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Offerte di lavoro: aggiornamento del $(date -u +%Y-%m-%d)"
+          git push

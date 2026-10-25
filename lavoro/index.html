@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Luca — Offerte di lavoro</title>
+  <link rel="stylesheet" href="../style.css" />
+  <style>
+    :root { --c-lavoro: #b5523b; }
+    .eyebrow { color: var(--c-lavoro); }
+
+    .toolbar { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 1rem; }
+    .toolbar input { flex: 1 1 220px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.5rem; }
+    .chip {
+      font-family: var(--body); font-size: 0.82rem; font-weight: 500;
+      border: 1px solid var(--line); background: var(--surface); color: var(--muted);
+      border-radius: 999px; padding: 0.3rem 0.8rem; cursor: pointer;
+    }
+    .chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+    .job { display: flex; gap: 0.9rem; margin-bottom: 0.7rem; }
+    .job .logo {
+      flex: 0 0 44px; height: 44px; border-radius: 10px; border: 1px solid var(--line);
+      background: var(--bg) center / contain no-repeat; display: grid; place-items: center;
+      font-family: var(--display); font-weight: 700; color: var(--muted);
+    }
+    .job .body { flex: 1; min-width: 0; }
+    .job h3 { font-family: var(--display); font-size: 1.08rem; line-height: 1.3; margin: 0 0 0.15rem; }
+    .job h3 a { color: inherit; text-decoration: none; }
+    .job h3 a:hover { color: var(--c-lavoro); }
+    .job .meta { font-size: 0.85rem; color: var(--muted); }
+    .job .excerpt { font-size: 0.9rem; margin: 0.5rem 0 0.6rem; overflow-wrap: anywhere; }
+    .job .tags { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    .badge.new { background: var(--c-lavoro); color: #fff; }
+    .star {
+      flex: 0 0 auto; align-self: flex-start; border: none; background: none;
+      font-size: 1.3rem; line-height: 1; cursor: pointer; color: var(--line); padding: 0.1rem;
+    }
+    .star[aria-pressed="true"] { color: var(--c-bitcoin); }
+
+    details.card { margin-top: 2rem; }
+    details summary { cursor: pointer; font-weight: 600; }
+    .crit { margin: 0.8rem 0 0; padding: 0; list-style: none; }
+    .crit li { padding: 0.5rem 0; border-top: 1px solid var(--line); font-size: 0.92rem; }
+    .crit li:first-child { border-top: none; }
+    .warn { border-color: #e7b9a9; color: #8a3a22; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../index.html">Luca</a>
+    <ul>
+      <li><a href="../index.html">Home</a></li>
+      <li><a href="../ricette.html">Ricette</a></li>
+      <li><a href="../bitcoin.html">Bitcoin</a></li>
+      <li><a href="../allenamenti.html">Allenamenti</a></li>
+      <li><a href="../libri.html">Libri</a></li>
+      <li><a href="../modellazione3d.html">Modellazione 3D</a></li>
+      <li><a href="../fantacalcio.html">Fantacalcio</a></li>
+      <li><a href="./" aria-current="page">Lavoro</a></li>
+    </ul>
+  </nav>
+
+  <main class="wrap">
+    <header class="page-head">
+      <p class="eyebrow">Riepilogo giornaliero</p>
+      <h1 class="title">Offerte di lavoro</h1>
+      <p class="lead" id="updated">Caricamento…</p>
+    </header>
+
+    <div class="stats">
+      <div class="stat"><div class="n" id="s-new">—</div><div class="l">Nuove oggi</div></div>
+      <div class="stat"><div class="n" id="s-all">—</div><div class="l">In elenco</div></div>
+      <div class="stat"><div class="n" id="s-remote">—</div><div class="l">Da remoto</div></div>
+      <div class="stat"><div class="n" id="s-saved">—</div><div class="l">Salvate</div></div>
+    </div>
+
+    <div id="errors"></div>
+
+    <div class="toolbar">
+      <input id="q" type="search" placeholder="Filtra per titolo, azienda, luogo…" aria-label="Filtra" />
+    </div>
+    <div class="chips" id="chips"></div>
+
+    <div id="list"></div>
+
+    <details class="card">
+      <summary>Criteri di ricerca</summary>
+      <ul class="crit" id="crit"></ul>
+      <p class="note">
+        Le ricerche partono ogni mattina. Per cambiarle modifica
+        <a class="inline" target="_blank" rel="noopener"
+           href="https://github.com/marseluca/marseluca.github.io/edit/main/lavoro/criteri.json">lavoro/criteri.json</a>
+        su GitHub: al salvataggio la ricerca riparte da sola entro un paio di minuti.
+      </p>
+    </details>
+  </main>
+
+  <footer class="site">&copy; <span id="y"></span> Luca · dati da JSearch</footer>
+
+  <script>
+    const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+    const fmtDate = iso => {
+      const d = new Date(iso);
+      return isNaN(d) ? "" : d.toLocaleDateString("it-IT", { day: "numeric", month: "short" });
+    };
+    const CONTRATTI = { FULLTIME: "Tempo pieno", PARTTIME: "Part-time", CONTRACTOR: "Collaborazione", INTERN: "Stage" };
+    const PERIODI = { YEAR: "anno", MONTH: "mese", HOUR: "ora", WEEK: "settimana", DAY: "giorno" };
+
+    // Le preferite restano solo in questo browser: è una comodità, non un archivio.
+    const store = {
+      get() { try { return new Set(JSON.parse(localStorage.getItem("lavoro-salvate") || "[]")); } catch { return new Set(); } },
+      set(s) { try { localStorage.setItem("lavoro-salvate", JSON.stringify([...s])); } catch {} }
+    };
+    let saved = store.get();
+    let data = { offerte: [], ricerche: [] };
+    let filtro = "tutte";
+
+    const stipendio = s => {
+      if (!s) return "";
+      const n = v => v ? Math.round(v).toLocaleString("it-IT") : "?";
+      const range = s.min && s.max && s.min !== s.max ? `${n(s.min)}–${n(s.max)}` : n(s.min || s.max);
+      return `${range} ${s.valuta || ""}${s.periodo ? " / " + (PERIODI[s.periodo] || s.periodo) : ""}`.trim();
+    };
+
+    function render() {
+      const oggi = data.oggi;
+      const q = document.getElementById("q").value.trim().toLowerCase();
+      const items = data.offerte.filter(o => {
+        if (filtro === "nuove" && o.prima_vista !== oggi) return false;
+        if (filtro === "remoto" && !o.remoto) return false;
+        if (filtro === "salvate" && !saved.has(o.id)) return false;
+        if (filtro.startsWith("r:") && !o.ricerche.includes(filtro.slice(2))) return false;
+        return !q || `${o.titolo} ${o.azienda} ${o.luogo}`.toLowerCase().includes(q);
+      });
+
+      document.getElementById("s-new").textContent = data.offerte.filter(o => o.prima_vista === oggi).length;
+      document.getElementById("s-all").textContent = data.offerte.length;
+      document.getElementById("s-remote").textContent = data.offerte.filter(o => o.remoto).length;
+      document.getElementById("s-saved").textContent = data.offerte.filter(o => saved.has(o.id)).length;
+
+      const chips = [["tutte", "Tutte"], ["nuove", "Nuove oggi"], ["remoto", "Da remoto"], ["salvate", "★ Salvate"],
+        ...data.ricerche.map(r => ["r:" + r, r])];
+      document.getElementById("chips").innerHTML = chips.map(([k, l]) =>
+        `<button class="chip" data-k="${esc(k)}" aria-pressed="${k === filtro}">${esc(l)}</button>`).join("");
+
+      document.getElementById("list").innerHTML = items.length ? items.map(o => {
+        const initial = esc((o.azienda || "?").trim().charAt(0).toUpperCase());
+        const logo = o.logo
+          ? `<div class="logo" style="background-image:url('${esc(o.logo)}')"></div>`
+          : `<div class="logo">${initial}</div>`;
+        const tags = [
+          o.prima_vista === oggi ? `<span class="badge new">Nuova</span>` : "",
+          o.remoto ? `<span class="badge">Remoto</span>` : "",
+          o.contratto ? `<span class="badge">${esc(CONTRATTI[o.contratto] || o.contratto)}</span>` : "",
+          o.stipendio ? `<span class="badge">${esc(stipendio(o.stipendio))}</span>` : "",
+          o.fonte ? `<span class="badge">via ${esc(o.fonte)}</span>` : ""
+        ].join("");
+        const quando = fmtDate(o.pubblicata);
+        return `
+          <article class="card job">
+            ${logo}
+            <div class="body">
+              <h3><a href="${esc(o.link)}" target="_blank" rel="noopener">${esc(o.titolo)}</a></h3>
+              <div class="meta">${esc(o.azienda)}${o.luogo ? " · " + esc(o.luogo) : ""}${quando ? " · pubblicata il " + esc(quando) : ""}</div>
+              ${o.estratto ? `<p class="excerpt">${esc(o.estratto)}…</p>` : ""}
+              <div class="tags">${tags}</div>
+            </div>
+            <button class="star" data-id="${esc(o.id)}" aria-pressed="${saved.has(o.id)}" aria-label="Salva">★</button>
+          </article>`;
+      }).join("") : `<div class="empty">Nessuna offerta con questi filtri.</div>`;
+    }
+
+    document.getElementById("chips").addEventListener("click", e => {
+      const b = e.target.closest(".chip"); if (!b) return;
+      filtro = b.dataset.k; render();
+    });
+    document.getElementById("list").addEventListener("click", e => {
+      const b = e.target.closest(".star"); if (!b) return;
+      saved.has(b.dataset.id) ? saved.delete(b.dataset.id) : saved.add(b.dataset.id);
+      store.set(saved); render();
+    });
+    document.getElementById("q").addEventListener("input", render);
+
+    (async () => {
+      // Criteri
+      try {
+        const c = await (await fetch("criteri.json", { cache: "no-cache" })).json();
+        const quando = { today: "oggi", "3days": "ultimi 3 giorni", week: "ultima settimana", month: "ultimo mese", all: "qualsiasi data" };
+        document.getElementById("crit").innerHTML = c.ricerche.map(r => `
+          <li><strong>${esc(r.nome)}</strong><br>
+            «${esc(r.query)}» · ${esc((r.paese || "it").toUpperCase())} · ${esc(quando[r.pubblicate_da] || r.pubblicate_da)}
+            ${r.solo_remoto ? " · solo remoto" : ""}
+            ${r.contratti?.length ? " · " + r.contratti.map(t => esc(CONTRATTI[t] || t)).join(", ") : ""}
+          </li>`).join("") +
+          (c.escludi_parole?.length ? `<li>Escluse se contengono: ${c.escludi_parole.map(esc).join(", ")}</li>` : "");
+      } catch {}
+
+      // Offerte
+      try {
+        const r = await fetch("offerte.json", { cache: "no-cache" });
+        if (!r.ok) throw new Error("assente");
+        data = await r.json();
+        data.oggi = (data.aggiornato || "").slice(0, 10);
+        const d = new Date(data.aggiornato);
+        document.getElementById("updated").textContent =
+          `Aggiornato ${d.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })} alle ${d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}.`;
+        if (data.errori?.length) {
+          document.getElementById("errors").innerHTML =
+            `<p class="note warn">Alcune ricerche non sono andate a buon fine: ${data.errori.map(esc).join("; ")}</p>`;
+        }
+      } catch {
+        document.getElementById("updated").textContent = "Nessun dato ancora: la prima ricerca non è ancora partita.";
+      }
+      render();
+    })();
+
+    document.getElementById("y").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

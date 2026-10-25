@@ -1,0 +1,23 @@
+{
+  "_note": "Modifica liberamente. Ogni voce di 'ricerche' è una ricerca separata su JSearch (1 richiesta al giorno ciascuna). Piano gratuito: 200 richieste/mese → massimo 6 ricerche.",
+  "ricerche": [
+    {
+      "nome": "Automazione a Torino",
+      "query": "ingegnere automazione Torino",
+      "paese": "it",
+      "pubblicate_da": "3days",
+      "solo_remoto": false,
+      "contratti": ["FULLTIME"]
+    },
+    {
+      "nome": "Control engineer da remoto",
+      "query": "control systems engineer",
+      "paese": "it",
+      "pubblicate_da": "3days",
+      "solo_remoto": true,
+      "contratti": []
+    }
+  ],
+  "escludi_parole": ["senior director", "stage non retribuito"],
+  "giorni_di_storico": 14
+}
