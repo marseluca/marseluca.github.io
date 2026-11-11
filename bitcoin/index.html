@@ -23,6 +23,14 @@
     --shadow: 0 1px 0 rgba(27,23,19,.04), 0 18px 40px -28px rgba(27,23,19,.45);
     --display: "Space Grotesk", system-ui, sans-serif;
     --mono: "JetBrains Mono", ui-monospace, monospace;
+
+    /* un colore per categoria, con la sua tinta chiara per i fondini */
+    --c-banca: #3b6584;        --t-banca: #e3ecf3;
+    --c-contanti: #4f7a52;     --t-contanti: #e5efe4;
+    --c-cauzione: #6b4f80;     --t-cauzione: #ece4f2;
+    --c-investimenti: #2f6f6b; --t-investimenti: #ddeeec;
+    --c-btc: #d9730d;          --t-btc: #f6e4cd;
+    --c-digitale: #9c4f6a;     --t-digitale: #f3e3e9;
   }
 
   * { box-sizing: border-box; }
@@ -123,6 +131,48 @@
   .btn.forte { background: var(--ink); color: var(--paper); border-color: var(--ink); }
   .btn.forte:hover { background: #000; color: var(--paper); border-color: #000; }
 
+  /* ---- schede per categoria ---- */
+  .tabs {
+    display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 10px;
+    margin-bottom: 10px; scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tabs button {
+    flex: none; display: flex; align-items: center; gap: 7px;
+    border: 1px solid var(--hair); background: #fff; color: var(--muted);
+    font-family: var(--display); font-weight: 500; font-size: 13px;
+    padding: 7px 13px; border-radius: 10px; cursor: pointer; white-space: nowrap;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  .tabs button .pallino {
+    width: 8px; height: 8px; border-radius: 50%; flex: none;
+    background: var(--tinta-piena);
+  }
+  .tabs button .quanti {
+    font-family: var(--mono); font-size: 10px; color: var(--muted);
+  }
+  .tabs button:hover { color: var(--ink); border-color: var(--tinta-piena); }
+  .tabs button.on {
+    color: var(--tinta-piena); border-color: var(--tinta-piena);
+    background: var(--tinta-chiara); font-weight: 600;
+  }
+  .tabs button.on .quanti { color: var(--tinta-piena); }
+
+  /* riepilogo per categoria nella scheda Tutto */
+  .riepilogo { display: flex; flex-direction: column; gap: 2px; }
+  .riga-cat {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    background: transparent; border: 0; border-top: 1px dotted var(--hair);
+    padding: 11px 2px; cursor: pointer; text-align: left; font-family: var(--display);
+  }
+  .riga-cat:first-child { border-top: 0; }
+  .riga-cat:hover .cat-nome { color: var(--tinta-piena); }
+  .riga-cat .pallino { width: 10px; height: 10px; border-radius: 50%; flex: none; background: var(--tinta-piena); }
+  .riga-cat .cat-nome { flex: 1; font-size: 15px; font-weight: 500; color: var(--ink); }
+  .riga-cat .cat-quanti { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .riga-cat .cat-tot { font-family: var(--mono); font-weight: 700; font-size: 15px; white-space: nowrap; }
+  .riga-cat .freccia { color: var(--muted); font-size: 14px; }
+
   /* ---- conti ---- */
   .conto-head {
     display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
@@ -130,12 +180,18 @@
   .badge {
     font-family: var(--mono); font-size: 10px; letter-spacing: .12em;
     text-transform: uppercase; padding: 4px 8px; border-radius: 6px;
-    background: var(--amber-soft); color: var(--amber); flex: none;
+    background: var(--tinta-chiara); color: var(--tinta-piena); flex: none;
   }
-  .badge.banca { background: #e4ecf2; color: #3b6584; }
-  .badge.cauzione { background: #efe7f3; color: #6b4f80; }
-  .badge.investimenti { background: #e7efe2; color: var(--in); }
-  .badge.digitale { background: #f3ebdd; color: #8a6a35; }
+  .banca        { --tinta-piena: var(--c-banca);        --tinta-chiara: var(--t-banca); }
+  .contanti     { --tinta-piena: var(--c-contanti);     --tinta-chiara: var(--t-contanti); }
+  .cauzione     { --tinta-piena: var(--c-cauzione);     --tinta-chiara: var(--t-cauzione); }
+  .investimenti { --tinta-piena: var(--c-investimenti); --tinta-chiara: var(--t-investimenti); }
+  .btc          { --tinta-piena: var(--c-btc);          --tinta-chiara: var(--t-btc); }
+  .digitale     { --tinta-piena: var(--c-digitale);     --tinta-chiara: var(--t-digitale); }
+  .tutto        { --tinta-piena: var(--ink);            --tinta-chiara: var(--paper-2); }
+
+  /* la scheda di un conto porta il colore della sua categoria sul bordo sinistro */
+  .card.conto { border-left: 3px solid var(--tinta-piena); }
 
   .nome {
     border: 0; background: transparent; flex: 1; min-width: 100px;
@@ -195,6 +251,37 @@
   }
   .nuovo-indirizzo input:focus { outline: none; border-color: var(--amber); background: #fff; }
 
+  /* ---- titoli MOT ---- */
+  .titolo { padding: 11px 0; border-top: 1px dotted var(--hair); }
+  .titolo-riga1 { display: flex; align-items: baseline; gap: 8px; }
+  .titolo-nome { flex: 1; min-width: 0; font-weight: 600; font-size: 14px; }
+  .titolo-isin {
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    background: var(--paper); border: 1px solid var(--hair);
+    border-radius: 5px; padding: 1px 6px; flex: none;
+  }
+  .titolo-val { font-family: var(--mono); font-weight: 700; font-size: 14px; white-space: nowrap; }
+  .titolo-riga2 {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 8px;
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+  }
+  .titolo-riga2 .importo { width: 104px; }
+  .titolo-riga2 .per { padding: 0 2px; }
+  .prezzo-stato { flex: 1; min-width: 120px; text-align: right; }
+  .prezzo-stato.manuale { color: var(--amber); }
+
+  .nuovo-titolo { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .nuovo-titolo .fila { display: flex; gap: 8px; flex-wrap: wrap; }
+  .nuovo-titolo input, .nuovo-titolo select {
+    border: 1px solid var(--hair); background: var(--paper); border-radius: 8px;
+    padding: 8px 10px; font-size: 13px; color: var(--ink); min-width: 0;
+  }
+  .nuovo-titolo .isin { font-family: var(--mono); width: 150px; flex: none; text-transform: uppercase; }
+  .nuovo-titolo .desc { flex: 1; min-width: 120px; }
+  .nuovo-titolo select { flex: 1; min-width: 160px; font-family: var(--display); }
+  .nuovo-titolo input:focus, .nuovo-titolo select:focus { outline: none; border-color: var(--tinta-piena); background: #fff; }
+  .nuovo-titolo .isin.male { border-color: var(--out); color: var(--out); }
+
   /* ---- nuovo conto ---- */
   .nuovo-conto { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .nuovo-conto select, .nuovo-conto input {
@@ -210,21 +297,22 @@
   .chart-wrap svg text { font-family: var(--mono); font-size: 12px; fill: var(--muted); }
   .chart-wrap .grid { stroke: var(--hair); stroke-width: 1; }
   .chart-wrap .zero { stroke: var(--hair); stroke-width: 1.5; }
-  .chart-wrap .curve { stroke: var(--amber); stroke-width: 2; fill: none; }
-  .chart-wrap .fill { fill: url(#sfumaAmbra); }
-  /* il gradiente sta in un svg nascosto in fondo al body, fuori da .chart-wrap:
-     questi due selettori non possono essere discendenti, o lo stop resta nero */
-  .stop-a { stop-color: #d9730d; stop-opacity: .22; }
-  .stop-b { stop-color: #d9730d; stop-opacity: 0; }
-  .chart-wrap .dot { fill: var(--amber); }
+  /* --tinta la mette il grafico sul suo contenitore: ogni categoria ha il suo
+     colore. Il gradiente vive dentro il proprio svg, così eredita la variabile
+     e ogni grafico ha il suo id: fuori resterebbe nero e gli id si scontrerebbero. */
+  .chart-wrap { --tinta: var(--amber); }
+  .chart-wrap .curve { stroke: var(--tinta); stroke-width: 2; fill: none; }
+  .chart-wrap .stop-a { stop-color: var(--tinta); stop-opacity: .22; }
+  .chart-wrap .stop-b { stop-color: var(--tinta); stop-opacity: 0; }
+  .chart-wrap .dot { fill: var(--tinta); }
   .chart-wrap .cross-line { stroke: var(--ink); stroke-width: 1; opacity: .45; }
-  .chart-wrap .cross-dot { fill: #fff; stroke: var(--amber); stroke-width: 2; }
+  .chart-wrap .cross-dot { fill: #fff; stroke: var(--tinta); stroke-width: 2; }
   .chart-wrap .tip-bg { fill: var(--ink); opacity: .92; }
   .chart-wrap .tip-v { fill: var(--paper); font-weight: 700; }
   .chart-wrap .tip-d { fill: #c9bfae; font-size: 11px; }
-  .chart-wrap .bloccato .tip-bg { stroke: var(--amber); stroke-width: 1.5; opacity: 1; }
+  .chart-wrap .bloccato .tip-bg { stroke: var(--tinta); stroke-width: 1.5; opacity: 1; }
   .chart-wrap .bloccato .cross-line { opacity: .7; }
-  .chart-wrap .pin { fill: var(--amber); font-size: 10px; display: none; }
+  .chart-wrap .pin { fill: var(--tinta); font-size: 10px; display: none; }
   .chart-wrap .bloccato .pin { display: block; }
 
   .range { display: flex; flex-wrap: wrap; gap: 4px; margin: 12px 0 0; }
@@ -272,6 +360,16 @@
   }
   .toast[hidden] { display: none; }
 
+  @media (max-width: 480px) {
+    /* il nome del conto va a capo da solo: in riga con totale e cestino
+       veniva tagliato a metà */
+    .conto-head { flex-wrap: wrap; row-gap: 6px; }
+    .conto-head .badge { order: 1; }
+    .conto-head .conto-tot { order: 2; margin-left: auto; }
+    .conto-head .elimina { order: 3; }
+    .conto-head .nome { order: 4; flex: 1 1 100%; min-width: 0; }
+  }
+
   @media (max-width: 420px) {
     .card { padding: 18px 14px; }
     .importo { width: 108px; }
@@ -297,13 +395,20 @@
       </div>
     </section>
 
-    <section class="card">
-      <div class="sec-title">Andamento del patrimonio</div>
+    <nav class="tabs" id="tabs" role="tablist" aria-label="Categorie"></nav>
+
+    <section class="card" id="card-patrimonio">
+      <div class="sec-title" id="titolo-grafico">Andamento del patrimonio</div>
       <div class="chart-wrap" id="grafico-patrimonio"></div>
       <div class="chart-foot">
         <span id="patrimonio-periodo"></span>
         <span id="patrimonio-nota"></span>
       </div>
+    </section>
+
+    <section class="card" id="card-riepilogo" hidden>
+      <div class="sec-title">Per categoria</div>
+      <div class="riepilogo" id="riepilogo"></div>
     </section>
 
     <div id="conti"></div>
@@ -343,17 +448,26 @@ const G = 86400e3;
 
 const TIPI = {
   banca:        { nome: "Banca",            sotto: true },
+  contanti:     { nome: "Contanti",         sotto: true },
   cauzione:     { nome: "Cauzione affitto", sotto: false },
+  investimenti: { nome: "Investimenti",     sotto: true, titoli: true },
   btc:          { nome: "Wallet BTC",       sotto: false, auto: true },
-  investimenti: { nome: "Investimenti",     sotto: true },
   digitale:     { nome: "Wallet digitale",  sotto: true }
 };
+const ORDINE = Object.keys(TIPI);
+const tintaDi = t => t === "tutto" ? "var(--ink)" : `var(--c-${t})`;
 
 /* ---------- stato ---------- */
 /* Tutto resta nel browser: i saldi sono dati personali e non hanno motivo di
    uscire da questo dispositivo. Struttura:
-     conti: [{ id, tipo, nome, voci: [{id, nome}], indirizzi: [{addr, nota}] }]
+     conti: [{ id, tipo, nome, voci: [{id, nome}], indirizzi: [{addr}],
+               titoli: [{id, isin, nome}] }]
      saldi: { "2026-11": { "<idVoce>": importo } }
+     catalogo: [{ isin, nome }]   strumenti MOT già usati, riproposti nel menu
+   Di un titolo MOT il mese porta due numeri, con le chiavi "<id>#n" e "<id>#p":
+   il nominale e il prezzo in percentuale, come si quota sul MOT. Tenerli nel
+   mese invece che sul titolo significa che comprarne altri a novembre non
+   riscrive quanto valeva a marzo.
    Un mese senza un importo per una voce eredita l'ultimo inserito prima di
    quel mese: in un registro mensile un conto che non cambia non si riscrive. */
 const CHIAVE_STATO = "finanze_v1";
@@ -362,9 +476,9 @@ let stato = carica();
 function carica() {
   try {
     const s = JSON.parse(localStorage.getItem(CHIAVE_STATO));
-    if (s && Array.isArray(s.conti)) return { conti: s.conti, saldi: s.saldi || {} };
+    if (s && Array.isArray(s.conti)) return { conti: s.conti, saldi: s.saldi || {}, catalogo: s.catalogo || [] };
   } catch (_) { /* stato illeggibile: si riparte puliti */ }
-  return { conti: [], saldi: {} };
+  return { conti: [], saldi: {}, catalogo: [] };
 }
 function salva() {
   try { localStorage.setItem(CHIAVE_STATO, JSON.stringify(stato)); }
@@ -424,19 +538,68 @@ function valoreVoce(voceId, m) {
   return { valore: 0, ereditato: false, vuoto: true };
 }
 
+const titoliDi = c => (TIPI[c.tipo].titoli && c.titoli) || [];
+
+// sul MOT le obbligazioni si quotano in percentuale del nominale: 98,75 vuol
+// dire che 10.000 € di nominale ne valgono 9.875
+const nominaleDi = (t, m) => valoreVoce(t.id + "#n", m);
+const prezzoDi = (t, m) => valoreVoce(t.id + "#p", m);
+const valoreTitolo = (t, m) => nominaleDi(t, m).valore * prezzoDi(t, m).valore / 100;
+
 function totaleConto(c, m) {
   if (c.tipo === "btc") return valoreBtc(c, m);
-  return vociDi(c).reduce((s, v) => s + valoreVoce(v.id, m).valore, 0);
+  return vociDi(c).reduce((s, v) => s + valoreVoce(v.id, m).valore, 0)
+       + titoliDi(c).reduce((s, t) => s + valoreTitolo(t, m), 0);
 }
-const totaleMese = m => stato.conti.reduce((s, c) => s + totaleConto(c, m), 0);
 
-// i mesi da mostrare nel grafico: dal primo con un dato fino a oggi
-function mesiDelGrafico() {
-  const chiavi = mesiConDati().concat(Object.keys(btcMensile));
-  if (!chiavi.length) return [];
-  let k = chiavi.reduce((a, b) => a < b ? a : b);
+const contiDi = t => t === "tutto" ? stato.conti : stato.conti.filter(c => c.tipo === t);
+const totaleDi = (t, m) => contiDi(t).reduce((s, c) => s + totaleConto(c, m), 0);
+const totaleMese = m => totaleDi("tutto", m);
+
+/* Un ISIN porta in fondo una cifra di controllo: lettere in numeri (A=10…Z=35),
+   poi Luhn. Si verifica senza rete, e intercetta subito un codice copiato male.
+   Dice che il codice è ben formato, non che quel titolo esista davvero. */
+function isinValido(isin) {
+  const v = String(isin || "").toUpperCase().replace(/\s/g, "");
+  if (!/^[A-Z]{2}[A-Z0-9]{9}[0-9]$/.test(v)) return false;
+  const cifre = [...v].map(c => /[A-Z]/.test(c) ? String(c.charCodeAt(0) - 55) : c).join("");
+  let somma = 0, doppio = false;
+  for (let i = cifre.length - 1; i >= 0; i--) {
+    let d = +cifre[i];
+    if (doppio) { d *= 2; if (d > 9) d -= 9; }
+    somma += d;
+    doppio = !doppio;
+  }
+  return somma % 10 === 0;
+}
+const normalizzaIsin = i => String(i || "").toUpperCase().replace(/\s/g, "");
+
+function ricorda(isin, nome) {
+  if (!stato.catalogo.some(x => x.isin === isin)) stato.catalogo.push({ isin, nome });
+}
+
+/* I mesi del grafico vanno dal primo dato di QUELLA scheda fino a oggi: se
+   partissero sempre dal primo dato in assoluto, la curva di una categoria aperta
+   da poco comincerebbe con mesi di zeri che non vogliono dire niente. */
+function mesiDelGrafico(scopo) {
+  const conti = contiDi(scopo);
+  const chiavi = new Set();
+  conti.forEach(c => {
+    vociDi(c).forEach(v => chiavi.add(v.id));
+    titoliDi(c).forEach(t => { chiavi.add(t.id + "#n"); chiavi.add(t.id + "#p"); });
+  });
+
+  let primo = mesiConDati().find(m => Object.keys(stato.saldi[m]).some(k => chiavi.has(k))) || null;
+  conti.forEach(c => {                       // i mesi ricostruiti dei wallet bitcoin
+    const d = btcDati[c.id];
+    if (!d) return;
+    const suoi = Object.keys(d.satsMensile).sort();
+    if (suoi.length && (!primo || suoi[0] < primo)) primo = suoi[0];
+  });
+  if (!primo) return [];
+
   const out = [];
-  while (k <= MESE_OGGI && out.length < 240) { out.push(k); k = spostaMese(k, 1); }
+  for (let k = primo; k <= MESE_OGGI && out.length < 240; k = spostaMese(k, 1)) out.push(k);
   return out;
 }
 
@@ -446,7 +609,10 @@ function mesiDelGrafico() {
    su telefono le scritte dentro l'SVG verrebbero rimpicciolite dalla scalatura. */
 const grafici = [];
 
+let contatoreGrafici = 0;
+
 function creaGrafico(contenitore) {
+  const idSfuma = "sfuma" + (++contatoreGrafici);
   const TIP_W = 152, TIP_H = 38;
   let W = 720, H = 280, PX0 = 4, PX1 = 662, PY0 = 18, PY1 = 254;
   let punti = [], opt = {}, X = null, Y = null, bloccato = false;
@@ -526,15 +692,26 @@ function creaGrafico(contenitore) {
       <line class="${Math.abs(v) < 1e-9 ? "zero" : "grid"}" x1="${PX0}" y1="${r(Y(v))}" x2="${PX1}" y2="${r(Y(v))}" stroke-dasharray="2 4"/>
       <text x="${PX1 + 7}" y="${r(Y(v)) + 4}">${fmtAsse(v)}</text>`).join("");
 
-    const assi = taccheX(t0, t1).map(([t, testo]) => `
-      <line class="grid" x1="${r(X(t))}" y1="${PY0}" x2="${r(X(t))}" y2="${PY1}"/>
-      <text x="${r(X(t))}" y="${H - 8}" text-anchor="middle">${testo}</text>`).join("");
+    // una tacca sul bordo verrebbe tagliata a metà: lì il testo si ancora al lato
+    const assi = (opt.tacche ? opt.tacche(t0, t1) : taccheX(t0, t1)).map(([t, testo]) => {
+      const x = r(X(t));
+      const ancora = x - PX0 < 24 ? "start" : PX1 - x < 24 ? "end" : "middle";
+      return `
+      <line class="grid" x1="${x}" y1="${PY0}" x2="${x}" y2="${PY1}"/>
+      <text x="${x}" y="${H - 8}" text-anchor="${ancora}">${testo}</text>`;
+    }).join("");
 
     const fine = xy[xy.length - 1];
+    contenitore.style.setProperty("--tinta", opt.tinta || "var(--amber)");
     contenitore.innerHTML = `
       <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${opt.titolo || "Grafico"}">
+        <defs>
+          <linearGradient id="${idSfuma}" x1="0" y1="0" x2="0" y2="1">
+            <stop class="stop-a" offset="0%"/><stop class="stop-b" offset="100%"/>
+          </linearGradient>
+        </defs>
         ${assi}${griglia}
-        <path class="fill" d="${area}"/>
+        <path d="${area}" fill="url(#${idSfuma})"/>
         <path class="curve" d="${linea}" stroke-linejoin="round" stroke-linecap="round"/>
         <circle class="dot" cx="${fine[0]}" cy="${fine[1]}" r="3.5"/>
         <g class="cross" style="display:none" pointer-events="none">
@@ -604,14 +781,6 @@ function creaGrafico(contenitore) {
 
 document.addEventListener("pointerdown", e => grafici.forEach(g => { if (!g.contiene(e.target)) g.sblocca(); }));
 document.addEventListener("keydown", e => { if (e.key === "Escape") grafici.forEach(g => g.sblocca()); });
-
-// una sola definizione della sfumatura per tutta la pagina: gli id devono essere unici
-document.body.insertAdjacentHTML("beforeend", `
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
-    <linearGradient id="sfumaAmbra" x1="0" y1="0" x2="0" y2="1">
-      <stop class="stop-a" offset="0%"/><stop class="stop-b" offset="100%"/>
-    </linearGradient>
-  </defs></svg>`);
 
 let toastTimer = null;
 function avvisa(msg) {
@@ -710,7 +879,6 @@ async function caricaPrezzoOra() {
 const API_BS = "https://blockstream.info/api";
 const SAT = 1e8;
 const btcDati = {};      // idConto -> { sats, perIndirizzo, satsMensile, troncato, errore }
-const btcMensile = {};   // mesi in cui almeno un wallet aveva un saldo
 
 const deltaTx = (tx, addr) => {
   let v = 0;
@@ -744,7 +912,6 @@ function satsPerMese(eventi) {
     const limite = fineMese(k);
     while (i < eventi.length && eventi[i].t <= limite) cum += eventi[i++].delta;
     out[k] = cum;
-    btcMensile[k] = true;
     k = spostaMese(k, 1);
   }
   return out;
@@ -810,10 +977,17 @@ let daMettereAFuoco = null;
 const esc = t => String(t == null ? "" : t)
   .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
+let tab = "tutto";
+
 function render() {
+  if (tab !== "tutto" && !contiDi(tab).length) tab = "tutto";   // categoria svuotata
+  $("card-prezzo").hidden = tab !== "btc" || !contiDi("btc").length;
+  $("card-patrimonio").hidden = tab === "btc";
+  renderSchede();
   renderTestata();
   renderConti();
-  renderPatrimonio();
+  renderGrafico();
+  renderRiepilogo();
   if (daMettereAFuoco) {
     const el = boxConti.querySelector(`[data-rinomina="${daMettereAFuoco}"]`);
     if (el) { el.focus(); el.select(); }
@@ -831,8 +1005,13 @@ function aggiornaCifre() {
   stato.conti.forEach(c => {
     const el = boxConti.querySelector(`[data-tot="${c.id}"]`);
     if (el) el.textContent = fmtEur(totaleConto(c, mese));
+    titoliDi(c).forEach(t => {
+      const v = boxConti.querySelector(`[data-valore-titolo="${t.id}"]`);
+      if (v) v.textContent = fmtEur(valoreTitolo(t, mese));
+    });
   });
-  renderPatrimonio();
+  renderGrafico();
+  renderRiepilogo();
 }
 
 let renderInCoda = null;
@@ -841,15 +1020,53 @@ function renderPresto() {
   renderInCoda = setTimeout(() => { renderInCoda = null; render(); }, 0);
 }
 
+// una scheda per categoria che ha almeno un conto, più il riepilogo
+function categorieAttive() {
+  return ORDINE.filter(t => contiDi(t).length);
+}
+
+function renderSchede() {
+  const attive = categorieAttive();
+  const barra = $("tabs");
+  barra.hidden = !attive.length;
+  if (!attive.length) { barra.innerHTML = ""; return; }
+
+  const voce = (id, nome) => {
+    const n = contiDi(id).length;
+    return `<button type="button" role="tab" data-tab="${id}" class="${id} ${id === tab ? "on" : ""}"
+                    aria-selected="${id === tab}">
+              <span class="pallino"></span>${esc(nome)}${n ? `<span class="quanti">${n}</span>` : ""}
+            </button>`;
+  };
+  barra.innerHTML = voce("tutto", "Tutto") + attive.map(t => voce(t, TIPI[t].nome)).join("");
+}
+
+function renderRiepilogo() {
+  const attive = categorieAttive();
+  $("card-riepilogo").hidden = tab !== "tutto" || attive.length < 2;
+  if ($("card-riepilogo").hidden) return;
+  $("riepilogo").innerHTML = attive.map(t => `
+    <button type="button" class="riga-cat ${t}" data-tab="${t}">
+      <span class="pallino"></span>
+      <span class="cat-nome">${TIPI[t].nome}</span>
+      <span class="cat-quanti">${contiDi(t).length} ${contiDi(t).length === 1 ? "conto" : "conti"}</span>
+      <span class="cat-tot">${fmtEur(totaleDi(t, mese))}</span>
+      <span class="freccia">›</span>
+    </button>`).join("");
+}
+
 function renderTestata() {
-  $("etichetta-mese").textContent = "Saldo complessivo · " + etichettaMese(mese);
-  const tot = totaleMese(mese);
-  $("totale").textContent = stato.conti.length ? fmtEur(tot) : "—";
+  const quali = contiDi(tab);
+  $("etichetta-mese").textContent =
+    (tab === "tutto" ? "Saldo complessivo" : TIPI[tab].nome) + " · " + etichettaMese(mese);
+  const tot = totaleDi(tab, mese);
+  $("totale").textContent = quali.length ? fmtEur(tot) : "—";
+  $("totale").style.color = tab === "tutto" ? "" : tintaDi(tab);
 
   const prec = spostaMese(mese, -1);
-  const diff = tot - totaleMese(prec);
+  const diff = tot - totaleDi(tab, prec);
   const d = $("delta");
-  if (!stato.conti.length) {
+  if (!quali.length) {
     d.className = "delta pari";
     d.textContent = "Aggiungi un conto per cominciare.";
   } else if (Math.abs(diff) < 0.005) {
@@ -875,28 +1092,30 @@ function campoImporto(voceId) {
 }
 
 function renderConti() {
-  if (!stato.conti.length) {
+  const quali = contiDi(tab);
+  if (!quali.length) {
     boxConti.innerHTML = `<section class="card"><div class="vuoto">Nessun conto. Creane uno qui sotto.</div></section>`;
     return;
   }
 
-  boxConti.innerHTML = stato.conti.map(c => {
+  boxConti.innerHTML = quali.map(c => {
     const tipo = TIPI[c.tipo];
     const testa = `
       <div class="conto-head">
-        <span class="badge ${c.tipo}">${tipo.nome}</span>
+        <span class="badge">${tipo.nome}</span>
         <input class="nome" data-rinomina="${c.id}" value="${esc(c.nome)}" aria-label="Nome del conto" />
         <span class="conto-tot" data-tot="${c.id}">${fmtEur(totaleConto(c, mese))}</span>
         <button class="elimina" data-elimina-conto="${c.id}" aria-label="Elimina ${esc(c.nome)}">×</button>
       </div>`;
+    const scheda = corpo => `<section class="card conto ${c.tipo}">${testa}${corpo}</section>`;
 
-    if (c.tipo === "btc") return `<section class="card">${testa}${corpoBtc(c)}</section>`;
+    if (c.tipo === "btc") return scheda(corpoBtc(c));
 
-    if (!tipo.sotto) return `<section class="card">${testa}
+    if (!tipo.sotto) return scheda(`
       <div class="voci"><div class="voce">
         <span class="nome" style="color:var(--muted);font-size:14px">Saldo di ${etichettaMese(mese)}</span>
         ${campoImporto(c.id)}
-      </div></div></section>`;
+      </div></div>`);
 
     const voci = (c.voci || []).map(v => `
       <div class="voce">
@@ -905,11 +1124,69 @@ function renderConti() {
         <button class="elimina" data-elimina-voce="${v.id}" aria-label="Elimina ${esc(v.nome)}">×</button>
       </div>`).join("");
 
-    return `<section class="card">${testa}
+    if (!tipo.titoli) return scheda(`
       <div class="voci">${voci || `<div class="vuoto">Nessun sottoconto.</div>`}</div>
-      <div class="riga-azioni"><button class="btn" data-nuova-voce="${c.id}">+ Sottoconto</button></div>
-    </section>`;
+      <div class="riga-azioni"><button class="btn" data-nuova-voce="${c.id}">+ Sottoconto</button></div>`);
+
+    const titoli = titoliDi(c).map(t => corpoTitolo(t)).join("");
+    return scheda(`
+      <div class="voci">${titoli}${voci}${titoli || voci ? "" : `<div class="vuoto">Nessun titolo.</div>`}</div>
+      ${nuovoTitolo(c)}
+      <div class="riga-azioni"><button class="btn" data-nuova-voce="${c.id}">+ Sottoconto a mano</button></div>`);
   }).join("");
+}
+
+/* Un titolo del MOT: nominale per prezzo diviso cento. Nominale e prezzo stanno
+   nel mese, come qualunque altro importo, quindi valgono anche le regole di
+   eredità: il mese che non li ridichiara tiene gli ultimi inseriti. */
+function corpoTitolo(t) {
+  const n = nominaleDi(t, mese), pr = prezzoDi(t, mese);
+  const campo = (suffisso, dato, segnaposto, etichetta) => {
+    const esplicito = !dato.ereditato && !dato.vuoto;
+    return `<input class="importo ${dato.ereditato ? "ereditato" : ""}" data-importo="${t.id}#${suffisso}"
+                   type="text" inputmode="decimal" aria-label="${etichetta}"
+                   value="${esplicito ? fmtNum(dato.valore) : ""}"
+                   placeholder="${dato.ereditato ? fmtNum(dato.valore) : segnaposto}" />`;
+  };
+  const quando = pr.vuoto ? "prezzo da inserire"
+    : pr.ereditato ? "prezzo riportato dal mese prima" : "prezzo di " + etichettaBreve(mese);
+
+  return `
+    <div class="titolo">
+      <div class="titolo-riga1">
+        <span class="titolo-nome">${esc(t.nome)}</span>
+        <span class="titolo-isin">${esc(t.isin)}</span>
+        <span class="titolo-val" data-valore-titolo="${t.id}">${fmtEur(valoreTitolo(t, mese))}</span>
+        <button class="elimina" data-elimina-titolo="${t.id}" aria-label="Rimuovi ${esc(t.nome)}">×</button>
+      </div>
+      <div class="titolo-riga2">
+        <span>nominale</span>${campo("n", n, "0,00", "Valore nominale")}
+        <span class="per">×</span>${campo("p", pr, "100,00", "Prezzo in percentuale del nominale")}
+        <span>%</span>
+        <span class="prezzo-stato ${pr.vuoto ? "manuale" : ""}">${quando}</span>
+      </div>
+    </div>`;
+}
+
+function nuovoTitolo(c) {
+  const scelte = stato.catalogo
+    .map(x => `<option value="${esc(x.isin)}">${esc(x.nome)} · ${esc(x.isin)}</option>`).join("");
+  return `
+    <div class="nuovo-titolo">
+      ${scelte ? `<div class="fila">
+        <select data-scegli-titolo="${c.id}" aria-label="Titolo già usato">
+          <option value="">Scegli un titolo già usato…</option>${scelte}
+        </select>
+      </div>` : ""}
+      <div class="fila">
+        <input class="isin" data-isin="${c.id}" placeholder="ISIN" maxlength="12"
+               spellcheck="false" aria-label="ISIN del titolo MOT" />
+        <input class="desc" data-desc="${c.id}" placeholder="Descrizione (es. BTP 1Nv29 3,85%)"
+               aria-label="Descrizione del titolo" />
+        <button class="btn" data-aggiungi-titolo="${c.id}">+ Titolo MOT</button>
+      </div>
+      <div class="nota">Le obbligazioni del MOT si quotano in percentuale del nominale: il valore è nominale × prezzo ÷ 100. L'ISIN viene controllato nella cifra di controllo.</div>
+    </div>`;
 }
 
 function corpoBtc(c) {
@@ -949,24 +1226,29 @@ function corpoBtc(c) {
     ${note.map(n => `<div class="nota${n.startsWith("Storico") || n.startsWith("Una lettura") ? " avviso" : ""}">${n}</div>`).join("")}`;
 }
 
-function renderPatrimonio() {
-  const mesi = mesiDelGrafico();
-  if (mesi.length < 2) {
+function renderGrafico() {
+  if (tab === "btc") return;                       // la scheda BTC ha il suo grafico del prezzo
+  const quali = tab === "tutto" ? "Andamento del patrimonio" : "Andamento · " + TIPI[tab].nome;
+  $("titolo-grafico").textContent = quali;
+
+  const mesi = mesiDelGrafico(tab);
+  if (mesi.length < 2 || !contiDi(tab).length) {
     graficoPatrimonio.messaggio("Inserisci i saldi di almeno due mesi per vedere l'andamento.");
     $("patrimonio-periodo").textContent = "";
     $("patrimonio-nota").textContent = "";
     return;
   }
-  const punti = mesi.map(m => [dataMese(m).getTime(), totaleMese(m)]);
+  const punti = mesi.map(m => [dataMese(m).getTime(), totaleDi(tab, m)]);
   const valori = punti.map(p => p[1]);
 
   graficoPatrimonio.disegna(punti, {
-    titolo: `Patrimonio da ${etichettaBreve(mesi[0])} a ${etichettaBreve(mesi[mesi.length - 1])}`,
+    titolo: `${quali} da ${etichettaBreve(mesi[0])} a ${etichettaBreve(mesi[mesi.length - 1])}`,
+    tinta: tintaDi(tab),
     valore: fmtEur0,
     quando: (t, i) => etichettaMese(mesi[i]),
     tacche: () => {
       const passo = Math.max(1, Math.ceil(mesi.length / 6));
-      return mesi.filter((_, i) => i % passo === 0)
+      return mesi.filter((_, i) => i % passo === 0 || i === mesi.length - 1)
         .map(m => [dataMese(m).getTime(), dataMese(m).toLocaleDateString("it-IT", { month: "short", year: "2-digit" })]);
     }
   });
@@ -1005,6 +1287,7 @@ async function mostraPrezzo() {
 
   graficoPrezzo.disegna(vista, {
     titolo: "Prezzo di Bitcoin in euro · " + periodo.desc,
+    tinta: tintaDi("btc"),
     valore: fmtEur0,
     quando: t => new Date(t).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" })
   });
@@ -1061,10 +1344,41 @@ boxConti.addEventListener("click", e => {
     salva(); renderPresto(); return;
   }
 
+  if (b.dataset.aggiungiTitolo) {
+    const c = trovaConto(b.dataset.aggiungiTitolo);
+    const campoIsin = boxConti.querySelector(`[data-isin="${c.id}"]`);
+    const campoDesc = boxConti.querySelector(`[data-desc="${c.id}"]`);
+    const isin = normalizzaIsin(campoIsin.value);
+    if (!isinValido(isin)) {
+      campoIsin.classList.add("male");
+      campoIsin.focus();
+      avvisa(isin ? "Questo ISIN non supera il controllo: ricontrolla il codice." : "Serve l'ISIN del titolo.");
+      return;
+    }
+    if (titoliDi(c).some(t => t.isin === isin)) { avvisa("Questo titolo è già in questo conto."); return; }
+    const nome = campoDesc.value.trim() || (stato.catalogo.find(x => x.isin === isin) || {}).nome || isin;
+    (c.titoli = c.titoli || []).push({ id: nuovoId(), isin, nome });
+    ricorda(isin, nome);
+    salva(); renderPresto();
+    return;
+  }
+
+  if (b.dataset.eliminaTitolo) {
+    const c = stato.conti.find(x => titoliDi(x).some(t => t.id === b.dataset.eliminaTitolo));
+    const t = c.titoli.find(x => x.id === b.dataset.eliminaTitolo);
+    if (!confirm(`Tolgo "${t.nome}" dal conto e i suoi valori di tutti i mesi?`)) return;
+    c.titoli = c.titoli.filter(x => x.id !== t.id);
+    scordaVoce(t.id + "#n");
+    scordaVoce(t.id + "#p");
+    salva(); renderPresto();
+    return;
+  }
+
   if (b.dataset.eliminaConto) {
     const c = trovaConto(b.dataset.eliminaConto);
     if (!confirm(`Elimino il conto "${c.nome}" e i suoi saldi di tutti i mesi?`)) return;
     vociDi(c).forEach(v => scordaVoce(v.id));
+    titoliDi(c).forEach(t => { scordaVoce(t.id + "#n"); scordaVoce(t.id + "#p"); });
     scordaVoce(c.id);
     stato.conti = stato.conti.filter(x => x.id !== c.id);
     delete btcDati[c.id];
@@ -1095,6 +1409,16 @@ boxConti.addEventListener("click", e => {
 
 boxConti.addEventListener("change", e => {
   const el = e.target;
+
+  if (el.dataset.scegliTitolo) {
+    const scelto = stato.catalogo.find(x => x.isin === el.value);
+    if (scelto) {
+      boxConti.querySelector(`[data-isin="${el.dataset.scegliTitolo}"]`).value = scelto.isin;
+      boxConti.querySelector(`[data-desc="${el.dataset.scegliTitolo}"]`).value = scelto.nome;
+    }
+    el.value = "";
+    return;
+  }
 
   if (el.dataset.rinomina) {
     const id = el.dataset.rinomina;
@@ -1129,9 +1453,21 @@ boxConti.addEventListener("change", e => {
   }
 });
 
+boxConti.addEventListener("input", e => {
+  if (!e.target.dataset.isin) return;
+  const v = normalizzaIsin(e.target.value);
+  e.target.classList.toggle("male", v.length === 12 && !isinValido(v));
+});
+
 boxConti.addEventListener("keydown", e => {
   if (e.key !== "Enter") return;
   const el = e.target;
+
+  if (el.dataset.isin || el.dataset.desc) {
+    e.preventDefault();
+    boxConti.querySelector(`[data-aggiungi-titolo="${el.dataset.isin || el.dataset.desc}"]`).click();
+    return;
+  }
 
   // compilando un mese intero si va a Invio da un importo al successivo: col Tab
   // ci si fermerebbe prima sul bottone di eliminazione e sul nome della voce
@@ -1151,7 +1487,24 @@ boxConti.addEventListener("keydown", e => {
   if (el.dataset.rinomina) { e.preventDefault(); el.blur(); }
 });
 
-$("nuovo-tipo").innerHTML = Object.entries(TIPI).map(([k, t]) => `<option value="${k}">${t.nome}</option>`).join("");
+function vaiA(t) {
+  if (t === tab) return;
+  tab = t;
+  grafici.forEach(g => g.sblocca());
+  render();
+  if (tab === "btc") mostraPrezzo();
+  $("nuovo-tipo").value = tab === "tutto" ? ORDINE[0] : tab;
+}
+$("tabs").addEventListener("click", e => {
+  const b = e.target.closest("button[data-tab]");
+  if (b) vaiA(b.dataset.tab);
+});
+$("riepilogo").addEventListener("click", e => {
+  const b = e.target.closest("button[data-tab]");
+  if (b) vaiA(b.dataset.tab);
+});
+
+$("nuovo-tipo").innerHTML = ORDINE.map(k => `<option value="${k}">${TIPI[k].nome}</option>`).join("");
 
 $("aggiungi-conto").addEventListener("click", () => {
   const tipo = $("nuovo-tipo").value;
@@ -1159,10 +1512,12 @@ $("aggiungi-conto").addEventListener("click", () => {
   const c = { id: nuovoId(), tipo, nome };
   if (TIPI[tipo].sotto) c.voci = [{ id: nuovoId(), nome: "Principale" }];
   if (tipo === "btc") c.indirizzi = [];
+  if (TIPI[tipo].titoli) c.titoli = [];
   stato.conti.push(c);
   $("nuovo-nome").value = "";
+  tab = tipo;                       // si apre la scheda della categoria appena creata
   salva(); renderPresto();
-  if (tipo === "btc") { $("card-prezzo").hidden = false; mostraPrezzo(); aggiornaBitcoin(); }
+  if (tipo === "btc") { mostraPrezzo(); aggiornaBitcoin(); }
 });
 $("nuovo-nome").addEventListener("keydown", e => { if (e.key === "Enter") $("aggiungi-conto").click(); });
 
@@ -1178,10 +1533,14 @@ $("copia").addEventListener("click", () => {
   const prec = spostaMese(mese, -1);
   const riga = stato.saldi[mese] = stato.saldi[mese] || {};
   let quante = 0;
-  stato.conti.forEach(c => vociDi(c).forEach(v => {
-    const { valore, vuoto } = valoreVoce(v.id, prec);
-    if (!vuoto) { riga[v.id] = valore; quante++; }
-  }));
+  const copiaChiave = k => {
+    const { valore, vuoto } = valoreVoce(k, prec);
+    if (!vuoto) { riga[k] = valore; quante++; }
+  };
+  contiDi(tab).forEach(c => {
+    vociDi(c).forEach(v => copiaChiave(v.id));
+    titoliDi(c).forEach(t => { copiaChiave(t.id + "#n"); copiaChiave(t.id + "#p"); });
+  });
   if (!quante) { delete stato.saldi[mese]; avvisa("In " + etichettaBreve(prec) + " non c'è nulla da copiare."); return; }
   salva(); renderPresto();
   avvisa(`Copiati ${quante} saldi da ${etichettaBreve(prec)}.`);
@@ -1197,11 +1556,10 @@ window.addEventListener("resize", () => {
 
 /* ---------- avvio ---------- */
 async function aggiornaBitcoin() {
-  const conti = stato.conti.filter(c => c.tipo === "btc");
-  $("card-prezzo").hidden = !conti.length;
+  const conti = contiDi("btc");
   if (!conti.length) return;
 
-  mostraPrezzo();
+  if (tab === "btc") mostraPrezzo();
   await caricaLivello("lungo");     // serve a rivalutare i mesi passati
   await caricaPrezzoOra();
   render();
