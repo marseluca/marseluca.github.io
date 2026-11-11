@@ -1,6 +1,7 @@
-/* Service worker del Saldo wallet Bitcoin: tiene in cache il guscio dell'app. */
-const CACHE = "walletreader-v1";
+/* Service worker delle pagine Bitcoin: tiene in cache il guscio dell'app. */
+const CACHE = "walletreader-v2";
 const ASSETS = [
+  "./index.html",
   "./walletreader.html",
   "./walletreader.webmanifest",
   "./walletreader-icons/icon-192.png",
@@ -24,7 +25,13 @@ self.addEventListener("activate", e => {
 // la linea si ripiega sulla copia in cache. Le icone restano prese dalla cache.
 // I dati di blockchain e prezzi sono su altri domini: non passano di qui, devono
 // sempre essere freschi.
-const daRete = url => /\.(html|webmanifest)$/.test(url.pathname) || url.pathname.endsWith("/");
+const daRete = url => /\.(html|webmanifest|js)$/.test(url.pathname) || url.pathname.endsWith("/");
+
+// Lo scope è tutta la cartella /bitcoin/, che ora ha due pagine: il fallback
+// offline deve rendere quella chiesta, non sempre il lettore di wallet.
+const paginaDi = req => new URL(req.url).pathname.endsWith("/walletreader.html")
+  ? "./walletreader.html"
+  : "./index.html";
 
 self.addEventListener("fetch", e => {
   const req = e.request;
@@ -37,11 +44,11 @@ self.addEventListener("fetch", e => {
         .then(res => {
           if (res && res.status === 200) {
             const copia = res.clone();
-            caches.open(CACHE).then(c => c.put(req.mode === "navigate" ? "./walletreader.html" : req, copia));
+            caches.open(CACHE).then(c => c.put(req.mode === "navigate" ? paginaDi(req) : req, copia));
           }
           return res;
         })
-        .catch(() => caches.match(req.mode === "navigate" ? "./walletreader.html" : req))
+        .catch(() => caches.match(req.mode === "navigate" ? paginaDi(req) : req))
     );
     return;
   }

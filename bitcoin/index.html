@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Finanze personali</title>
+<meta name="description" content="Saldo complessivo, conti e andamento del patrimonio mese per mese." />
+<meta name="theme-color" content="#d9730d" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #f5f0e6;
+    --paper-2: #efe8da;
+    --ink: #1b1713;
+    --muted: #8c8071;
+    --hair: #ddd3c2;
+    --amber: #d9730d;
+    --amber-soft: #f6e4cd;
+    --in: #5d7a4d;
+    --out: #b4502f;
+    --shadow: 0 1px 0 rgba(27,23,19,.04), 0 18px 40px -28px rgba(27,23,19,.45);
+    --display: "Space Grotesk", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(120% 80% at 50% -10%, var(--paper-2), var(--paper) 60%);
+    color: var(--ink);
+    font-family: var(--display);
+    line-height: 1.5;
+    display: flex;
+    justify-content: center;
+    padding: clamp(16px, 4vw, 48px) clamp(14px, 4vw, 24px) 64px;
+  }
+
+  .sheet { width: 100%; max-width: 680px; }
+
+  .mark {
+    width: 26px; height: 26px; flex: none;
+    border-radius: 50%;
+    background: var(--amber);
+    color: var(--paper);
+    display: grid; place-items: center;
+    font-weight: 700; font-size: 15px;
+    box-shadow: 0 4px 12px -4px rgba(217,115,13,.7);
+  }
+  h1 {
+    font-size: clamp(26px, 6.5vw, 38px);
+    font-weight: 600;
+    letter-spacing: -.02em;
+    margin: 0 0 22px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .card {
+    background: #fff;
+    border: 1px solid var(--hair);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    padding: 22px;
+    margin-bottom: 16px;
+  }
+
+  .sec-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 2px 0 16px;
+  }
+
+  /* ---- saldo complessivo ---- */
+  .hero .sec-title { margin-bottom: 6px; }
+  .totale {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: clamp(30px, 8.5vw, 44px);
+    letter-spacing: -.02em;
+    line-height: 1;
+    word-break: break-word;
+  }
+  .totale .cent { color: var(--muted); font-size: .55em; }
+  .delta { font-family: var(--mono); font-size: 13px; margin-top: 10px; }
+  .delta.up { color: var(--in); }
+  .delta.down { color: var(--out); }
+  .delta.pari { color: var(--muted); }
+
+  .mese-nav {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--hair);
+  }
+  .mese-nav input[type="month"] {
+    font-family: var(--mono); font-size: 13px; color: var(--ink);
+    border: 1px solid var(--hair); background: var(--paper);
+    border-radius: 8px; padding: 6px 10px; min-width: 0;
+  }
+  .passo {
+    border: 1px solid var(--hair); background: var(--paper); color: var(--muted);
+    width: 32px; height: 32px; flex: none; border-radius: 8px; cursor: pointer;
+    font-family: var(--mono); font-size: 15px; line-height: 1;
+  }
+  .passo:hover:not(:disabled) { color: var(--amber); border-color: var(--amber); }
+  .passo:disabled { opacity: .35; cursor: default; }
+
+  .btn {
+    border: 1px solid var(--hair); background: var(--paper); color: var(--muted);
+    font-family: var(--mono); font-size: 11px; letter-spacing: .06em;
+    padding: 7px 11px; border-radius: 8px; cursor: pointer;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  .btn:hover { color: var(--amber); border-color: var(--amber); }
+  .btn.forte { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .btn.forte:hover { background: #000; color: var(--paper); border-color: #000; }
+
+  /* ---- conti ---- */
+  .conto-head {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .badge {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .12em;
+    text-transform: uppercase; padding: 4px 8px; border-radius: 6px;
+    background: var(--amber-soft); color: var(--amber); flex: none;
+  }
+  .badge.banca { background: #e4ecf2; color: #3b6584; }
+  .badge.cauzione { background: #efe7f3; color: #6b4f80; }
+  .badge.investimenti { background: #e7efe2; color: var(--in); }
+  .badge.digitale { background: #f3ebdd; color: #8a6a35; }
+
+  .nome {
+    border: 0; background: transparent; flex: 1; min-width: 100px;
+    font-family: var(--display); font-weight: 600; font-size: 16px;
+    color: var(--ink); padding: 2px 0;
+  }
+  .nome:focus { outline: none; color: var(--amber); }
+  .conto-tot { font-family: var(--mono); font-weight: 700; font-size: 16px; white-space: nowrap; }
+  .elimina {
+    border: 1px solid var(--hair); background: var(--paper); color: var(--muted);
+    width: 28px; height: 28px; flex: none; border-radius: 7px; cursor: pointer;
+    font-size: 15px; line-height: 1;
+  }
+  .elimina:hover { color: var(--out); border-color: var(--out); }
+
+  .voci { margin-top: 14px; }
+  .voce {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 0; border-top: 1px dotted var(--hair);
+  }
+  .voce .nome { font-weight: 500; font-size: 14px; }
+  .importo {
+    width: 128px; flex: none; text-align: right;
+    border: 1px solid var(--hair); background: var(--paper);
+    border-radius: 8px; padding: 6px 9px;
+    font-family: var(--mono); font-size: 13px; color: var(--ink);
+  }
+  .importo:focus { outline: none; border-color: var(--amber); background: #fff; }
+  .importo::placeholder { color: #bcb1a0; }
+  .importo.ereditato { color: var(--muted); }
+
+  .riga-azioni { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+  .nota {
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    margin-top: 10px; line-height: 1.6;
+  }
+  .nota.avviso { color: var(--amber); }
+
+  /* ---- conto bitcoin ---- */
+  .indirizzo {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 0; border-top: 1px dotted var(--hair);
+  }
+  .indirizzo .testo { flex: 1; min-width: 0; }
+  .indirizzo .addr {
+    font-family: var(--mono); font-size: 12px; color: var(--muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .indirizzo .quanto { font-family: var(--mono); font-size: 13px; white-space: nowrap; text-align: right; }
+  .indirizzo .quanto small { display: block; color: var(--muted); font-size: 11px; font-weight: 400; }
+  .nuovo-indirizzo { display: flex; gap: 8px; margin-top: 12px; }
+  .nuovo-indirizzo input {
+    flex: 1; min-width: 0;
+    border: 1px solid var(--hair); background: var(--paper); border-radius: 8px;
+    padding: 8px 10px; font-family: var(--mono); font-size: 12px; color: var(--ink);
+  }
+  .nuovo-indirizzo input:focus { outline: none; border-color: var(--amber); background: #fff; }
+
+  /* ---- nuovo conto ---- */
+  .nuovo-conto { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .nuovo-conto select, .nuovo-conto input {
+    border: 1px solid var(--hair); background: var(--paper); border-radius: 8px;
+    padding: 8px 10px; font-family: var(--display); font-size: 14px; color: var(--ink);
+  }
+  .nuovo-conto input { flex: 1; min-width: 140px; }
+  .nuovo-conto select:focus, .nuovo-conto input:focus { outline: none; border-color: var(--amber); }
+
+  /* ---- grafici ---- */
+  .chart-wrap { margin-top: 6px; touch-action: pan-y; }
+  .chart-wrap svg { display: block; width: 100%; height: auto; overflow: visible; cursor: crosshair; }
+  .chart-wrap svg text { font-family: var(--mono); font-size: 12px; fill: var(--muted); }
+  .chart-wrap .grid { stroke: var(--hair); stroke-width: 1; }
+  .chart-wrap .zero { stroke: var(--hair); stroke-width: 1.5; }
+  .chart-wrap .curve { stroke: var(--amber); stroke-width: 2; fill: none; }
+  .chart-wrap .fill { fill: url(#sfumaAmbra); }
+  /* il gradiente sta in un svg nascosto in fondo al body, fuori da .chart-wrap:
+     questi due selettori non possono essere discendenti, o lo stop resta nero */
+  .stop-a { stop-color: #d9730d; stop-opacity: .22; }
+  .stop-b { stop-color: #d9730d; stop-opacity: 0; }
+  .chart-wrap .dot { fill: var(--amber); }
+  .chart-wrap .cross-line { stroke: var(--ink); stroke-width: 1; opacity: .45; }
+  .chart-wrap .cross-dot { fill: #fff; stroke: var(--amber); stroke-width: 2; }
+  .chart-wrap .tip-bg { fill: var(--ink); opacity: .92; }
+  .chart-wrap .tip-v { fill: var(--paper); font-weight: 700; }
+  .chart-wrap .tip-d { fill: #c9bfae; font-size: 11px; }
+  .chart-wrap .bloccato .tip-bg { stroke: var(--amber); stroke-width: 1.5; opacity: 1; }
+  .chart-wrap .bloccato .cross-line { opacity: .7; }
+  .chart-wrap .pin { fill: var(--amber); font-size: 10px; display: none; }
+  .chart-wrap .bloccato .pin { display: block; }
+
+  .range { display: flex; flex-wrap: wrap; gap: 4px; margin: 12px 0 0; }
+  .range button {
+    border: 1px solid var(--hair); background: var(--paper); color: var(--muted);
+    font-family: var(--mono); font-size: 11px; letter-spacing: .06em;
+    padding: 5px 9px; border-radius: 7px; cursor: pointer;
+  }
+  .range button:hover { color: var(--amber); border-color: var(--amber); }
+  .range button.on { color: var(--amber); border-color: var(--amber); background: var(--amber-soft); }
+
+  .chart-foot {
+    display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    padding: 10px 2px 0; margin-top: 8px; border-top: 1px solid var(--hair);
+  }
+
+  .chart-foot .parziale { color: var(--amber); }
+
+  .stato { text-align: center; color: var(--muted); font-size: 14px; padding: 26px 0; }
+  .stato.errore {
+    border: 1px solid #e7c4b6; background: #fbeee8; color: var(--out);
+    border-radius: 12px; padding: 14px; text-align: left; font-size: 13px;
+  }
+  .spinner {
+    width: 20px; height: 20px; border: 2px solid var(--hair);
+    border-top-color: var(--amber); border-radius: 50%;
+    margin: 0 auto 10px; animation: gira .8s linear infinite;
+  }
+  @keyframes gira { to { transform: rotate(360deg); } }
+  .vuoto { color: var(--muted); font-size: 14px; text-align: center; padding: 18px 0; }
+
+  footer {
+    text-align: center; color: var(--muted); font-size: 12px;
+    margin-top: 26px; line-height: 1.7;
+  }
+  footer a { color: var(--muted); }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+    background: var(--ink); color: var(--paper);
+    font-size: 13px; padding: 11px 16px; border-radius: 10px;
+    max-width: min(92vw, 420px); text-align: center; z-index: 20;
+    box-shadow: 0 18px 40px -20px rgba(27,23,19,.8);
+  }
+  .toast[hidden] { display: none; }
+
+  @media (max-width: 420px) {
+    .card { padding: 18px 14px; }
+    .importo { width: 108px; }
+    .range button { padding: 5px 7px; font-size: 10px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+  :focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; border-radius: 4px; }
+</style>
+</head>
+<body>
+  <main class="sheet">
+    <h1><span class="mark">€</span> Finanze personali</h1>
+
+    <section class="card hero">
+      <div class="sec-title" id="etichetta-mese">Saldo complessivo</div>
+      <div class="totale" id="totale">—</div>
+      <div class="delta" id="delta"></div>
+      <div class="mese-nav">
+        <button class="passo" id="mese-giu" aria-label="Mese precedente">‹</button>
+        <input type="month" id="mese" aria-label="Mese da compilare" />
+        <button class="passo" id="mese-su" aria-label="Mese successivo">›</button>
+        <button class="btn" id="copia">Copia dal mese scorso</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="sec-title">Andamento del patrimonio</div>
+      <div class="chart-wrap" id="grafico-patrimonio"></div>
+      <div class="chart-foot">
+        <span id="patrimonio-periodo"></span>
+        <span id="patrimonio-nota"></span>
+      </div>
+    </section>
+
+    <div id="conti"></div>
+
+    <section class="card" id="card-prezzo" hidden>
+      <div class="sec-title">Prezzo Bitcoin</div>
+      <div class="totale" id="prezzo-btc" style="font-size:24px">—</div>
+      <div class="delta" id="prezzo-delta"></div>
+      <div class="range" id="prezzo-range" role="group" aria-label="Periodo del grafico"></div>
+      <div class="chart-wrap" id="grafico-prezzo"></div>
+      <div class="chart-foot">
+        <span id="prezzo-periodo"></span>
+        <span id="prezzo-fonte"></span>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="sec-title">Nuovo conto</div>
+      <div class="nuovo-conto">
+        <select id="nuovo-tipo" aria-label="Tipo di conto"></select>
+        <input id="nuovo-nome" placeholder="Nome del conto…" aria-label="Nome del nuovo conto" />
+        <button class="btn forte" id="aggiungi-conto">Aggiungi</button>
+      </div>
+    </section>
+
+
+    <footer>
+      I dati restano su questo dispositivo · saldi Bitcoin via Blockstream · prezzi CoinGecko, Kraken, Bitstamp<br />
+      <a href="walletreader.html">Lettore di wallet Bitcoin</a>
+    </footer>
+  </main>
+
+  <div class="toast" id="toast" hidden></div>
+<script>
+const $ = id => document.getElementById(id);
+const G = 86400e3;
+
+const TIPI = {
+  banca:        { nome: "Banca",            sotto: true },
+  cauzione:     { nome: "Cauzione affitto", sotto: false },
+  btc:          { nome: "Wallet BTC",       sotto: false, auto: true },
+  investimenti: { nome: "Investimenti",     sotto: true },
+  digitale:     { nome: "Wallet digitale",  sotto: true }
+};
+
+/* ---------- stato ---------- */
+/* Tutto resta nel browser: i saldi sono dati personali e non hanno motivo di
+   uscire da questo dispositivo. Struttura:
+     conti: [{ id, tipo, nome, voci: [{id, nome}], indirizzi: [{addr, nota}] }]
+     saldi: { "2026-11": { "<idVoce>": importo } }
+   Un mese senza un importo per una voce eredita l'ultimo inserito prima di
+   quel mese: in un registro mensile un conto che non cambia non si riscrive. */
+const CHIAVE_STATO = "finanze_v1";
+let stato = carica();
+
+function carica() {
+  try {
+    const s = JSON.parse(localStorage.getItem(CHIAVE_STATO));
+    if (s && Array.isArray(s.conti)) return { conti: s.conti, saldi: s.saldi || {} };
+  } catch (_) { /* stato illeggibile: si riparte puliti */ }
+  return { conti: [], saldi: {} };
+}
+function salva() {
+  try { localStorage.setItem(CHIAVE_STATO, JSON.stringify(stato)); }
+  catch (_) { avvisa("Non riesco a salvare: lo spazio del browser è pieno o bloccato."); }
+}
+const nuovoId = () => "v" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+/* ---------- mesi ---------- */
+const chiaveMese = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+const dataMese = k => { const [a, m] = k.split("-").map(Number); return new Date(a, m - 1, 1); };
+const fineMese = k => { const [a, m] = k.split("-").map(Number); return new Date(a, m, 1).getTime() - 1; };
+const spostaMese = (k, n) => { const d = dataMese(k); d.setMonth(d.getMonth() + n); return chiaveMese(d); };
+const etichettaMese = k => dataMese(k).toLocaleDateString("it-IT", { month: "long", year: "numeric" });
+const etichettaBreve = k => dataMese(k).toLocaleDateString("it-IT", { month: "short", year: "numeric" });
+
+const MESE_OGGI = chiaveMese(new Date());
+let mese = MESE_OGGI;
+
+/* ---------- importi ---------- */
+// accetta sia "1.234,56" sia "1234.56": l'ultimo separatore è quello decimale
+function leggiImporto(testo) {
+  let t = String(testo).trim().replace(/[^\d.,-]/g, "");
+  if (!t || t === "-") return null;
+  if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(t)) t = t.replace(/\./g, "");
+  else if (/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(t)) t = t.replace(/,/g, "");
+  const v = parseFloat(t.replace(",", "."));
+  return isFinite(v) ? v : null;
+}
+// per l'italiano il CLDR non raggruppa le quattro cifre (1234,56): sui soldi però
+// si scrive 1.234,56, come su qualsiasi estratto conto, quindi forzo il separatore
+const SOLDI = { style: "currency", currency: "EUR", useGrouping: "always" };
+const fmtEur = v => v.toLocaleString("it-IT", SOLDI);
+const fmtEur0 = v => v.toLocaleString("it-IT", { ...SOLDI, maximumFractionDigits: 0 });
+const fmtNum = v => v.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: "always" });
+const fmtBtc = sats => (sats / 1e8).toLocaleString("it-IT", { minimumFractionDigits: 8, maximumFractionDigits: 8 });
+const fmtAsse = v => Math.abs(v) >= 1000
+  ? "€ " + (v / 1000).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "k"
+  : "€ " + Math.round(v);
+
+/* ---------- lettura dei saldi ---------- */
+const mesiConDati = () => Object.keys(stato.saldi).sort();
+
+function vociDi(c) {
+  if (c.tipo === "btc") return [];
+  if (TIPI[c.tipo].sotto) return c.voci || [];
+  return [{ id: c.id, nome: c.nome, unica: true }];
+}
+
+function valoreVoce(voceId, m) {
+  const riga = stato.saldi[m];
+  if (riga && typeof riga[voceId] === "number") return { valore: riga[voceId], ereditato: false };
+  const prima = mesiConDati().filter(k => k < m);
+  for (let i = prima.length - 1; i >= 0; i--) {
+    const v = stato.saldi[prima[i]][voceId];
+    if (typeof v === "number") return { valore: v, ereditato: true };
+  }
+  return { valore: 0, ereditato: false, vuoto: true };
+}
+
+function totaleConto(c, m) {
+  if (c.tipo === "btc") return valoreBtc(c, m);
+  return vociDi(c).reduce((s, v) => s + valoreVoce(v.id, m).valore, 0);
+}
+const totaleMese = m => stato.conti.reduce((s, c) => s + totaleConto(c, m), 0);
+
+// i mesi da mostrare nel grafico: dal primo con un dato fino a oggi
+function mesiDelGrafico() {
+  const chiavi = mesiConDati().concat(Object.keys(btcMensile));
+  if (!chiavi.length) return [];
+  let k = chiavi.reduce((a, b) => a < b ? a : b);
+  const out = [];
+  while (k <= MESE_OGGI && out.length < 240) { out.push(k); k = spostaMese(k, 1); }
+  return out;
+}
+
+/* ---------- motore dei grafici ---------- */
+/* Uno solo per entrambi: patrimonio e prezzo cambiano solo nei dati e nelle
+   etichette. Il viewBox segue la larghezza reale del contenitore, altrimenti
+   su telefono le scritte dentro l'SVG verrebbero rimpicciolite dalla scalatura. */
+const grafici = [];
+
+function creaGrafico(contenitore) {
+  const TIP_W = 152, TIP_H = 38;
+  let W = 720, H = 280, PX0 = 4, PX1 = 662, PY0 = 18, PY1 = 254;
+  let punti = [], opt = {}, X = null, Y = null, bloccato = false;
+
+  function dimensiona() {
+    W = Math.round(Math.min(Math.max(contenitore.clientWidth || 620, 300), 720));
+    H = W < 480 ? 215 : 275;
+    PX0 = 4; PX1 = W - (W < 480 ? 46 : 58); PY0 = 18; PY1 = H - 26;
+  }
+
+  function taccheY(min, max, n = 4) {
+    const campo = (max - min) || Math.abs(max) || 1;
+    const mag = Math.pow(10, Math.floor(Math.log10(campo / n)));
+    const norm = campo / n / mag;
+    const passo = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * mag;
+    const t = [];
+    for (let v = Math.ceil(min / passo) * passo; v <= max; v += passo) t.push(v);
+    return t;
+  }
+
+  // tacche temporali su confini leggibili: ore, giorni, primi del mese o anni
+  function taccheX(t0, t1) {
+    const campo = t1 - t0, out = [];
+    const ora = t => new Date(t).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+    const giorno = t => new Date(t).toLocaleDateString("it-IT", { day: "numeric", month: "short" });
+    const mesetto = t => new Date(t).toLocaleDateString("it-IT", { month: "short", year: "2-digit" });
+
+    if (campo <= 2.5 * G) {
+      const passo = Math.max(1, Math.round(campo / 3600e3 / 6)) * 3600e3;
+      for (let t = Math.ceil(t0 / passo) * passo; t <= t1; t += passo) out.push([t, ora(t)]);
+    } else if (campo <= 70 * G) {
+      const passo = Math.max(1, Math.round(campo / G / 6));
+      const d = new Date(t0); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + 1);
+      for (; +d <= t1; d.setDate(d.getDate() + passo)) out.push([+d, giorno(+d)]);
+    } else if (campo <= 800 * G) {
+      const passo = Math.max(1, Math.round(campo / G / 30.4 / 6));
+      const d = new Date(t0); d.setDate(1); d.setHours(0, 0, 0, 0); d.setMonth(d.getMonth() + 1);
+      for (; +d <= t1; d.setMonth(d.getMonth() + passo)) out.push([+d, mesetto(+d)]);
+    } else {
+      const passo = Math.max(1, Math.round(campo / G / 365.25 / 6));
+      const d = new Date(new Date(t0).getFullYear() + 1, 0, 1);
+      for (; +d <= t1; d.setFullYear(d.getFullYear() + passo)) out.push([+d, String(d.getFullYear())]);
+    }
+    return out;
+  }
+
+  function messaggio(html, classe) {
+    contenitore.innerHTML = `<div class="stato ${classe || ""}">${html}</div>`;
+    punti = [];
+  }
+
+  function disegna(nuovi, opzioni) {
+    opt = opzioni || {};
+    punti = (nuovi || []).filter(p => isFinite(p[0]) && isFinite(p[1]));
+    if (punti.length < 2) {
+      messaggio(opt.vuoto || "Servono almeno due mesi per disegnare una linea.");
+      return;
+    }
+    dimensiona();
+    bloccato = false;
+
+    const t0 = punti[0][0], t1 = punti[punti.length - 1][0];
+    const lo = Math.min(...punti.map(p => p[1])), hi = Math.max(...punti.map(p => p[1]));
+    const margine = (hi - lo) * .12 || Math.abs(hi) * .1 || 1;
+    const yLo = lo >= 0 ? Math.max(0, lo - margine) : lo - margine;
+    const yHi = hi + margine;
+
+    X = t => PX0 + (t - t0) / ((t1 - t0) || 1) * (PX1 - PX0);
+    Y = v => PY1 - (v - yLo) / ((yHi - yLo) || 1) * (PY1 - PY0);
+    const r = n => Math.round(n * 10) / 10;
+
+    const xy = punti.map(p => [r(X(p[0])), r(Y(p[1]))]);
+    const linea = xy.map((p, i) => `${i ? "L" : "M"}${p[0]} ${p[1]}`).join(" ");
+    const area = `${linea} L${xy[xy.length - 1][0]} ${PY1} L${xy[0][0]} ${PY1} Z`;
+
+    const griglia = taccheY(yLo, yHi).map(v => `
+      <line class="${Math.abs(v) < 1e-9 ? "zero" : "grid"}" x1="${PX0}" y1="${r(Y(v))}" x2="${PX1}" y2="${r(Y(v))}" stroke-dasharray="2 4"/>
+      <text x="${PX1 + 7}" y="${r(Y(v)) + 4}">${fmtAsse(v)}</text>`).join("");
+
+    const assi = taccheX(t0, t1).map(([t, testo]) => `
+      <line class="grid" x1="${r(X(t))}" y1="${PY0}" x2="${r(X(t))}" y2="${PY1}"/>
+      <text x="${r(X(t))}" y="${H - 8}" text-anchor="middle">${testo}</text>`).join("");
+
+    const fine = xy[xy.length - 1];
+    contenitore.innerHTML = `
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${opt.titolo || "Grafico"}">
+        ${assi}${griglia}
+        <path class="fill" d="${area}"/>
+        <path class="curve" d="${linea}" stroke-linejoin="round" stroke-linecap="round"/>
+        <circle class="dot" cx="${fine[0]}" cy="${fine[1]}" r="3.5"/>
+        <g class="cross" style="display:none" pointer-events="none">
+          <line class="cross-line" y1="${PY0}" y2="${PY1}" stroke-dasharray="3 3"/>
+          <circle class="cross-dot" r="4"/>
+          <rect class="tip-bg" rx="6" height="${TIP_H}" width="${TIP_W}"/>
+          <text class="tip-v"></text>
+          <text class="tip-d"></text>
+          <text class="pin">📌</text>
+        </g>
+        <rect x="${PX0}" y="${PY0}" width="${PX1 - PX0}" height="${PY1 - PY0}" fill="transparent"/>
+      </svg>`;
+
+    collega();
+  }
+
+  /* L'etichetta segue il puntatore; con un clic resta ferma sul punto e si
+     toglie cliccando altrove nella pagina o con Esc. */
+  function collega() {
+    const svg = contenitore.querySelector("svg");
+    const g = contenitore.querySelector(".cross");
+    const linea = g.querySelector(".cross-line");
+    const dot = g.querySelector(".cross-dot");
+    const box = g.querySelector(".tip-bg");
+    const testoV = g.querySelector(".tip-v");
+    const testoD = g.querySelector(".tip-d");
+    const pin = g.querySelector(".pin");
+
+    const punta = e => {
+      const rect = svg.getBoundingClientRect();
+      const vx = (e.clientX - rect.left) / rect.width * W;
+      let i = 0, best = Infinity;
+      punti.forEach((p, k) => { const d = Math.abs(X(p[0]) - vx); if (d < best) { best = d; i = k; } });
+      const [t, v] = punti[i], x = X(t), y = Y(v);
+
+      linea.setAttribute("x1", x); linea.setAttribute("x2", x);
+      dot.setAttribute("cx", x); dot.setAttribute("cy", y);
+      const bx = Math.min(Math.max(x - TIP_W / 2, PX0), Math.max(PX0, PX1 - TIP_W));
+      box.setAttribute("x", bx); box.setAttribute("y", PY0 - 4);
+      testoV.setAttribute("x", bx + 10); testoV.setAttribute("y", PY0 + 12);
+      testoV.textContent = (opt.valore || fmtEur0)(v);
+      testoD.setAttribute("x", bx + 10); testoD.setAttribute("y", PY0 + 27);
+      testoD.textContent = (opt.quando || (q => new Date(q).toLocaleDateString("it-IT")))(t, i);
+      pin.setAttribute("x", bx + TIP_W - 22); pin.setAttribute("y", PY0 + 12);
+      g.style.display = "";
+    };
+
+    svg.addEventListener("pointermove", e => { if (!bloccato) punta(e); });
+    svg.addEventListener("pointerleave", () => { if (!bloccato) g.style.display = "none"; });
+    svg.addEventListener("click", e => { punta(e); bloccato = true; g.classList.add("bloccato"); });
+  }
+
+  const api = {
+    disegna,
+    messaggio,
+    ridisegna: () => { if (punti.length) disegna(punti, opt); },
+    sblocca() {
+      bloccato = false;
+      const g = contenitore.querySelector(".cross");
+      if (g) { g.style.display = "none"; g.classList.remove("bloccato"); }
+    },
+    contiene: nodo => contenitore.contains(nodo)
+  };
+  grafici.push(api);
+  return api;
+}
+
+document.addEventListener("pointerdown", e => grafici.forEach(g => { if (!g.contiene(e.target)) g.sblocca(); }));
+document.addEventListener("keydown", e => { if (e.key === "Escape") grafici.forEach(g => g.sblocca()); });
+
+// una sola definizione della sfumatura per tutta la pagina: gli id devono essere unici
+document.body.insertAdjacentHTML("beforeend", `
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <linearGradient id="sfumaAmbra" x1="0" y1="0" x2="0" y2="1">
+      <stop class="stop-a" offset="0%"/><stop class="stop-b" offset="100%"/>
+    </linearGradient>
+  </defs></svg>`);
+
+let toastTimer = null;
+function avvisa(msg) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.hidden = true; }, 4200);
+}
+
+/* ---------- Bitcoin: prezzi ---------- */
+/* Tre livelli di dettaglio con la stessa cascata di sorgenti: vince la prima che
+   risponde con abbastanza punti. CoinGecko resta ultima perché il piano gratuito
+   si ferma a un anno di storico. Il livello lungo serve anche a rivalutare i
+   saldi dei mesi passati. */
+const daKraken = j => {
+  if (j.error && j.error.length) throw new Error(j.error[0]);
+  const k = Object.keys(j.result || {}).find(x => x !== "last");
+  return (j.result[k] || []).map(r => [r[0] * 1000, +r[4]]);
+};
+const daBitstamp = j => (j.data.ohlc || []).map(c => [+c.timestamp * 1000, +c.close]);
+const daGecko = j => (j.prices || []).map(p => [p[0], p[1]]);
+
+const kraken = i => ({ label: "Kraken (XBT/EUR)", url: `https://api.kraken.com/0/public/OHLC?pair=XBTEUR&interval=${i}`, parse: daKraken });
+const bitstamp = (passo, n) => ({ label: "Bitstamp (BTC/EUR)", url: `https://www.bitstamp.net/api/v2/ohlc/btceur/?step=${passo}&limit=${n}`, parse: daBitstamp });
+const gecko = (q, nota) => ({ label: "CoinGecko" + (nota || ""), url: `https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=eur&${q}`, parse: daGecko });
+
+const LIVELLI = {
+  breve: { ttl: 30 * 60e3,   fonti: [kraken(240),   bitstamp(14400, 1000), gecko("days=90")] },
+  medio: { ttl: 6 * 3600e3,  fonti: [kraken(1440),  bitstamp(86400, 1000), gecko("days=365&interval=daily", " (solo 1 anno)")] },
+  lungo: { ttl: 24 * 3600e3, fonti: [kraken(10080), bitstamp(259200, 700), gecko("days=365&interval=daily", " (solo 1 anno)")] }
+};
+
+const PERIODI = [
+  { id: "1m", label: "1M", desc: "1 mese",  giorni: 30,   livello: "breve" },
+  { id: "6m", label: "6M", desc: "6 mesi",  giorni: 183,  livello: "medio" },
+  { id: "1a", label: "1A", desc: "1 anno",  giorni: 365,  livello: "medio" },
+  { id: "2a", label: "2A", desc: "2 anni",  giorni: 730,  livello: "lungo" },
+  { id: "5a", label: "5A", desc: "5 anni",  giorni: 1826, livello: "lungo" }
+];
+
+const datiPrezzi = {};
+let periodo = PERIODI.find(p => p.id === "1a");
+let prezzoOra = null;
+let richiestaPrezzo = 0;
+
+async function caricaLivello(liv) {
+  if (datiPrezzi[liv]) return datiPrezzi[liv];
+  const chiave = "btc_prezzi_" + liv;
+  let vecchia = null;
+  try {
+    const c = JSON.parse(localStorage.getItem(chiave));
+    if (c && Array.isArray(c.serie) && c.serie.length > 20) {
+      vecchia = c;
+      if (Date.now() - c.ts < LIVELLI[liv].ttl) return (datiPrezzi[liv] = { serie: c.serie, fonte: c.fonte });
+    }
+  } catch (_) { /* cache illeggibile: si riparte dalla rete */ }
+
+  for (const fonte of LIVELLI[liv].fonti) {
+    try {
+      const r = await fetch(fonte.url);
+      if (!r.ok) continue;
+      const punti = (fonte.parse(await r.json()) || [])
+        .filter(p => isFinite(p[0]) && isFinite(p[1]) && p[1] > 0)
+        .sort((a, b) => a[0] - b[0]);
+      if (punti.length < 20) continue;
+      try { localStorage.setItem(chiave, JSON.stringify({ ts: Date.now(), fonte: fonte.label, serie: punti })); } catch (_) { /* spazio esaurito */ }
+      return (datiPrezzi[liv] = { serie: punti, fonte: fonte.label });
+    } catch (_) { /* sorgente muta: si prova la prossima */ }
+  }
+
+  // rete giù: meglio dati vecchi dichiarati che una scheda vuota
+  if (vecchia) return (datiPrezzi[liv] = { serie: vecchia.serie, fonte: vecchia.fonte + " · dati del " + new Date(vecchia.ts).toLocaleDateString("it-IT") });
+  return null;
+}
+
+function prezzoAlMese(m) {
+  const d = datiPrezzi.lungo;
+  if (!d || !d.serie.length) return null;
+  const limite = fineMese(m);
+  let p = null;
+  for (const punto of d.serie) { if (punto[0] <= limite) p = punto[1]; else break; }
+  return p !== null ? p : d.serie[0][1];
+}
+
+async function caricaPrezzoOra() {
+  try {
+    const r = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=eur");
+    if (r.ok) { prezzoOra = (await r.json()).bitcoin.eur; return; }
+  } catch (_) { /* si ripiega sull'ultima quotazione dello storico */ }
+  const d = datiPrezzi.lungo || datiPrezzi.medio || datiPrezzi.breve;
+  if (d && d.serie.length) prezzoOra = d.serie[d.serie.length - 1][1];
+}
+
+/* ---------- Bitcoin: saldi on-chain ---------- */
+const API_BS = "https://blockstream.info/api";
+const SAT = 1e8;
+const btcDati = {};      // idConto -> { sats, perIndirizzo, satsMensile, troncato, errore }
+const btcMensile = {};   // mesi in cui almeno un wallet aveva un saldo
+
+const deltaTx = (tx, addr) => {
+  let v = 0;
+  for (const o of tx.vout || []) if (o.scriptpubkey_address === addr) v += o.value;
+  for (const i of tx.vin || []) if (i.prevout && i.prevout.scriptpubkey_address === addr) v -= i.prevout.value;
+  return v;
+};
+
+// Blockstream pagina a 25 transazioni per volta: si risale finché la pagina è vuota
+async function tutteLeTx(addr) {
+  const out = [];
+  let url = `${API_BS}/address/${addr}/txs`;
+  for (let p = 0; p < 20; p++) {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const lotto = await r.json();
+    if (!lotto.length) return { tx: out, completo: true };
+    out.push(...lotto);
+    url = `${API_BS}/address/${addr}/txs/chain/${lotto[lotto.length - 1].txid}`;
+  }
+  return { tx: out, completo: false };
+}
+
+// dal saldo cumulato nel tempo al saldo a fine di ogni mese
+function satsPerMese(eventi) {
+  const out = {};
+  if (!eventi.length) return out;
+  eventi.sort((a, b) => a.t - b.t);
+  let k = chiaveMese(new Date(eventi[0].t)), i = 0, cum = 0;
+  while (k <= MESE_OGGI) {
+    const limite = fineMese(k);
+    while (i < eventi.length && eventi[i].t <= limite) cum += eventi[i++].delta;
+    out[k] = cum;
+    btcMensile[k] = true;
+    k = spostaMese(k, 1);
+  }
+  return out;
+}
+
+async function caricaConto(conto) {
+  const indirizzi = (conto.indirizzi || []).map(i => i.addr);
+  const d = { sats: 0, perIndirizzo: {}, satsMensile: {}, troncato: false, errore: null, pronto: false };
+  btcDati[conto.id] = d;
+  if (!indirizzi.length) { d.pronto = true; return; }
+
+  const eventi = [];
+  for (const addr of indirizzi) {
+    try {
+      const r = await fetch(`${API_BS}/address/${addr}`);
+      if (r.status === 400 || r.status === 404) { d.perIndirizzo[addr] = null; continue; }
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const s = await r.json();
+      const saldo = (s.chain_stats.funded_txo_sum - s.chain_stats.spent_txo_sum)
+                  + (s.mempool_stats.funded_txo_sum - s.mempool_stats.spent_txo_sum);
+      d.perIndirizzo[addr] = saldo;
+      d.sats += saldo;
+
+      const { tx, completo } = await tutteLeTx(addr);
+      if (!completo) d.troncato = true;
+      for (const t of tx) {
+        if (!t.status || !t.status.confirmed || !t.status.block_time) continue;
+        eventi.push({ t: t.status.block_time * 1000, delta: deltaTx(t, addr) });
+      }
+    } catch (e) {
+      d.errore = e.message;
+      d.perIndirizzo[addr] = d.perIndirizzo[addr] ?? null;
+    }
+  }
+  d.satsMensile = satsPerMese(eventi);
+  d.pronto = true;
+}
+
+// sats di un conto a fine mese: dal mese ricostruito, o dall'ultimo noto prima
+function satsAlMese(d, m) {
+  if (!d) return 0;
+  if (m >= MESE_OGGI) return d.sats;
+  if (typeof d.satsMensile[m] === "number") return d.satsMensile[m];
+  const prima = Object.keys(d.satsMensile).filter(k => k < m).sort();
+  return prima.length ? d.satsMensile[prima[prima.length - 1]] : 0;
+}
+
+function valoreBtc(conto, m) {
+  const d = btcDati[conto.id];
+  if (!d) return 0;
+  const sats = satsAlMese(d, m);
+  if (!sats) return 0;
+  const prezzo = m >= MESE_OGGI ? (prezzoOra ?? prezzoAlMese(m)) : prezzoAlMese(m);
+  return prezzo ? sats / SAT * prezzo : 0;
+}
+
+/* ---------- rendering ---------- */
+const boxConti = $("conti");
+const graficoPatrimonio = creaGrafico($("grafico-patrimonio"));
+const graficoPrezzo = creaGrafico($("grafico-prezzo"));
+let daMettereAFuoco = null;
+
+const esc = t => String(t == null ? "" : t)
+  .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+function render() {
+  renderTestata();
+  renderConti();
+  renderPatrimonio();
+  if (daMettereAFuoco) {
+    const el = boxConti.querySelector(`[data-rinomina="${daMettereAFuoco}"]`);
+    if (el) { el.focus(); el.select(); }
+    daMettereAFuoco = null;
+  }
+}
+
+/* Il cambio di un importo arriva da un evento change, cioè da un blur: rifare
+   l'HTML della lista lì dentro fa fallire innerHTML (il nodo che sta perdendo il
+   focus non è più figlio di nessuno) e farebbe perdere il focus a chi passa da un
+   campo all'altro col Tab. Quindi per un importo aggiorno solo le cifre derivate,
+   e i cambi di struttura li rimando al giro successivo del loop. */
+function aggiornaCifre() {
+  renderTestata();
+  stato.conti.forEach(c => {
+    const el = boxConti.querySelector(`[data-tot="${c.id}"]`);
+    if (el) el.textContent = fmtEur(totaleConto(c, mese));
+  });
+  renderPatrimonio();
+}
+
+let renderInCoda = null;
+function renderPresto() {
+  if (renderInCoda) return;
+  renderInCoda = setTimeout(() => { renderInCoda = null; render(); }, 0);
+}
+
+function renderTestata() {
+  $("etichetta-mese").textContent = "Saldo complessivo · " + etichettaMese(mese);
+  const tot = totaleMese(mese);
+  $("totale").textContent = stato.conti.length ? fmtEur(tot) : "—";
+
+  const prec = spostaMese(mese, -1);
+  const diff = tot - totaleMese(prec);
+  const d = $("delta");
+  if (!stato.conti.length) {
+    d.className = "delta pari";
+    d.textContent = "Aggiungi un conto per cominciare.";
+  } else if (Math.abs(diff) < 0.005) {
+    d.className = "delta pari";
+    d.textContent = "Nessuna variazione su " + etichettaBreve(prec);
+  } else {
+    d.className = "delta " + (diff > 0 ? "up" : "down");
+    d.textContent = `${diff > 0 ? "▲" : "▼"} ${diff > 0 ? "+" : "−"}${fmtEur(Math.abs(diff))} su ${etichettaBreve(prec)}`;
+  }
+
+  $("mese").value = mese;
+  $("mese").max = MESE_OGGI;
+  $("mese-su").disabled = mese >= MESE_OGGI;
+}
+
+function campoImporto(voceId) {
+  const { valore, ereditato, vuoto } = valoreVoce(voceId, mese);
+  const esplicito = !ereditato && !vuoto;
+  return `<input class="importo ${ereditato ? "ereditato" : ""}" data-importo="${voceId}"
+                 type="text" inputmode="decimal" aria-label="Saldo di ${etichettaMese(mese)}"
+                 value="${esplicito ? fmtNum(valore) : ""}"
+                 placeholder="${ereditato ? fmtNum(valore) : "0,00"}" />`;
+}
+
+function renderConti() {
+  if (!stato.conti.length) {
+    boxConti.innerHTML = `<section class="card"><div class="vuoto">Nessun conto. Creane uno qui sotto.</div></section>`;
+    return;
+  }
+
+  boxConti.innerHTML = stato.conti.map(c => {
+    const tipo = TIPI[c.tipo];
+    const testa = `
+      <div class="conto-head">
+        <span class="badge ${c.tipo}">${tipo.nome}</span>
+        <input class="nome" data-rinomina="${c.id}" value="${esc(c.nome)}" aria-label="Nome del conto" />
+        <span class="conto-tot" data-tot="${c.id}">${fmtEur(totaleConto(c, mese))}</span>
+        <button class="elimina" data-elimina-conto="${c.id}" aria-label="Elimina ${esc(c.nome)}">×</button>
+      </div>`;
+
+    if (c.tipo === "btc") return `<section class="card">${testa}${corpoBtc(c)}</section>`;
+
+    if (!tipo.sotto) return `<section class="card">${testa}
+      <div class="voci"><div class="voce">
+        <span class="nome" style="color:var(--muted);font-size:14px">Saldo di ${etichettaMese(mese)}</span>
+        ${campoImporto(c.id)}
+      </div></div></section>`;
+
+    const voci = (c.voci || []).map(v => `
+      <div class="voce">
+        <input class="nome" data-rinomina="${v.id}" value="${esc(v.nome)}" aria-label="Nome del sottoconto" />
+        ${campoImporto(v.id)}
+        <button class="elimina" data-elimina-voce="${v.id}" aria-label="Elimina ${esc(v.nome)}">×</button>
+      </div>`).join("");
+
+    return `<section class="card">${testa}
+      <div class="voci">${voci || `<div class="vuoto">Nessun sottoconto.</div>`}</div>
+      <div class="riga-azioni"><button class="btn" data-nuova-voce="${c.id}">+ Sottoconto</button></div>
+    </section>`;
+  }).join("");
+}
+
+function corpoBtc(c) {
+  const d = btcDati[c.id];
+  const righe = (c.indirizzi || []).map(i => {
+    const sats = d && d.perIndirizzo[i.addr];
+    const quanto = !d || !d.pronto ? "<small>lettura…</small>"
+      : sats == null ? "<small>non leggibile</small>"
+      : `${fmtBtc(sats)}<small>${prezzoOra ? fmtEur(sats / SAT * prezzoOra) : "—"}</small>`;
+    return `<div class="indirizzo">
+        <div class="testo"><div class="addr" title="${esc(i.addr)}">${esc(i.addr)}</div></div>
+        <div class="quanto">${quanto}</div>
+        <button class="elimina" data-elimina-addr="${esc(i.addr)}" data-conto="${c.id}" aria-label="Rimuovi indirizzo">×</button>
+      </div>`;
+  }).join("");
+
+  const sats = d ? satsAlMese(d, mese) : 0;
+  const riepilogo = !(c.indirizzi || []).length ? ""
+    : `<div class="voce" style="border-top:1px solid var(--hair)">
+         <span class="nome" style="color:var(--muted);font-size:14px">${mese >= MESE_OGGI ? "Saldo attuale" : "A fine " + etichettaBreve(mese)}</span>
+         <span class="conto-tot">${fmtBtc(sats)} BTC</span>
+       </div>`;
+
+  const note = [];
+  if (!(c.indirizzi || []).length) note.push("Incolla un indirizzo: il saldo viene letto dalla blockchain, non si inserisce a mano.");
+  else {
+    note.push("Saldo letto dalla blockchain e rivalutato al cambio del mese: non si inserisce a mano.");
+    if (d && d.troncato) note.push("Storico molto lungo: ho letto solo le transazioni più recenti, i mesi lontani possono essere imprecisi.");
+    if (d && d.errore) note.push("Una lettura non è riuscita (" + esc(d.errore) + "): il saldo mostrato può essere parziale.");
+  }
+
+  return `<div class="voci">${righe}${riepilogo}</div>
+    <div class="nuovo-indirizzo">
+      <input data-nuovo-addr="${c.id}" placeholder="bc1q… · 3… · 1…" aria-label="Nuovo indirizzo Bitcoin" spellcheck="false" />
+      <button class="btn" data-aggiungi-addr="${c.id}">Aggiungi</button>
+    </div>
+    ${note.map(n => `<div class="nota${n.startsWith("Storico") || n.startsWith("Una lettura") ? " avviso" : ""}">${n}</div>`).join("")}`;
+}
+
+function renderPatrimonio() {
+  const mesi = mesiDelGrafico();
+  if (mesi.length < 2) {
+    graficoPatrimonio.messaggio("Inserisci i saldi di almeno due mesi per vedere l'andamento.");
+    $("patrimonio-periodo").textContent = "";
+    $("patrimonio-nota").textContent = "";
+    return;
+  }
+  const punti = mesi.map(m => [dataMese(m).getTime(), totaleMese(m)]);
+  const valori = punti.map(p => p[1]);
+
+  graficoPatrimonio.disegna(punti, {
+    titolo: `Patrimonio da ${etichettaBreve(mesi[0])} a ${etichettaBreve(mesi[mesi.length - 1])}`,
+    valore: fmtEur0,
+    quando: (t, i) => etichettaMese(mesi[i]),
+    tacche: () => {
+      const passo = Math.max(1, Math.ceil(mesi.length / 6));
+      return mesi.filter((_, i) => i % passo === 0)
+        .map(m => [dataMese(m).getTime(), dataMese(m).toLocaleDateString("it-IT", { month: "short", year: "2-digit" })]);
+    }
+  });
+
+  $("patrimonio-periodo").textContent =
+    `${etichettaBreve(mesi[0])} → ${etichettaBreve(mesi[mesi.length - 1])} · min ${fmtEur0(Math.min(...valori))} · max ${fmtEur0(Math.max(...valori))}`;
+  $("patrimonio-nota").textContent = "i mesi senza un nuovo valore tengono l'ultimo inserito";
+}
+
+/* ---------- grafico del prezzo ---------- */
+$("prezzo-range").innerHTML = PERIODI.map(p =>
+  `<button type="button" data-periodo="${p.id}" aria-label="${p.desc}" aria-pressed="${p.id === periodo.id}"
+           class="${p.id === periodo.id ? "on" : ""}">${p.label}</button>`).join("");
+
+async function mostraPrezzo() {
+  const mia = ++richiestaPrezzo;
+  if (!datiPrezzi[periodo.livello]) graficoPrezzo.messaggio('<div class="spinner"></div>Carico lo storico…');
+  const d = await caricaLivello(periodo.livello);
+  if (mia !== richiestaPrezzo) return;
+  if (!d) {
+    graficoPrezzo.messaggio("Non riesco a scaricare lo storico dei prezzi. Riprova più tardi.", "errore");
+    return;
+  }
+
+  const taglio = Date.now() - periodo.giorni * G;
+  const dentro = d.serie.filter(p => p[0] >= taglio);
+  const vista = dentro.length >= 2 ? dentro : d.serie.slice(-2);
+  const primo = vista[0][1], ultimo = vista[vista.length - 1][1];
+  const campo = vista[vista.length - 1][0] - vista[0][0];
+  const varPct = (ultimo - primo) / primo * 100;
+  const su = varPct >= 0;
+
+  $("prezzo-btc").textContent = fmtEur0(ultimo);
+  $("prezzo-delta").className = "delta " + (su ? "up" : "down");
+  $("prezzo-delta").textContent = `${su ? "▲" : "▼"} ${su ? "+" : "−"}${Math.abs(varPct).toLocaleString("it-IT", { maximumFractionDigits: 1 })}% · ${periodo.desc}`;
+
+  graficoPrezzo.disegna(vista, {
+    titolo: "Prezzo di Bitcoin in euro · " + periodo.desc,
+    valore: fmtEur0,
+    quando: t => new Date(t).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" })
+  });
+
+  $("prezzo-periodo").textContent = `min ${fmtEur0(Math.min(...vista.map(p => p[1])))} · max ${fmtEur0(Math.max(...vista.map(p => p[1])))}`;
+  const parziale = campo < periodo.giorni * G * .85;
+  $("prezzo-fonte").className = parziale ? "parziale" : "";
+  $("prezzo-fonte").textContent = parziale
+    ? `storico disponibile: ${Math.round(campo / G)} giorni · ${d.fonte}`
+    : `fonte: ${d.fonte}`;
+}
+
+$("prezzo-range").addEventListener("click", e => {
+  const b = e.target.closest("button[data-periodo]");
+  if (!b || b.dataset.periodo === periodo.id) return;
+  periodo = PERIODI.find(p => p.id === b.dataset.periodo);
+  $("prezzo-range").querySelectorAll("button").forEach(x => {
+    const on = x === b;
+    x.classList.toggle("on", on);
+    x.setAttribute("aria-pressed", on);
+  });
+  mostraPrezzo();
+});
+
+/* ---------- azioni ---------- */
+function trovaConto(id) { return stato.conti.find(c => c.id === id); }
+function contoDiVoce(id) { return stato.conti.find(c => (c.voci || []).some(v => v.id === id)); }
+
+function scordaVoce(voceId) {
+  for (const m of Object.keys(stato.saldi)) {
+    delete stato.saldi[m][voceId];
+    if (!Object.keys(stato.saldi[m]).length) delete stato.saldi[m];
+  }
+}
+
+boxConti.addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+
+  if (b.dataset.nuovaVoce) {
+    const c = trovaConto(b.dataset.nuovaVoce);
+    const v = { id: nuovoId(), nome: "Nuovo sottoconto" };
+    (c.voci = c.voci || []).push(v);
+    daMettereAFuoco = v.id;
+    salva(); renderPresto(); return;
+  }
+
+  if (b.dataset.eliminaVoce) {
+    const c = contoDiVoce(b.dataset.eliminaVoce);
+    const v = c.voci.find(x => x.id === b.dataset.eliminaVoce);
+    if (!confirm(`Elimino il sottoconto "${v.nome}" e i suoi saldi di tutti i mesi?`)) return;
+    c.voci = c.voci.filter(x => x.id !== v.id);
+    scordaVoce(v.id);
+    salva(); renderPresto(); return;
+  }
+
+  if (b.dataset.eliminaConto) {
+    const c = trovaConto(b.dataset.eliminaConto);
+    if (!confirm(`Elimino il conto "${c.nome}" e i suoi saldi di tutti i mesi?`)) return;
+    vociDi(c).forEach(v => scordaVoce(v.id));
+    scordaVoce(c.id);
+    stato.conti = stato.conti.filter(x => x.id !== c.id);
+    delete btcDati[c.id];
+    salva(); renderPresto();
+    $("card-prezzo").hidden = !stato.conti.some(x => x.tipo === "btc");
+    return;
+  }
+
+  if (b.dataset.aggiungiAddr) {
+    const c = trovaConto(b.dataset.aggiungiAddr);
+    const campo = boxConti.querySelector(`[data-nuovo-addr="${c.id}"]`);
+    const addr = campo.value.trim();
+    if (!addr) { campo.focus(); return; }
+    if ((c.indirizzi || []).some(i => i.addr === addr)) { avvisa("Indirizzo già presente in questo conto."); return; }
+    (c.indirizzi = c.indirizzi || []).push({ addr });
+    salva(); renderPresto();
+    caricaConto(c).then(render);
+    return;
+  }
+
+  if (b.dataset.eliminaAddr) {
+    const c = trovaConto(b.dataset.conto);
+    c.indirizzi = (c.indirizzi || []).filter(i => i.addr !== b.dataset.eliminaAddr);
+    salva(); renderPresto();
+    caricaConto(c).then(render);
+  }
+});
+
+boxConti.addEventListener("change", e => {
+  const el = e.target;
+
+  if (el.dataset.rinomina) {
+    const id = el.dataset.rinomina;
+    const nome = el.value.trim() || "Senza nome";
+    const c = trovaConto(id);
+    if (c) c.nome = nome;
+    else { const p = contoDiVoce(id); if (p) p.voci.find(v => v.id === id).nome = nome; }
+    el.value = nome;
+    salva(); return;
+  }
+
+  if (el.dataset.importo) {
+    const id = el.dataset.importo;
+    const testo = el.value.trim();
+    if (!testo) {                                   // svuotare torna a ereditare dal mese prima
+      if (stato.saldi[mese]) { delete stato.saldi[mese][id]; if (!Object.keys(stato.saldi[mese]).length) delete stato.saldi[mese]; }
+    } else {
+      const v = leggiImporto(testo);
+      if (v === null) {
+        avvisa("Non ho capito quell'importo. Scrivilo come 1.234,56");
+        el.value = "";
+      } else {
+        (stato.saldi[mese] = stato.saldi[mese] || {})[id] = v;
+      }
+    }
+    salva();
+    const ora = valoreVoce(id, mese);
+    el.value = ora.ereditato || ora.vuoto ? "" : fmtNum(ora.valore);
+    el.placeholder = ora.ereditato ? fmtNum(ora.valore) : "0,00";
+    el.classList.toggle("ereditato", !!ora.ereditato);
+    aggiornaCifre();
+  }
+});
+
+boxConti.addEventListener("keydown", e => {
+  if (e.key !== "Enter") return;
+  const el = e.target;
+
+  // compilando un mese intero si va a Invio da un importo al successivo: col Tab
+  // ci si fermerebbe prima sul bottone di eliminazione e sul nome della voce
+  if (el.dataset.importo) {
+    e.preventDefault();
+    const campi = [...boxConti.querySelectorAll(".importo")];
+    const prossimo = campi[campi.indexOf(el) + 1];
+    el.blur();
+    if (prossimo) { prossimo.focus(); prossimo.select(); }
+    return;
+  }
+  if (el.dataset.nuovoAddr) {
+    e.preventDefault();
+    boxConti.querySelector(`[data-aggiungi-addr="${el.dataset.nuovoAddr}"]`).click();
+    return;
+  }
+  if (el.dataset.rinomina) { e.preventDefault(); el.blur(); }
+});
+
+$("nuovo-tipo").innerHTML = Object.entries(TIPI).map(([k, t]) => `<option value="${k}">${t.nome}</option>`).join("");
+
+$("aggiungi-conto").addEventListener("click", () => {
+  const tipo = $("nuovo-tipo").value;
+  const nome = $("nuovo-nome").value.trim() || TIPI[tipo].nome;
+  const c = { id: nuovoId(), tipo, nome };
+  if (TIPI[tipo].sotto) c.voci = [{ id: nuovoId(), nome: "Principale" }];
+  if (tipo === "btc") c.indirizzi = [];
+  stato.conti.push(c);
+  $("nuovo-nome").value = "";
+  salva(); renderPresto();
+  if (tipo === "btc") { $("card-prezzo").hidden = false; mostraPrezzo(); aggiornaBitcoin(); }
+});
+$("nuovo-nome").addEventListener("keydown", e => { if (e.key === "Enter") $("aggiungi-conto").click(); });
+
+$("mese").addEventListener("change", e => {
+  if (!e.target.value) { $("mese").value = mese; return; }
+  mese = e.target.value > MESE_OGGI ? MESE_OGGI : e.target.value;
+  renderPresto();
+});
+$("mese-giu").addEventListener("click", () => { mese = spostaMese(mese, -1); renderPresto(); });
+$("mese-su").addEventListener("click", () => { if (mese < MESE_OGGI) { mese = spostaMese(mese, 1); renderPresto(); } });
+
+$("copia").addEventListener("click", () => {
+  const prec = spostaMese(mese, -1);
+  const riga = stato.saldi[mese] = stato.saldi[mese] || {};
+  let quante = 0;
+  stato.conti.forEach(c => vociDi(c).forEach(v => {
+    const { valore, vuoto } = valoreVoce(v.id, prec);
+    if (!vuoto) { riga[v.id] = valore; quante++; }
+  }));
+  if (!quante) { delete stato.saldi[mese]; avvisa("In " + etichettaBreve(prec) + " non c'è nulla da copiare."); return; }
+  salva(); renderPresto();
+  avvisa(`Copiati ${quante} saldi da ${etichettaBreve(prec)}.`);
+});
+
+let larghezzaNota = 0, ridisegno = null;
+window.addEventListener("resize", () => {
+  if (document.body.clientWidth === larghezzaNota) return;
+  larghezzaNota = document.body.clientWidth;
+  clearTimeout(ridisegno);
+  ridisegno = setTimeout(() => grafici.forEach(g => g.ridisegna()), 150);
+});
+
+/* ---------- avvio ---------- */
+async function aggiornaBitcoin() {
+  const conti = stato.conti.filter(c => c.tipo === "btc");
+  $("card-prezzo").hidden = !conti.length;
+  if (!conti.length) return;
+
+  mostraPrezzo();
+  await caricaLivello("lungo");     // serve a rivalutare i mesi passati
+  await caricaPrezzoOra();
+  render();
+  await Promise.all(conti.map(caricaConto));
+  render();
+}
+
+render();
+aggiornaBitcoin();
+</script>
+</body>
+</html>
