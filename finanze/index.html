@@ -458,6 +458,22 @@
   .confronto-voce.entra { --tinta: var(--positivo); }
   .confronto-voce.esce  { --tinta: var(--negativo); }
 
+  /* Quanto si è mossa davvero la cassa contro quanto era previsto. Tre cifre
+     in fila, che su schermo stretto scendono una sotto l'altra. */
+  .scarto {
+    display: flex; flex-wrap: wrap; gap: 12px 18px;
+    margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--linea);
+  }
+  .scarto-voce { flex: 1 1 110px; min-width: 0; }
+  .scarto-voce .et {
+    display: block; font-size: 11.5px; letter-spacing: .03em;
+    text-transform: uppercase; color: var(--fioco); margin-bottom: 3px;
+  }
+  .scarto-voce .val { font-size: 17px; font-weight: 700; color: var(--testo); }
+  .scarto-voce .val.su { color: var(--positivo); }
+  .scarto-voce .val.giu { color: var(--negativo); }
+  .scarto-nota { margin-top: 10px; font-size: 12.5px; color: var(--tenue); }
+
   .prev-ogni { margin-top: 7px; }
   .prev-ogni > summary {
     display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px;
@@ -976,6 +992,17 @@ function prossimaDopo(p, m) {
 
 const previsteDel = m => previsioni().filter(p => cadeNel(p, m));
 const attesoDel = m => previsteDel(m).reduce((s, p) => s + p.verso * p.importo, 0);
+
+/* Di quanto si è mosso davvero il patrimonio nel mese. Restituisce null quando
+   la domanda non ha risposta: nel futuro non è ancora successo niente, e prima
+   del primo saldo registrato il confronto sarebbe con uno zero che non vuol
+   dire "non avevo niente" ma "non lo so". */
+function variazioneVera(m) {
+  if (distanzaMesi(m, MESE_OGGI) < 0) return null;
+  const noti = mesiDelGrafico("tutto");
+  if (!noti.length || spostaMese(m, -1) < noti[0]) return null;
+  return totaleMese(m) - totaleMese(spostaMese(m, -1));
+}
 const attesoVerso = (m, verso) => previsteDel(m)
   .filter(p => p.verso === verso).reduce((s, p) => s + p.importo, 0);
 
@@ -1523,7 +1550,7 @@ function mostraSaldi(si) {
   const b = $("occhio");
   b.setAttribute("aria-pressed", String(si));
   b.setAttribute("aria-label", si ? "Nascondi i saldi" : "Mostra i saldi");
-  renderBarra(); renderSommario(); renderCategorie();
+  renderBarra(); renderSommario(); renderCategorie(); renderConfronto();
 }
 
 function renderSommario() {
@@ -1847,6 +1874,53 @@ function renderSommarioPreviste() {
 /* Le due barre del mese, sulla stessa scala: il confronto si legge dalla
    lunghezza, non dai numeri. La più lunga arriva in fondo, l'altra sta in
    proporzione; se sono tutte e due a zero la scheda sparisce. */
+/* Il segno davanti serve: "1.400" e "−1.400" sono due mesi opposti, e la riga
+   si legge di sfuggita. Lo zero resta senza segno. */
+const conSegno = v => (v > 0 ? "+" : v < 0 ? "−" : "") + fmtEur(Math.abs(v));
+const classeSegno = v => v > 0 ? " su" : v < 0 ? " giu" : "";
+
+/* Previsto, effettivo e la distanza fra i due. L'effettivo è un movimento del
+   patrimonio, quindi sta sotto lo stesso velo dei saldi; il previsto no, è già
+   scritto nelle due barre qui sopra. */
+function scartoDelMese(previsto, vera) {
+  const cella = (et, testo, classe) =>
+    `<div class="scarto-voce"><span class="et">${et}</span><span class="val num${classe || ""}">${esc(testo)}</span></div>`;
+
+  if (vera === null) {
+    const futuro = distanzaMesi(mese, MESE_OGGI) < 0;
+    return `<div class="scarto">
+        ${cella("Variazione prevista", conSegno(previsto))}
+        ${cella("Variazione effettiva", "—")}
+      </div>
+      <div class="scarto-nota">${futuro
+        ? "Il mese deve ancora arrivare: non c'è una variazione da confrontare."
+        : "Serve il saldo di almeno un mese precedente per sapere di quanto ci si è mossi davvero."}</div>`;
+  }
+
+  const scarto = vera - previsto;
+  // il colore va solo sulla differenza: è la cifra che risponde alla domanda,
+  // e tre numeri colorati in fila se la mangerebbero
+  const corpo = `<div class="scarto">
+      ${cella("Variazione prevista", conSegno(previsto))}
+      ${cella("Variazione effettiva", velato(conSegno(vera)))}
+      ${cella("Differenza", velato(conSegno(scarto)), saldiVisibili ? classeSegno(scarto) : "")}
+    </div>`;
+
+  const nome = etichettaMese(mese).split(" ")[0];
+  const inCorso = mese === MESE_OGGI
+    ? " " + nome[0].toUpperCase() + nome.slice(1) + " è ancora in corso, la variazione effettiva può crescere."
+    : "";
+  const nota = !saldiVisibili
+    ? "Scopri i saldi per vedere di quanto ci si è mossi davvero." + inCorso
+    : scarto === 0
+      ? "Il mese è andato esattamente come previsto." + inCorso
+      : scarto > 0
+        ? `Sono rimasti ${fmtEur(scarto)} più del previsto.` + inCorso
+        : `Sono rimasti ${fmtEur(-scarto)} meno del previsto.` + inCorso;
+
+  return corpo + `<div class="scarto-nota">${esc(nota)}</div>`;
+}
+
 function renderConfronto() {
   const scheda = $("scheda-confronto");
   scheda.hidden = tab !== "previste" || !previsioni().length;
@@ -1867,10 +1941,12 @@ function renderConfronto() {
       </div>
     </div>`;
 
+  const previsto = entra - esce;
+  const vera = variazioneVera(mese);
   $("confronto").innerHTML =
-    voce("entra", "↑", "Entrate", entra) + voce("esce", "↓", "Uscite", esce);
+    voce("entra", "↑", "Entrate", entra) + voce("esce", "↓", "Uscite", esce) + scartoDelMese(previsto, vera);
 
-  const netto = entra - esce;
+  const netto = previsto;
   $("confronto-piede").textContent = netto === 0
     ? (massimo ? "Entrate e uscite si pareggiano." : "Nessuna ricorrenza cade questo mese.")
     : netto > 0
