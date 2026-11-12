@@ -31,6 +31,7 @@
     --c-investimenti: #2f6f6b; --t-investimenti: #ddeeec;
     --c-btc: #d9730d;          --t-btc: #f6e4cd;
     --c-digitale: #9c4f6a;     --t-digitale: #f3e3e9;
+    --c-debiti: #9d3321;       --t-debiti: #f6e0da;
   }
 
   * { box-sizing: border-box; }
@@ -188,10 +189,12 @@
   .investimenti { --tinta-piena: var(--c-investimenti); --tinta-chiara: var(--t-investimenti); }
   .btc          { --tinta-piena: var(--c-btc);          --tinta-chiara: var(--t-btc); }
   .digitale     { --tinta-piena: var(--c-digitale);     --tinta-chiara: var(--t-digitale); }
+  .debiti       { --tinta-piena: var(--c-debiti);       --tinta-chiara: var(--t-debiti); }
   .tutto        { --tinta-piena: var(--ink);            --tinta-chiara: var(--paper-2); }
 
   /* la scheda di un conto porta il colore della sua categoria sul bordo sinistro */
   .card.conto { border-left: 3px solid var(--tinta-piena); }
+  .card.conto.debiti .conto-tot { color: var(--c-debiti); }
 
   .nome {
     border: 0; background: transparent; flex: 1; min-width: 100px;
@@ -452,7 +455,8 @@ const TIPI = {
   cauzione:     { nome: "Cauzione affitto", sotto: false },
   investimenti: { nome: "Investimenti",     sotto: true, titoli: true },
   btc:          { nome: "Wallet BTC",       sotto: false, auto: true },
-  digitale:     { nome: "Wallet digitale",  sotto: true }
+  digitale:     { nome: "Wallet digitali",  sotto: true },
+  debiti:       { nome: "Tasse e debiti",   sotto: true, segno: -1 }
 };
 const ORDINE = Object.keys(TIPI);
 const tintaDi = t => t === "tutto" ? "var(--ink)" : `var(--c-${t})`;
@@ -548,8 +552,9 @@ const valoreTitolo = (t, m) => nominaleDi(t, m).valore * prezzoDi(t, m).valore /
 
 function totaleConto(c, m) {
   if (c.tipo === "btc") return valoreBtc(c, m);
-  return vociDi(c).reduce((s, v) => s + valoreVoce(v.id, m).valore, 0)
-       + titoliDi(c).reduce((s, t) => s + valoreTitolo(t, m), 0);
+  const somma = vociDi(c).reduce((s, v) => s + valoreVoce(v.id, m).valore, 0)
+              + titoliDi(c).reduce((s, t) => s + valoreTitolo(t, m), 0);
+  return (TIPI[c.tipo].segno || 1) * somma;
 }
 
 const contiDi = t => t === "tutto" ? stato.conti : stato.conti.filter(c => c.tipo === t);
@@ -686,7 +691,10 @@ function creaGrafico(contenitore) {
 
     const xy = punti.map(p => [r(X(p[0])), r(Y(p[1]))]);
     const linea = xy.map((p, i) => `${i ? "L" : "M"}${p[0]} ${p[1]}`).join(" ");
-    const area = `${linea} L${xy[xy.length - 1][0]} ${PY1} L${xy[0][0]} ${PY1} Z`;
+    // con valori sotto zero l'area va riempita fino alla linea dello zero,
+    // non fino al fondo del riquadro
+    const base = yLo <= 0 && yHi >= 0 ? r(Y(0)) : PY1;
+    const area = `${linea} L${xy[xy.length - 1][0]} ${base} L${xy[0][0]} ${base} Z`;
 
     const griglia = taccheY(yLo, yHi).map(v => `
       <line class="${Math.abs(v) < 1e-9 ? "zero" : "grid"}" x1="${PX0}" y1="${r(Y(v))}" x2="${PX1}" y2="${r(Y(v))}" stroke-dasharray="2 4"/>
@@ -1126,6 +1134,7 @@ function renderConti() {
 
     if (!tipo.titoli) return scheda(`
       <div class="voci">${voci || `<div class="vuoto">Nessun sottoconto.</div>`}</div>
+      ${tipo.segno < 0 ? `<div class="nota">Scrivi quanto devi, con il segno più: nei totali entra in negativo.</div>` : ""}
       <div class="riga-azioni"><button class="btn" data-nuova-voce="${c.id}">+ Sottoconto</button></div>`);
 
     const titoli = titoliDi(c).map(t => corpoTitolo(t)).join("");
