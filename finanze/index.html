@@ -98,6 +98,20 @@
 
   .num { font-variant-numeric: tabular-nums; }
 
+  /* I saldi complessivi non si vedono finché non si chiede: la pagina si apre
+     spesso dove qualcuno può guardare. La scelta resta registrata. */
+  .fila-cifrone { display: flex; align-items: center; gap: 10px; }
+  .occhio {
+    flex: none; width: 34px; height: 34px; padding: 0; border-radius: 50%;
+    display: grid; place-items: center; cursor: pointer;
+    border: 1px solid var(--linea); background: var(--superficie); color: var(--tenue);
+  }
+  .occhio svg { width: 19px; height: 19px; }
+  .occhio:hover { color: var(--testo); border-color: var(--fioco); }
+  .occhio:focus-visible { outline: 2px solid var(--tinta, var(--testo)); outline-offset: 2px; }
+  .occhio[aria-pressed="true"] .sbarra { display: none; }
+  .nascosto { letter-spacing: .08em; color: var(--tenue); }
+
   /* ---------- barra in alto ---------- */
   .barra {
     position: sticky; top: 0; z-index: 30;
@@ -417,6 +431,33 @@
   .prev-alto .bottoncino { order: 5; margin-left: auto; }
   /* la periodicità è il dettaglio: in chiaro resta solo il riassunto, il resto
      si apre quando serve. <details> porta da sé tastiera e lettori di schermo. */
+  /* Istogramma orizzontale: due barre sulla stessa scala, ciascuna con la sua
+     etichetta, la freccia e il valore sempre in chiaro. Verde e rosso qui
+     dicono la stessa cosa che dicono in tutta la pagina, ma non sono l'unico
+     segnale: al buio del daltonismo restano parole e frecce. */
+  .confronto-voce + .confronto-voce { margin-top: 14px; }
+  .confronto-alto {
+    display: flex; align-items: baseline; gap: 10px;
+    font-size: 13px; color: var(--tenue); margin-bottom: 6px;
+  }
+  .confronto-alto .chi { flex: 1 1 auto; min-width: 0; font-weight: 600; }
+  .confronto-alto .quanto { font-size: 16px; font-weight: 700; color: var(--testo); }
+  /* la barra parte squadrata dalla base e si arrotonda solo in punta: con
+     tutti e due i capi tondi le barre corte sembrano più corte di quanto sono */
+  .pista {
+    height: 12px; border-radius: 3px; overflow: hidden;
+    background: color-mix(in srgb, var(--tinta) var(--quanta-pista, 13%), transparent);
+  }
+  /* su fondo scuro il 13% sparisce nella scheda e si perde il riferimento del
+     cento per cento, cioè quanto manca alla barra più lunga */
+  @media (prefers-color-scheme: dark) { .pista { --quanta-pista: 26%; } }
+  .pista > i {
+    display: block; height: 100%; min-width: 3px;
+    border-radius: 0 3px 3px 0; background: var(--tinta);
+  }
+  .confronto-voce.entra { --tinta: var(--positivo); }
+  .confronto-voce.esce  { --tinta: var(--negativo); }
+
   .prev-ogni { margin-top: 7px; }
   .prev-ogni > summary {
     display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px;
@@ -624,11 +665,18 @@
   <main>
     <section class="sommario">
       <div class="occhiello" id="occhiello">Patrimonio netto</div>
-      <div class="cifrone num" id="cifrone">—</div>
-      <!-- il bottone sta per primo: i chip dopo cambiano testo e compaiono o
-           spariscono, e lo facevano slittare mentre ci si cliccava sopra -->
+      <div class="fila-cifrone">
+        <div class="cifrone num" id="cifrone">—</div>
+        <button type="button" class="occhio" id="occhio" aria-pressed="false" aria-label="Mostra i saldi">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12Z" />
+            <circle cx="12" cy="12" r="2.8" />
+            <path class="sbarra" d="M4 20 20 4" />
+          </svg>
+        </button>
+      </div>
       <div class="riga-chip" id="chip">
-        <button type="button" class="chip azione" id="copia" hidden>Copia dal mese scorso</button>
         <span class="chip" id="chip-delta" hidden></span>
         <span class="chip" id="chip-conta" hidden></span>
       </div>
@@ -637,20 +685,18 @@
 
     <nav class="pillole" id="pillole" role="tablist" aria-label="Categorie"></nav>
 
+    <section class="scheda" id="scheda-confronto" hidden>
+      <div class="intestazione"><h2 id="confronto-titolo">Entrate e uscite</h2></div>
+      <div class="corpo" id="confronto"></div>
+      <div class="piedino"><span id="confronto-piede"></span></div>
+    </section>
+
     <section class="scheda" id="scheda-grafico">
       <div class="intestazione"><h2 id="titolo-grafico">Andamento</h2></div>
       <div class="grafico" id="grafico-patrimonio"></div>
       <div class="piedino">
         <span id="piede-periodo"></span>
         <span id="piede-nota"></span>
-      </div>
-    </section>
-
-    <section class="scheda" id="scheda-fine-mese" hidden>
-      <div class="intestazione"><h2 id="fine-mese-titolo">Saldo previsto a fine mese</h2></div>
-      <div class="corpo">
-        <div class="cifrone num" id="fine-mese-valore" style="font-size:28px">—</div>
-        <div class="brindello" id="fine-mese-conto" style="margin-top:7px"></div>
       </div>
     </section>
 
@@ -822,6 +868,14 @@ const spostaMese = (k, n) => { const d = dataMese(k); d.setMonth(d.getMonth() + 
 const etichettaMese = k => dataMese(k).toLocaleDateString("it-IT", { month: "long", year: "numeric" });
 const etichettaBreve = k => dataMese(k).toLocaleDateString("it-IT", { month: "short", year: "numeric" });
 
+/* La scelta di mostrare i saldi vive fuori dai dati: è una preferenza di questo
+   dispositivo, non un numero da conservare. Alla prima apertura sono nascosti. */
+const CHIAVE_OCCHIO = "finanze_occhio";
+let saldiVisibili = false;
+try { saldiVisibili = localStorage.getItem(CHIAVE_OCCHIO) === "1"; } catch (e) {}
+const PALLINI = "••••";
+const velato = testo => saldiVisibili ? testo : PALLINI;
+
 const MESE_OGGI = chiaveMese(new Date());
 let mese = MESE_OGGI;
 
@@ -833,14 +887,18 @@ function leggiImporto(testo) {
   if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(t)) t = t.replace(/\./g, "");
   else if (/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(t)) t = t.replace(/,/g, "");
   const v = parseFloat(t.replace(",", "."));
-  return isFinite(v) ? v : null;
+  return isFinite(v) ? Math.round(v) : null;
 }
-// per l'italiano il CLDR non raggruppa le quattro cifre (1234,56): sui soldi però
-// si scrive 1.234,56, come su qualsiasi estratto conto, quindi forzo il separatore
-const SOLDI = { style: "currency", currency: "EUR", useGrouping: "always" };
+/* Gli euro si scrivono senza centesimi: a queste cifre i decimali sono rumore.
+   Per l'italiano il CLDR non raggruppa le quattro cifre (1234): sui soldi però
+   si scrive 1.234, come su qualsiasi estratto conto, quindi forzo il separatore. */
+const SOLDI = {
+  style: "currency", currency: "EUR", useGrouping: "always",
+  minimumFractionDigits: 0, maximumFractionDigits: 0
+};
 const fmtEur = v => v.toLocaleString("it-IT", SOLDI);
-const fmtEur0 = v => v.toLocaleString("it-IT", { ...SOLDI, maximumFractionDigits: 0 });
-const fmtNum = v => v.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: "always" });
+const fmtEur0 = fmtEur;
+const fmtNum = v => Math.round(v).toLocaleString("it-IT", { maximumFractionDigits: 0, useGrouping: "always" });
 const fmtBtc = sats => (sats / 1e8).toLocaleString("it-IT", { minimumFractionDigits: 8, maximumFractionDigits: 8 });
 const fmtAsse = v => Math.abs(v) >= 1000
   ? "€ " + (v / 1000).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "k"
@@ -929,14 +987,6 @@ function attesoResiduo(m) {
   return previsteDel(m)
     .filter(x => giornoReale(x.giorno, m) >= oggi)
     .reduce((somma, x) => somma + x.verso * x.importo, 0);
-}
-
-// quanto ci si aspetta di muovere da adesso alla fine del mese `m`
-function cumulatoFinoA(m) {
-  if (distanzaMesi(MESE_OGGI, m) < 0) return 0;
-  let valore = attesoResiduo(MESE_OGGI);
-  for (let k = spostaMese(MESE_OGGI, 1); distanzaMesi(k, m) >= 0; k = spostaMese(k, 1)) valore += attesoDel(k);
-  return valore;
 }
 
 /* Il grafico parte da zero adesso e accumula: dice quanto ci si aspetta di
@@ -1375,7 +1425,7 @@ function render() {
   renderPillole();
   renderSommario();
   renderCategorie();
-  renderFineMese();
+  renderConfronto();
   renderConti();
   renderGrafico();
   renderZonaNuovo();
@@ -1407,7 +1457,7 @@ function aggiornaCifre() {
     el.hidden = !somma;
   });
   renderGrafico();
-  renderFineMese();
+  renderConfronto();
 }
 
 let renderInCoda = null;
@@ -1424,9 +1474,11 @@ function renderBarra() {
   $("mese").value = mese;
   $("mese").max = ultimoMese();
   $("mese-su").disabled = mese >= ultimoMese();
-  $("riassunto-barra").textContent = tab === "previste"
-    ? (previsioni().length ? fmtEur0(attesoDel(mese)) : "")
-    : (stato.conti.length ? fmtEur0(totaleDi(tab, mese)) : "");
+  const sommato = tab === "previste"
+    ? (previsioni().length ? fmtEur(attesoDel(mese)) : "")
+    : (stato.conti.length ? fmtEur(totaleDi(tab, mese)) : "");
+  $("riassunto-barra").textContent = sommato && velato(sommato);
+  $("riassunto-barra").classList.toggle("nascosto", !!sommato && !saldiVisibili);
 }
 
 // il totale compare nella barra quando il titolone esce dallo schermo
@@ -1455,26 +1507,44 @@ function renderPillole() {
 }
 
 /* ---------- sommario ---------- */
+/* Il totale e il velo stanno insieme: ovunque si scriva il titolone deve
+   passare di qui, o basta una scheda nuova per far scappare la cifra. */
+function scriviCifrone(testo, colore) {
+  const el = $("cifrone");
+  const velare = testo !== "—" && !saldiVisibili;
+  el.textContent = velare ? PALLINI : testo;
+  el.classList.toggle("nascosto", velare);
+  el.style.color = velare ? "" : colore;
+}
+
+function mostraSaldi(si) {
+  saldiVisibili = si;
+  try { localStorage.setItem(CHIAVE_OCCHIO, si ? "1" : "0"); } catch (e) {}
+  const b = $("occhio");
+  b.setAttribute("aria-pressed", String(si));
+  b.setAttribute("aria-label", si ? "Nascondi i saldi" : "Mostra i saldi");
+  renderBarra(); renderSommario(); renderCategorie();
+}
+
 function renderSommario() {
   if (tab === "previste") return renderSommarioPreviste();
   const quali = contiDi(tab);
   $("occhiello").textContent = tab === "tutto" ? "Patrimonio netto" : TIPI[tab].nome;
   const tot = totaleDi(tab, mese);
-  $("cifrone").textContent = quali.length ? fmtEur(tot) : "—";
-  $("cifrone").style.color = tab === "tutto" ? "" : tintaDi(tab);
+  scriviCifrone(quali.length ? fmtEur(tot) : "—", tab === "tutto" ? "" : tintaDi(tab));
 
   /* I chip si aggiornano nel testo e non si ricreano. Ricostruirli qui li
      distruggerebbe mentre un campo perde il focus, e il clic che ha causato
      quel blur andrebbe perso fra mousedown e mouseup. */
-  const delta = $("chip-delta"), conta = $("chip-conta"), copia = $("copia");
+  const delta = $("chip-delta"), conta = $("chip-conta");
   if (!quali.length) {
-    delta.hidden = conta.hidden = copia.hidden = true;
+    delta.hidden = conta.hidden = true;
     return;
   }
 
   const prec = spostaMese(mese, -1);
   const diff = tot - totaleDi(tab, prec);
-  delta.hidden = false;
+  delta.hidden = !saldiVisibili;
   if (Math.abs(diff) < 0.005) {
     delta.className = "chip";
     delta.textContent = "Invariato su " + etichettaBreve(prec);
@@ -1483,11 +1553,8 @@ function renderSommario() {
     delta.textContent = `${diff > 0 ? "↑" : "↓"} ${diff > 0 ? "+" : "−"}${fmtEur(Math.abs(diff))} su ${etichettaBreve(prec)}`;
   }
 
-  // il contatore va e viene, il bottone no: sparendo sotto il dito mentre si
-  // scrive un importo si mangiava il clic
   const n = daAggiornare(tab);
   conta.hidden = !n;
-  copia.hidden = false;
   if (n) conta.textContent = `${n} ${n === 1 ? "voce da aggiornare" : "voci da aggiornare"}`;
 }
 
@@ -1521,7 +1588,7 @@ function renderComposizione(parti) {
   const sulCerchio = (ang, r) => [(C + r * Math.cos(ang)).toFixed(2), (C + r * Math.sin(ang)).toFixed(2)];
   const centro = `
     <text class="centro-eti" x="${C}" y="${C - 8}" text-anchor="middle">${passivo ? "Attività" : "Totale"}</text>
-    <text class="centro-val" x="${C}" y="${C + 14}" text-anchor="middle">${fmtEur0(attivo)}</text>`;
+    <text class="centro-val" x="${C}" y="${C + 14}" text-anchor="middle">${esc(velato(fmtEur(attivo)))}</text>`;
 
   let disegno;
   if (su.length === 1) {
@@ -1584,7 +1651,7 @@ function campoSoldi(chiave, etichetta, largo) {
                  type="text" inputmode="decimal" enterkeyhint="next" aria-label="${etichetta}"
                  ${d.ereditato ? `title="Riportato da un mese precedente"` : ""}
                  value="${scritto ? fmtNum(d.valore) : ""}"
-                 placeholder="${d.ereditato ? fmtNum(d.valore) : "0,00"}" />`;
+                 placeholder="${d.ereditato ? fmtNum(d.valore) : "0"}" />`;
 }
 
 const chiedo = (che, id) => `data-chiedi="${che}:${id}"`;
@@ -1765,36 +1832,50 @@ function renderSommarioPreviste() {
   const entra = attesoVerso(mese, 1), esce = attesoVerso(mese, -1);
   const netto = entra - esce;
   $("occhiello").textContent = "Saldo previsto del mese";
-  $("cifrone").textContent = previsioni().length ? fmtEur(netto) : "—";
-  $("cifrone").style.color = !previsioni().length ? "" : netto >= 0 ? "var(--positivo)" : "var(--negativo)";
+  scriviCifrone(previsioni().length ? fmtEur(netto) : "—",
+    !previsioni().length ? "" : netto >= 0 ? "var(--positivo)" : "var(--negativo)");
 
-  const delta = $("chip-delta"), conta = $("chip-conta"), copia = $("copia");
-  copia.hidden = true;
-  delta.hidden = !entra;
+  const delta = $("chip-delta"), conta = $("chip-conta");
+  delta.hidden = !entra || !saldiVisibili;
   delta.className = "chip su num";
   delta.textContent = `↑ ${fmtEur(entra)} in entrata`;
-  conta.hidden = !esce;
+  conta.hidden = !esce || !saldiVisibili;
   conta.className = "chip giu num";
   conta.textContent = `↓ ${fmtEur(esce)} in uscita`;
 }
 
-/* Dove si arriva partendo dal patrimonio di oggi e lasciando cadere tutto
-   quello che è previsto da qui alla fine del mese scelto. */
-function renderFineMese() {
-  const scheda = $("scheda-fine-mese");
-  scheda.hidden = tab !== "previste" || !stato.conti.length;
+/* Le due barre del mese, sulla stessa scala: il confronto si legge dalla
+   lunghezza, non dai numeri. La più lunga arriva in fondo, l'altra sta in
+   proporzione; se sono tutte e due a zero la scheda sparisce. */
+function renderConfronto() {
+  const scheda = $("scheda-confronto");
+  scheda.hidden = tab !== "previste" || !previsioni().length;
   if (scheda.hidden) return;
 
-  const oggi = totaleMese(MESE_OGGI);
-  const mosso = cumulatoFinoA(mese < MESE_OGGI ? MESE_OGGI : mese);
-  const fine = oggi + mosso;
+  const entra = attesoVerso(mese, 1), esce = attesoVerso(mese, -1);
+  const massimo = Math.max(entra, esce);
+  $("confronto-titolo").textContent = "Entrate e uscite · " + etichettaMese(mese);
 
-  $("fine-mese-titolo").textContent = "Saldo previsto a fine " + etichettaMese(mese < MESE_OGGI ? MESE_OGGI : mese);
-  $("fine-mese-valore").textContent = fmtEur(fine);
-  $("fine-mese-valore").style.color = fine >= 0 ? "" : "var(--negativo)";
-  $("fine-mese-conto").innerHTML = mosso === 0
-    ? `oggi <b>${esc(fmtEur(oggi))}</b>, e da qui in avanti non è previsto nulla.`
-    : `oggi <b>${esc(fmtEur(oggi))}</b> <span style="color:${mosso > 0 ? "var(--positivo)" : "var(--negativo)"}">${mosso > 0 ? "+" : "−"} ${esc(fmtEur(Math.abs(mosso)))}</span> attesi da oggi in poi.`;
+  const voce = (classe, freccia, nome, v) => `
+    <div class="confronto-voce ${classe}">
+      <div class="confronto-alto">
+        <span class="chi">${freccia} ${nome}</span>
+        <span class="quanto num">${esc(fmtEur(v))}</span>
+      </div>
+      <div class="pista" role="img" aria-label="${nome}: ${esc(fmtEur(v))}">
+        <i style="width:${massimo ? (v / massimo * 100).toFixed(1) : 0}%"></i>
+      </div>
+    </div>`;
+
+  $("confronto").innerHTML =
+    voce("entra", "↑", "Entrate", entra) + voce("esce", "↓", "Uscite", esce);
+
+  const netto = entra - esce;
+  $("confronto-piede").textContent = netto === 0
+    ? (massimo ? "Entrate e uscite si pareggiano." : "Nessuna ricorrenza cade questo mese.")
+    : netto > 0
+      ? `Restano ${fmtEur(netto)}, il ${Math.round(netto / entra * 100)}% di quanto entra.`
+      : `Mancano ${fmtEur(-netto)}: si spende ${esce && entra ? Math.round(esce / entra * 100) + "% di quanto entra" : "senza nulla in entrata"}.`;
 }
 
 function renderGraficoPreviste() {
@@ -2061,7 +2142,7 @@ boxConti.addEventListener("change", e => {
     if (el.dataset.prevNome) { p.nome = el.value.trim() || "Senza nome"; el.value = p.nome; }
     else if (el.dataset.prevImporto) {
       const v = leggiImporto(el.value);
-      if (v === null) avvisa("Non ho capito quell'importo. Scrivilo come 1.234,56");
+      if (v === null) avvisa("Non ho capito quell'importo. Scrivilo come 1234");
       else p.importo = Math.abs(v);
       el.value = fmtNum(p.importo);
     }
@@ -2107,7 +2188,7 @@ boxConti.addEventListener("change", e => {
       if (stato.saldi[mese]) { delete stato.saldi[mese][id]; if (!Object.keys(stato.saldi[mese]).length) delete stato.saldi[mese]; }
     } else {
       const v = leggiImporto(testo);
-      if (v === null) { avvisa("Non ho capito quell'importo. Scrivilo come 1.234,56"); el.value = ""; }
+      if (v === null) { avvisa("Non ho capito quell'importo. Scrivilo come 1234"); el.value = ""; }
       else (stato.saldi[mese] = stato.saldi[mese] || {})[id] = v;
     }
     salva();
@@ -2185,19 +2266,7 @@ $("mese").addEventListener("change", e => { if (e.target.value) vaiAlMese(e.targ
 $("mese-giu").addEventListener("click", () => vaiAlMese(spostaMese(mese, -1)));
 $("mese-su").addEventListener("click", () => { if (mese < ultimoMese()) vaiAlMese(spostaMese(mese, 1)); });
 
-$("chip").addEventListener("click", e => {
-  if (!e.target.closest("#copia")) return;
-  const prec = spostaMese(mese, -1);
-  const riga = stato.saldi[mese] = stato.saldi[mese] || {};
-  let quante = 0;
-  const copia = k => { const { valore, vuoto } = valoreVoce(k, prec); if (!vuoto) { riga[k] = valore; quante++; } };
-  contiDi(tab).forEach(c => vociDi(c).forEach(v => copia(v.id)));
-  if (!quante) { delete stato.saldi[mese]; avvisa("In " + etichettaBreve(prec) + " non c'è nulla da copiare."); return; }
-  salva(); renderPresto();
-  avvisa(quante === 1
-    ? `Copiato 1 valore da ${etichettaBreve(prec)}.`
-    : `Copiati ${quante} valori da ${etichettaBreve(prec)}.`);
-});
+$("occhio").addEventListener("click", () => mostraSaldi(!saldiVisibili));
 
 /* nuovo conto */
 $("apri-menu").addEventListener("click", () => apriMenu(!menuAperto));
@@ -2292,6 +2361,9 @@ async function aggiornaBitcoin() {
 }
 
 migra();
+// il bottone deve raccontare lo stato che arriva dalla memoria, non quello scritto nel markup
+$("occhio").setAttribute("aria-pressed", String(saldiVisibili));
+$("occhio").setAttribute("aria-label", saldiVisibili ? "Nascondi i saldi" : "Mostra i saldi");
 render();
 osserva.observe($("cifrone"));
 aggiornaBitcoin();
