@@ -248,6 +248,8 @@
 
   /* ---------- conti ---------- */
   .conto > .intestazione { border-bottom: 1px solid var(--linea); }
+  /* scheda di una riga sola: sotto non c'è niente, il bordo resterebbe appeso */
+  .conto > .intestazione:last-child { border-bottom: 0; }
   .conto .punto-cat { width: 9px; height: 9px; border-radius: 50%; background: var(--tinta); flex: none; }
   .conto .nome-conto {
     flex: 1; min-width: 60px; border: 0; background: transparent; color: var(--testo);
@@ -257,6 +259,7 @@
   .conto .nome-conto:hover { background: var(--superficie-2); }
   .conto .nome-conto:focus { outline: 2px solid var(--tinta); outline-offset: 0; background: var(--superficie); }
   .conto .tot-conto { font-weight: 700; white-space: nowrap; font-size: 16px; }
+  .conto > .intestazione .soldi { margin-right: -4px; }
   .conto.negativo .tot-conto { color: var(--negativo); }
   .etichetta-tipo {
     font-size: 11px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase;
@@ -333,23 +336,6 @@
   }
   .avvertenza.attenzione { color: var(--c-btc); }
 
-  /* ---------- titoli MOT ---------- */
-  .titolo { padding: 13px 18px; border-top: 1px solid var(--linea); }
-  .titolo-alto { display: flex; align-items: center; gap: 9px; }
-  .titolo-nome { flex: 1; min-width: 0; font-weight: 600; }
-  .isin {
-    font-size: 11.5px; font-variant-numeric: tabular-nums; color: var(--tenue);
-    background: var(--superficie-2); border-radius: 6px; padding: 2px 7px; flex: none;
-  }
-  .titolo-val { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .titolo-basso {
-    display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
-    margin-top: 9px; font-size: 12.5px; color: var(--tenue);
-  }
-  .titolo-basso .soldi { width: 108px; font-size: 14px; }
-  .quando-prezzo { flex: 1; min-width: 110px; text-align: right; font-size: 12px; }
-  .quando-prezzo.manca { color: var(--c-btc); }
-
   .modulo { display: flex; flex-direction: column; gap: 9px; padding: 14px 18px; border-top: 1px solid var(--linea); }
   .modulo .fila { display: flex; gap: 8px; flex-wrap: wrap; }
   .campo {
@@ -358,8 +344,6 @@
   }
   .campo:focus { outline: none; border-color: var(--tinta); box-shadow: 0 0 0 3px color-mix(in srgb, var(--tinta) 18%, transparent); }
   .campo::placeholder { color: var(--fioco); }
-  .campo.isin-campo { width: 160px; flex: none; text-transform: uppercase; font-variant-numeric: tabular-nums; }
-  .campo.isin-campo.errato { border-color: var(--negativo); color: var(--negativo); }
   .campo.largo { flex: 1; min-width: 140px; }
 
   /* ---------- indirizzi bitcoin ---------- */
@@ -464,6 +448,17 @@
   @media (max-width: 460px) {
     .marchio .nome-app { display: none; }
   }
+  /* schermi molto stretti: nome e importo non ci stanno in fila senza tagliare
+     il nome, quindi l'importo scende sotto, allineato a destra */
+  @media (max-width: 380px) {
+    .conto > .intestazione { flex-wrap: wrap; row-gap: 2px; }
+    .conto > .intestazione .punto-cat { order: 1; }
+    .conto > .intestazione .nome-conto { order: 2; flex: 1 1 auto; }
+    .conto > .intestazione .tot-conto { order: 3; }
+    .conto > .intestazione .bottoncino { order: 4; }
+    .conto > .intestazione .soldi { order: 5; margin-left: auto; }
+    .conto > .intestazione .valuta { order: 6; }
+  }
   @media (max-width: 360px) {
     .passi .mese-ora { min-width: 104px; font-size: 13px; }
   }
@@ -478,14 +473,10 @@
     .avvertenza, .piedino, .periodi { padding-left: 14px; padding-right: 14px; }
     .voce-cat { padding-left: 14px; padding-right: 14px; }
 
-    /* il nome del conto prende una riga sua: in fila con etichetta e totale
-       veniva tagliato */
-    .conto > .intestazione { flex-wrap: wrap; row-gap: 4px; }
-    .conto > .intestazione .punto-cat { order: 1; }
-    .conto > .intestazione .etichetta-tipo { order: 2; }
-    .conto > .intestazione .tot-conto { order: 3; margin-left: auto; }
-    .conto > .intestazione .bottoncino { order: 4; }
-    .conto > .intestazione .nome-conto { order: 5; flex: 1 1 100%; }
+    /* nome e importo sulla stessa riga: il campo si stringe quanto basta */
+    .conto > .intestazione { gap: 6px; }
+    .conto > .intestazione .soldi { width: 112px; padding-left: 6px; padding-right: 6px; }
+    .conto .nome-conto { min-width: 46px; }
   }
   @media (prefers-reduced-motion: reduce) {
     .rotella { animation: none; }
@@ -592,9 +583,9 @@ const TIPI = {
   banca:        { nome: "Banca" },
   contanti:     { nome: "Contanti" },
   cauzione:     { nome: "Cauzione affitto" },
-  investimenti: { nome: "Investimenti",     sotto: true, titoli: true },
+  investimenti: { nome: "Investimenti",     sotto: true, vocePerNome: "investimento" },
   btc:          { nome: "Wallet BTC",       auto: true },
-  digitale:     { nome: "Wallet digitali",  sotto: true },
+  digitale:     { nome: "Wallet digitali",  sotto: true, vocePerNome: "sottoconto" },
   debiti:       { nome: "Tasse e debiti",   segno: -1 }
 };
 const ORDINE = Object.keys(TIPI);
@@ -603,14 +594,9 @@ const tintaDi = t => `var(--c-${t})`;
 /* ---------- stato ---------- */
 /* Tutto resta nel browser: i saldi sono dati personali e non hanno motivo di
    uscire da questo dispositivo. Struttura:
-     conti: [{ id, tipo, nome, voci: [{id, nome}], indirizzi: [{addr}],
-               titoli: [{id, isin, nome}] }]
+     conti: [{ id, tipo, nome, voci: [{id, nome}], indirizzi: [{addr}] }]
      saldi: { "2026-11": { "<idVoce>": importo } }
-     catalogo: [{ isin, nome }]   strumenti MOT già usati, riproposti nel menu
-   Di un titolo MOT il mese porta due numeri, con le chiavi "<id>#n" e "<id>#p":
-   il nominale e il prezzo in percentuale, come si quota sul MOT. Tenerli nel
-   mese invece che sul titolo significa che comprarne altri a novembre non
-   riscrive quanto valeva a marzo.
+   I conti senza sottoconti portano il loro importo sotto il proprio id.
    Un mese senza un importo per una voce eredita l'ultimo inserito prima di
    quel mese: in un registro mensile un conto che non cambia non si riscrive. */
 const CHIAVE_STATO = "finanze_v1";
@@ -619,9 +605,9 @@ let stato = carica();
 function carica() {
   try {
     const s = JSON.parse(localStorage.getItem(CHIAVE_STATO));
-    if (s && Array.isArray(s.conti)) return { conti: s.conti, saldi: s.saldi || {}, catalogo: s.catalogo || [] };
+    if (s && Array.isArray(s.conti)) return { conti: s.conti, saldi: s.saldi || {} };
   } catch (_) { /* stato illeggibile: si riparte puliti */ }
-  return { conti: [], saldi: {}, catalogo: [] };
+  return { conti: [], saldi: {} };
 }
 function salva() {
   try { localStorage.setItem(CHIAVE_STATO, JSON.stringify(stato)); }
@@ -629,10 +615,43 @@ function salva() {
 }
 const nuovoId = () => "v" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
-/* Banca, contanti, cauzione e debiti avevano sottoconti e ora no. I saldi erano
-   salvati sotto l'id di ogni sottoconto: qui vengono sommati nel conto, mese per
-   mese, prima di buttare via le vecchie chiavi. Senza questo passaggio i numeri
-   già inseriti resterebbero nello storage senza più nessuno che li legge. */
+/* Due migrazioni dei dati già salvati, entrambe eseguite una volta sola.
+
+   I titoli del MOT erano sottoconti speciali con nominale e prezzo sotto le
+   chiavi "<id>#n" e "<id>#p": diventano sottoconti normali che portano il
+   valore già calcolato, mese per mese.
+
+   Banca, contanti, cauzione e debiti avevano sottoconti e ora no: i loro saldi
+   vengono sommati nel conto, sempre mese per mese, prima di buttare via le
+   vecchie chiavi. Senza questi passaggi i numeri già inseriti resterebbero
+   nello storage senza più nessuno che li legge. */
+function migraTitoli() {
+  let toccati = 0;
+  for (const c of stato.conti) {
+    if (!Array.isArray(c.titoli) || !c.titoli.length) continue;
+    c.voci = c.voci || [];
+    for (const t of c.titoli) {
+      const chiaveN = t.id + "#n", chiaveP = t.id + "#p";
+      const mesi = Object.keys(stato.saldi)
+        .filter(m => typeof stato.saldi[m][chiaveN] === "number" || typeof stato.saldi[m][chiaveP] === "number")
+        .sort();
+      for (const m of mesi) {
+        stato.saldi[m][t.id] = valoreVoce(chiaveN, m).valore * valoreVoce(chiaveP, m).valore / 100;
+      }
+      for (const m of Object.keys(stato.saldi)) {
+        delete stato.saldi[m][chiaveN];
+        delete stato.saldi[m][chiaveP];
+        if (!Object.keys(stato.saldi[m]).length) delete stato.saldi[m];
+      }
+      c.voci.push({ id: t.id, nome: t.nome });
+      toccati++;
+    }
+    delete c.titoli;
+  }
+  delete stato.catalogo;
+  return toccati;
+}
+
 function fondiSottoconti() {
   let toccati = 0;
   for (const c of stato.conti) {
@@ -652,8 +671,11 @@ function fondiSottoconti() {
     delete c.voci;
     toccati++;
   }
-  if (toccati) salva();
   return toccati;
+}
+
+function migra() {
+  if (migraTitoli() + fondiSottoconti()) salva();
 }
 
 /* ---------- mesi ---------- */
@@ -708,18 +730,9 @@ function valoreVoce(voceId, m) {
   return { valore: 0, ereditato: false, vuoto: true };
 }
 
-const titoliDi = c => (TIPI[c.tipo].titoli && c.titoli) || [];
-
-// sul MOT le obbligazioni si quotano in percentuale del nominale: 98,75 vuol
-// dire che 10.000 € di nominale ne valgono 9.875
-const nominaleDi = (t, m) => valoreVoce(t.id + "#n", m);
-const prezzoDi = (t, m) => valoreVoce(t.id + "#p", m);
-const valoreTitolo = (t, m) => nominaleDi(t, m).valore * prezzoDi(t, m).valore / 100;
-
 function totaleConto(c, m) {
   if (c.tipo === "btc") return valoreBtc(c, m);
-  const somma = vociDi(c).reduce((s, v) => s + valoreVoce(v.id, m).valore, 0)
-              + titoliDi(c).reduce((s, t) => s + valoreTitolo(t, m), 0);
+  const somma = vociDi(c).reduce((s, v) => s + valoreVoce(v.id, m).valore, 0);
   return (TIPI[c.tipo].segno || 1) * somma;
 }
 
@@ -727,38 +740,10 @@ const contiDi = t => t === "tutto" ? stato.conti : stato.conti.filter(c => c.tip
 const totaleDi = (t, m) => contiDi(t).reduce((s, c) => s + totaleConto(c, m), 0);
 const totaleMese = m => totaleDi("tutto", m);
 
-/* Un ISIN porta in fondo una cifra di controllo: lettere in numeri (A=10…Z=35),
-   poi Luhn. Si verifica senza rete, e intercetta subito un codice copiato male.
-   Dice che il codice è ben formato, non che quel titolo esista davvero. */
-function isinValido(isin) {
-  const v = String(isin || "").toUpperCase().replace(/\s/g, "");
-  if (!/^[A-Z]{2}[A-Z0-9]{9}[0-9]$/.test(v)) return false;
-  const cifre = [...v].map(c => /[A-Z]/.test(c) ? String(c.charCodeAt(0) - 55) : c).join("");
-  let somma = 0, doppio = false;
-  for (let i = cifre.length - 1; i >= 0; i--) {
-    let d = +cifre[i];
-    if (doppio) { d *= 2; if (d > 9) d -= 9; }
-    somma += d;
-    doppio = !doppio;
-  }
-  return somma % 10 === 0;
-}
-const normalizzaIsin = i => String(i || "").toUpperCase().replace(/\s/g, "");
-
-function ricorda(isin, nome) {
-  if (!stato.catalogo.some(x => x.isin === isin)) stato.catalogo.push({ isin, nome });
-}
-
-/* I mesi del grafico vanno dal primo dato di QUELLA scheda fino a oggi: se
-   partissero sempre dal primo dato in assoluto, la curva di una categoria aperta
-   da poco comincerebbe con mesi di zeri che non vogliono dire niente. */
 function mesiDelGrafico(scopo) {
   const conti = contiDi(scopo);
   const chiavi = new Set();
-  conti.forEach(c => {
-    vociDi(c).forEach(v => chiavi.add(v.id));
-    titoliDi(c).forEach(t => { chiavi.add(t.id + "#n"); chiavi.add(t.id + "#p"); });
-  });
+  conti.forEach(c => vociDi(c).forEach(v => chiavi.add(v.id)));
 
   let primo = mesiConDati().find(m => Object.keys(stato.saldi[m]).some(k => chiavi.has(k))) || null;
   conti.forEach(c => {                       // i mesi ricostruiti dei wallet bitcoin
@@ -1164,7 +1149,6 @@ function daAggiornare(scopo) {
   contiDi(scopo).forEach(c => {
     if (c.tipo === "btc") return;              // si legge da sé
     vociDi(c).forEach(v => { const d = valoreVoce(v.id, mese); if (d.ereditato || d.vuoto) n++; });
-    titoliDi(c).forEach(t => { const d = prezzoDi(t, mese); if (d.ereditato || d.vuoto) n++; });
   });
   return n;
 }
@@ -1197,10 +1181,6 @@ function aggiornaCifre() {
   stato.conti.forEach(c => {
     const el = boxConti.querySelector(`[data-tot="${c.id}"]`);
     if (el) el.textContent = fmtEur(totaleConto(c, mese));
-    titoliDi(c).forEach(t => {
-      const v = boxConti.querySelector(`[data-valore-titolo="${t.id}"]`);
-      if (v) v.textContent = fmtEur(valoreTitolo(t, mese));
-    });
   });
   renderGrafico();
 }
@@ -1396,99 +1376,58 @@ function renderConti() {
 function cartaConto(c) {
   const tipo = TIPI[c.tipo];
   const neg = tipo.segno < 0;
-  const intestazione = `
+  const righe = (c.voci || []);
+  // il totale in alto solo se somma più righe: con una riga sola ripeteva
+  // la stessa cifra due volte nella stessa scheda
+  const mostraTotale = c.tipo === "btc" || righe.length > 1;
+
+  const testa = dentro => `
     <div class="intestazione">
       <span class="punto-cat"></span>
       <input class="nome-conto" data-rinomina="${c.id}" value="${esc(c.nome)}" aria-label="Nome del conto" />
-      ${tab === "tutto" ? `<span class="etichetta-tipo">${tipo.nome}</span>` : ""}
-      <span class="tot-conto num" data-tot="${c.id}">${fmtEur(totaleConto(c, mese))}</span>
+      ${dentro}
       <button class="bottoncino" ${chiedo("conto", c.id)} aria-label="Elimina ${esc(c.nome)}">×</button>
     </div>`;
-  const guscio = dentro =>
+
+  const guscio = (intestazione, corpo) =>
     `<section class="scheda conto ${neg ? "negativo" : ""}" style="--tinta:${tintaDi(c.tipo)}">
-       ${intestazione}${quiConferma("conto", c.id)}${dentro}
+       ${intestazione}${quiConferma("conto", c.id)}${corpo}
      </section>`;
 
-  if (c.tipo === "btc") return guscio(corpoBtc(c));
+  if (c.tipo === "btc") {
+    return guscio(testa(`<span class="tot-conto num" data-tot="${c.id}">${fmtEur(totaleConto(c, mese))}</span>`), corpoBtc(c));
+  }
 
-  if (!tipo.sotto) return guscio(`
-    <div class="riga">
-      <span class="etichetta-fissa">Saldo di ${etichettaMese(mese)}</span>
-      ${campoSoldi(c.id, "Saldo di " + etichettaMese(mese))}
-      <span class="valuta">€</span>
-    </div>`);
+  if (!tipo.sotto) {
+    // conto e saldo sulla stessa riga: nient'altro da mostrare
+    return guscio(testa(`${campoSoldi(c.id, "Saldo di " + etichettaMese(mese))}<span class="valuta">€</span>`), "");
+  }
 
-  const righe = (c.voci || []).map(v => `
+  const nomeVoce = tipo.vocePerNome === "investimento" ? "Investimento" : "Sottoconto";
+  const elenco = righe.map(v => `
     <div class="riga">
-      <input class="etichetta" data-rinomina="${v.id}" value="${esc(v.nome)}" aria-label="Nome del sottoconto" />
+      <input class="etichetta" data-rinomina="${v.id}" value="${esc(v.nome)}" aria-label="Nome ${nomeVoce.toLowerCase()}" />
       ${campoSoldi(v.id, v.nome)}
       <span class="valuta">€</span>
       <button class="bottoncino" ${chiedo("voce", v.id)} aria-label="Elimina ${esc(v.nome)}">×</button>
     </div>${quiConferma("voce", v.id)}`).join("");
 
-  if (!tipo.titoli) return guscio(`
-    ${righe || `<div class="stato">Nessun sottoconto.</div>`}
-    ${neg ? `<div class="avvertenza" style="padding-top:12px">Scrivi quanto devi, con il segno più: nei totali entra in negativo.</div>` : ""}
-    <div class="piede-scheda"><button class="mini" data-nuova-voce="${c.id}">+ Sottoconto</button></div>`);
-
-  const titoli = titoliDi(c).map(t => rigaTitolo(t)).join("");
-  return guscio(`
-    ${titoli}${righe}
-    ${titoli || righe ? "" : `<div class="stato">Nessun titolo in questo conto.</div>`}
-    ${moduloTitolo(c)}
-    <div class="piede-scheda">
-      <button class="mini" data-nuova-voce="${c.id}">+ Sottoconto a mano</button>
-    </div>`);
-}
-
-/* Un titolo del MOT: nominale per prezzo diviso cento, perché le obbligazioni
-   si quotano in percentuale del nominale. Nominale e prezzo stanno nel mese. */
-function rigaTitolo(t) {
-  const pr = prezzoDi(t, mese);
-  const quando = pr.vuoto ? "prezzo da inserire"
-    : pr.ereditato ? "prezzo riportato" : "prezzo di " + etichettaBreve(mese);
-  return `
-    <div class="titolo">
-      <div class="titolo-alto">
-        <span class="titolo-nome">${esc(t.nome)}</span>
-        <span class="isin">${esc(t.isin)}</span>
-        <span class="titolo-val" data-valore-titolo="${t.id}">${fmtEur(valoreTitolo(t, mese))}</span>
-        <button class="bottoncino" ${chiedo("titolo", t.id)} aria-label="Rimuovi ${esc(t.nome)}">×</button>
-      </div>
-      <div class="titolo-basso">
-        <span>nominale</span>${campoSoldi(t.id + "#n", "Valore nominale di " + t.nome)}
-        <span>×</span>${campoSoldi(t.id + "#p", "Prezzo in percentuale di " + t.nome)}<span>%</span>
-        <span class="quando-prezzo ${pr.vuoto ? "manca" : ""}">${quando}</span>
-      </div>
-    </div>${quiConferma("titolo", t.id)}`;
-}
-
-function moduloTitolo(c) {
-  const scelte = stato.catalogo
-    .map(x => `<option value="${esc(x.isin)}">${esc(x.nome)} · ${esc(x.isin)}</option>`).join("");
-  return `
-    <div class="modulo">
-      ${scelte ? `<select class="campo largo" data-scegli-titolo="${c.id}" aria-label="Titolo già usato">
-          <option value="">Riprendi un titolo già usato…</option>${scelte}
-        </select>` : ""}
-      <div class="fila">
-        <input class="campo isin-campo" data-isin="${c.id}" placeholder="ISIN" maxlength="12"
-               spellcheck="false" aria-label="ISIN del titolo MOT" />
-        <input class="campo largo" data-desc="${c.id}" placeholder="Descrizione, es. BTP 1Nv29 3,85%"
-               aria-label="Descrizione del titolo" />
-        <button class="mini pieno" data-aggiungi-titolo="${c.id}">Aggiungi titolo</button>
-      </div>
-      <div class="brindello">Titoli del MOT: il valore è nominale × prezzo ÷ 100. L'ISIN viene controllato nella cifra di controllo.</div>
-    </div>`;
+  return guscio(
+    testa(mostraTotale ? `<span class="tot-conto num" data-tot="${c.id}">${fmtEur(totaleConto(c, mese))}</span>` : ""),
+    `${elenco || `<div class="stato">Nessun ${nomeVoce.toLowerCase()}.</div>`}
+     ${neg ? `<div class="avvertenza" style="padding-top:12px">Scrivi quanto devi, con il segno più: nei totali entra in negativo.</div>` : ""}
+     <div class="piede-scheda"><button class="mini" data-nuova-voce="${c.id}">+ ${nomeVoce}</button></div>`);
 }
 
 function corpoBtc(c) {
   const d = btcDati[c.id];
-  const righe = (c.indirizzi || []).map(i => {
-    const sats = d && d.perIndirizzo[i.addr];
+  const indirizzi = c.indirizzi || [];
+
+  const righe = indirizzi.map(i => {
+    const sats = d && d.pronto ? satsAlMese(d, mese) : null;
     const quanto = !d || !d.pronto ? `<small>lettura…</small>`
-      : sats == null ? `<small>non leggibile</small>`
-      : `<b>${fmtBtc(sats)}</b><small>${prezzoOra ? fmtEur(sats / SAT * prezzoOra) : "—"}</small>`;
+      : d.perIndirizzo[i.addr] == null ? `<small>non leggibile</small>`
+      : `<b>${fmtBtc(sats)} BTC</b>${mese < MESE_OGGI ? `<small>a fine ${etichettaBreve(mese)}</small>` : ""}`;
     return `<div class="indirizzo">
         <span class="codice" title="${esc(i.addr)}">${esc(i.addr)}</span>
         <span class="quanto">${quanto}</span>
@@ -1496,30 +1435,25 @@ function corpoBtc(c) {
       </div>${quiConferma("indirizzo", i.addr)}`;
   }).join("");
 
-  const sats = d ? satsAlMese(d, mese) : 0;
-  const riepilogo = !(c.indirizzi || []).length ? "" : `
-    <div class="riga">
-      <span class="etichetta-fissa">${mese >= MESE_OGGI ? "Saldo attuale" : "A fine " + etichettaBreve(mese)}</span>
-      <span class="tot-conto num">${fmtBtc(sats)} BTC</span>
-    </div>`;
-
-  const note = [];
-  if (!(c.indirizzi || []).length) note.push(["", "Incolla un indirizzo: il saldo lo legge dalla blockchain, non si scrive a mano."]);
-  else {
-    note.push(["", "Saldo letto dalla blockchain e rivalutato al cambio del mese."]);
-    if (d && d.troncato) note.push(["attenzione", "Storico molto lungo: ho letto solo le transazioni più recenti, i mesi lontani possono essere imprecisi."]);
-    if (d && d.errore) note.push(["attenzione", "Una lettura non è riuscita (" + esc(d.errore) + "): il saldo può essere parziale."]);
-  }
-
-  return `${righe}${riepilogo}
+  // un indirizzo per conto: quando c'è, il campo per aggiungerne sparisce
+  const modulo = indirizzi.length ? "" : `
     <div class="modulo">
       <div class="fila">
         <input class="campo largo" data-nuovo-addr="${c.id}" placeholder="bc1q… · 3… · 1…"
-               spellcheck="false" aria-label="Nuovo indirizzo Bitcoin" />
+               spellcheck="false" aria-label="Indirizzo del wallet" />
         <button class="mini pieno" data-aggiungi-addr="${c.id}">Aggiungi</button>
       </div>
-    </div>
-    ${note.map(([cl, t]) => `<div class="avvertenza ${cl}">${t}</div>`).join("")}`;
+      <div class="brindello">Incolla l'indirizzo del wallet: il saldo lo legge dalla blockchain, non si scrive a mano.</div>
+    </div>`;
+
+  const note = [];
+  if (indirizzi.length) {
+    if (d && d.troncato) note.push("Storico molto lungo: ho letto solo le transazioni più recenti, i mesi lontani possono essere imprecisi.");
+    if (d && d.errore) note.push("La lettura non è riuscita (" + esc(d.errore) + "): il saldo può essere parziale.");
+  }
+
+  return `${righe}${modulo}
+    ${note.map(t => `<div class="avvertenza attenzione">${t}</div>`).join("")}`;
 }
 
 /* ---------- grafici ---------- */
@@ -1634,7 +1568,7 @@ const esempioNome = t => ({
 /* ---------- azioni ---------- */
 const trovaConto = id => stato.conti.find(c => c.id === id);
 const contoDiVoce = id => stato.conti.find(c => (c.voci || []).some(v => v.id === id));
-const contoDiTitolo = id => stato.conti.find(c => titoliDi(c).some(t => t.id === id));
+
 
 function scorda(chiave) {
   for (const m of Object.keys(stato.saldi)) {
@@ -1646,7 +1580,6 @@ function scorda(chiave) {
 function nomeDa(che, id) {
   if (che === "conto") return (trovaConto(id) || {}).nome;
   if (che === "voce") { const c = contoDiVoce(id); return c && c.voci.find(v => v.id === id).nome; }
-  if (che === "titolo") { const c = contoDiTitolo(id); return c && c.titoli.find(t => t.id === id).nome; }
   return "questo indirizzo";
 }
 
@@ -1655,7 +1588,6 @@ function eliminaDavvero() {
   if (che === "conto") {
     const c = trovaConto(id);
     vociDi(c).forEach(v => scorda(v.id));
-    titoliDi(c).forEach(t => { scorda(t.id + "#n"); scorda(t.id + "#p"); });
     scorda(c.id);
     stato.conti = stato.conti.filter(x => x.id !== id);
     delete btcDati[id];
@@ -1663,10 +1595,6 @@ function eliminaDavvero() {
     const c = contoDiVoce(id);
     c.voci = c.voci.filter(v => v.id !== id);
     scorda(id);
-  } else if (che === "titolo") {
-    const c = contoDiTitolo(id);
-    c.titoli = c.titoli.filter(t => t.id !== id);
-    scorda(id + "#n"); scorda(id + "#p");
   } else {
     const c = trovaConto(daEliminare.conto);
     c.indirizzi = (c.indirizzi || []).filter(i => i.addr !== id);
@@ -1691,27 +1619,9 @@ boxConti.addEventListener("click", e => {
 
   if (b.dataset.nuovaVoce) {
     const c = trovaConto(b.dataset.nuovaVoce);
-    const v = { id: nuovoId(), nome: "Nuovo sottoconto" };
+    const v = { id: nuovoId(), nome: TIPI[c.tipo].vocePerNome === "investimento" ? "Nuovo investimento" : "Nuovo sottoconto" };
     (c.voci = c.voci || []).push(v);
     daMettereAFuoco = v.id;
-    salva(); renderPresto(); return;
-  }
-
-  if (b.dataset.aggiungiTitolo) {
-    const c = trovaConto(b.dataset.aggiungiTitolo);
-    const campoIsin = boxConti.querySelector(`[data-isin="${c.id}"]`);
-    const campoDesc = boxConti.querySelector(`[data-desc="${c.id}"]`);
-    const isin = normalizzaIsin(campoIsin.value);
-    if (!isinValido(isin)) {
-      campoIsin.classList.add("errato");
-      campoIsin.focus();
-      avvisa(isin ? "Questo ISIN non supera il controllo: ricontrolla il codice." : "Serve l'ISIN del titolo.");
-      return;
-    }
-    if (titoliDi(c).some(t => t.isin === isin)) { avvisa("Questo titolo è già in questo conto."); return; }
-    const nome = campoDesc.value.trim() || (stato.catalogo.find(x => x.isin === isin) || {}).nome || isin;
-    (c.titoli = c.titoli || []).push({ id: nuovoId(), isin, nome });
-    ricorda(isin, nome);
     salva(); renderPresto(); return;
   }
 
@@ -1720,8 +1630,8 @@ boxConti.addEventListener("click", e => {
     const campo = boxConti.querySelector(`[data-nuovo-addr="${c.id}"]`);
     const addr = campo.value.trim();
     if (!addr) { campo.focus(); return; }
-    if ((c.indirizzi || []).some(i => i.addr === addr)) { avvisa("Indirizzo già presente in questo conto."); return; }
-    (c.indirizzi = c.indirizzi || []).push({ addr });
+    if ((c.indirizzi || []).length) { avvisa("Questo conto ha già il suo wallet: togli quello presente per cambiarlo."); return; }
+    c.indirizzi = [{ addr }];
     salva(); renderPresto();
     caricaConto(c).then(render);
   }
@@ -1729,16 +1639,6 @@ boxConti.addEventListener("click", e => {
 
 boxConti.addEventListener("change", e => {
   const el = e.target;
-
-  if (el.dataset.scegliTitolo) {
-    const scelto = stato.catalogo.find(x => x.isin === el.value);
-    if (scelto) {
-      boxConti.querySelector(`[data-isin="${el.dataset.scegliTitolo}"]`).value = scelto.isin;
-      boxConti.querySelector(`[data-desc="${el.dataset.scegliTitolo}"]`).value = scelto.nome;
-    }
-    el.value = "";
-    return;
-  }
 
   if (el.dataset.rinomina) {
     const id = el.dataset.rinomina;
@@ -1772,12 +1672,6 @@ boxConti.addEventListener("change", e => {
   }
 });
 
-boxConti.addEventListener("input", e => {
-  if (!e.target.dataset.isin) return;
-  const v = normalizzaIsin(e.target.value);
-  e.target.classList.toggle("errato", v.length === 12 && !isinValido(v));
-});
-
 boxConti.addEventListener("keydown", e => {
   if (e.key !== "Enter") return;
   const el = e.target;
@@ -1787,11 +1681,6 @@ boxConti.addEventListener("keydown", e => {
     const prossimo = campi[campi.indexOf(el) + 1];
     el.blur();
     if (prossimo) { prossimo.focus(); prossimo.select(); }
-    return;
-  }
-  if (el.dataset.isin || el.dataset.desc) {
-    e.preventDefault();
-    boxConti.querySelector(`[data-aggiungi-titolo="${el.dataset.isin || el.dataset.desc}"]`).click();
     return;
   }
   if (el.dataset.nuovoAddr) {
@@ -1853,10 +1742,7 @@ $("chip").addEventListener("click", e => {
   const riga = stato.saldi[mese] = stato.saldi[mese] || {};
   let quante = 0;
   const copia = k => { const { valore, vuoto } = valoreVoce(k, prec); if (!vuoto) { riga[k] = valore; quante++; } };
-  contiDi(tab).forEach(c => {
-    vociDi(c).forEach(v => copia(v.id));
-    titoliDi(c).forEach(t => { copia(t.id + "#n"); copia(t.id + "#p"); });
-  });
+  contiDi(tab).forEach(c => vociDi(c).forEach(v => copia(v.id)));
   if (!quante) { delete stato.saldi[mese]; avvisa("In " + etichettaBreve(prec) + " non c'è nulla da copiare."); return; }
   salva(); renderPresto();
   avvisa(quante === 1
@@ -1884,8 +1770,9 @@ $("pannello").addEventListener("keydown", e => {
 function creaConto() {
   const nome = ($("nuovo-nome").value || "").trim() || TIPI[tipoNuovo].nome;
   const c = { id: nuovoId(), tipo: tipoNuovo, nome };
-  if (TIPI[tipoNuovo].sotto) c.voci = [{ id: nuovoId(), nome: "Principale" }];
-  if (TIPI[tipoNuovo].titoli) c.titoli = [];
+  if (TIPI[tipoNuovo].sotto) {
+    c.voci = [{ id: nuovoId(), nome: TIPI[tipoNuovo].vocePerNome === "investimento" ? "Nuovo investimento" : "Principale" }];
+  }
   if (tipoNuovo === "btc") c.indirizzi = [];
   stato.conti.push(c);
   $("nuovo-nome").value = "";
@@ -1915,7 +1802,7 @@ async function aggiornaBitcoin() {
   render();
 }
 
-fondiSottoconti();
+migra();
 render();
 osserva.observe($("cifrone"));
 aggiornaBitcoin();
