@@ -1,5 +1,7 @@
-/* Service worker delle pagine Bitcoin: tiene in cache il guscio dell'app. */
-const CACHE = "walletreader-v2";
+/* Service worker delle pagine Bitcoin: tiene in cache il guscio dell'app.
+   In questa cartella index.html è solo il rimando a /finanze/, dove le finanze
+   si sono trasferite: resta in cache perché il rimando funzioni anche offline. */
+const CACHE = "walletreader-v3";
 const ASSETS = [
   "./index.html",
   "./walletreader.html",
