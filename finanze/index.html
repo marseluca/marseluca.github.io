@@ -389,12 +389,54 @@
   .prev-alto { display: flex; align-items: center; gap: 6px 10px; flex-wrap: wrap; }
   .prev-alto .etichetta { flex: 1 1 auto; order: 1; }
   .prev-alto::after { content: ""; flex: 1 0 100%; height: 0; order: 2; }
-  .prev-alto .soldi { order: 3; margin-left: auto; }
-  .prev-alto .valuta { order: 4; }
-  .prev-alto .bottoncino { order: 5; }
+  /* Qui l'importo sta a sinistra, incolonnato col nome, e l'euro gli resta
+     attaccato invece di fluttuare in fondo a un campo di larghezza fissa. La
+     larghezza la detta una copia nascosta del testo nella stessa cella di
+     griglia: l'attributo size sbaglia di una settantina di pixel, perché il
+     browser la stima sulla larghezza media dei caratteri. */
+  .prev-alto .cresce { order: 3; display: inline-grid; max-width: 100%; margin-left: -6px; }
+  .prev-alto .cresce::after,
+  .prev-alto .cresce > .soldi {
+    grid-area: 1 / 1; box-sizing: border-box;
+    font: inherit; font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums;
+    padding: 7px 4px 7px 6px; border: 1px solid transparent; border-radius: 9px;
+  }
+  .prev-alto .cresce::after {
+    content: attr(data-eco); visibility: hidden; white-space: pre;
+  }
+  /* size="1" nel markup toglie al campo la sua larghezza naturale (venti
+     caratteri), altrimenti sarebbe lui a dettare la colonna invece della copia */
+  .prev-alto .cresce > .soldi { width: 100%; min-width: 0; text-align: left; }
+  /* le due regole qui sopra battono per specificità .soldi:hover e .soldi:focus:
+     vanno ridette, o il campo non si accende più quando lo si tocca */
+  .prev-alto .cresce > .soldi:hover { background: var(--superficie-2); }
+  .prev-alto .cresce > .soldi:focus {
+    outline: none; border-color: var(--tinta); background: var(--superficie);
+  }
+  .prev-alto .valuta { order: 4; margin-left: -4px; }
+  .prev-alto .bottoncino { order: 5; margin-left: auto; }
+  /* la periodicità è il dettaglio: in chiaro resta solo il riassunto, il resto
+     si apre quando serve. <details> porta da sé tastiera e lettori di schermo. */
+  .prev-ogni { margin-top: 7px; }
+  .prev-ogni > summary {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px;
+    list-style: none; cursor: pointer; border-radius: 8px;
+    padding: 4px 6px; margin-left: -6px;
+    font-size: 12.5px; color: var(--tenue);
+  }
+  .prev-ogni > summary::-webkit-details-marker { display: none; }
+  .prev-ogni > summary:hover { background: var(--superficie-2); }
+  .prev-ogni > summary:focus-visible { outline: 2px solid var(--tinta); }
+  .prev-ogni > summary::before {
+    content: ""; flex: none; width: 6px; height: 6px; margin: -2px 2px 0 0;
+    border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+    transform: rotate(-45deg); transition: transform .15s;
+  }
+  .prev-ogni[open] > summary::before { transform: rotate(45deg); margin-top: -4px; }
+  .prev-sunto { flex: 0 1 auto; min-width: 0; }
   .prev-basso {
     display: flex; align-items: center; gap: 6px 10px; flex-wrap: wrap;
-    margin-top: 9px; font-size: 12.5px; color: var(--tenue);
+    margin: 8px 0 2px; font-size: 12.5px; color: var(--tenue);
   }
   .coppia { display: inline-flex; align-items: center; gap: 5px; flex: 0 1 auto; min-width: 0; }
   .coppia input[type="month"] { max-width: 150px; }
@@ -523,7 +565,7 @@
   }
   @media (max-width: 560px) {
     .mini-campo { font-size: 16px; padding: 6px; }
-    .quando-cade { flex: 1 1 100%; text-align: left; margin-top: 2px; }
+    .quando-cade { flex: 1 1 auto; min-width: 0; text-align: left; margin-top: 0; }
   }
 
   @media (max-width: 560px) {
@@ -837,6 +879,15 @@ const totaleMese = m => totaleDi("tutto", m);
 /* ---------- entrate e uscite previste ---------- */
 const PASSI = [1, 2, 3, 4, 6, 12];
 const nomePasso = n => n === 1 ? "ogni mese" : n === 12 ? "ogni anno" : `ogni ${n} mesi`;
+// come si legge la ricorrenza quando la periodicità è chiusa
+function sintesiPeriodo(p) {
+  const o = p.ogni || 1;
+  const passo = o === 1 ? "di ogni mese" : o === 12 ? "di ogni anno" : `ogni ${o} mesi`;
+  let t = `il ${p.giorno} ${passo}`;
+  if (distanzaMesi(MESE_OGGI, p.da) > 0) t += `, da ${etichettaBreve(p.da)}`;
+  if (p.a) t += `, fino a ${etichettaBreve(p.a)}`;
+  return t;
+}
 const MESI_PROIEZIONE = 12;
 
 const distanzaMesi = (a, b) => {
@@ -1348,6 +1399,13 @@ function aggiornaCifre() {
     const el = boxConti.querySelector(`[data-tot="${c.id}"]`);
     if (el) el.textContent = fmtEur(totaleConto(c, mese));
   });
+  boxConti.querySelectorAll("[data-tot-verso]").forEach(el => {
+    const verso = +el.dataset.totVerso;
+    const somma = previsioni().filter(p => p.verso === verso && cadeNel(p, mese))
+      .reduce((s, p) => s + p.importo, 0);
+    el.textContent = (verso === 1 ? "+" : "−") + fmtEur(somma);
+    el.hidden = !somma;
+  });
   renderGrafico();
   renderFineMese();
 }
@@ -1557,7 +1615,7 @@ function cartePreviste() {
     return `<section class="scheda conto ${verso === 1 ? "entrate" : "uscite"}">
       <div class="intestazione">
           <h2 style="flex:1;margin:0;font-size:16px;font-weight:600">${titolo}</h2>
-        ${somma ? `<span class="tot-conto num">${verso === 1 ? "+" : "−"}${fmtEur(somma)}</span>` : ""}
+        <span class="tot-conto num" data-tot-verso="${verso}" ${somma ? "" : "hidden"}>${verso === 1 ? "+" : "−"}${fmtEur(somma)}</span>
       </div>
       ${righe.map(rigaPrevisione).join("") || `<div class="stato">Nessuna ${verso === 1 ? "entrata" : "uscita"} ricorrente.</div>`}
       <div class="piede-scheda">
@@ -1566,6 +1624,8 @@ function cartePreviste() {
     </section>`;
   }).join("");
 }
+
+const periodiAperti = new Set();
 
 function rigaPrevisione(p) {
   const qui = cadeNel(p, mese);
@@ -1584,28 +1644,35 @@ function rigaPrevisione(p) {
     <div class="riga previsione">
       <div class="prev-alto">
         <input class="etichetta" data-prev-nome="${p.id}" value="${esc(p.nome)}" aria-label="Nome" />
-        <input class="soldi num" data-prev-importo="${p.id}" type="text" inputmode="decimal"
-               value="${fmtNum(p.importo)}" aria-label="Importo di ${esc(p.nome)}" />
+        <span class="cresce" data-eco="${esc(fmtNum(p.importo))}">
+          <input class="soldi num" data-prev-importo="${p.id}" type="text" inputmode="decimal"
+                 size="1" value="${fmtNum(p.importo)}" aria-label="Importo di ${esc(p.nome)}" />
+        </span>
         <span class="valuta">€</span>
         <button class="bottoncino" ${chiedo("previsione", p.id)} aria-label="Elimina ${esc(p.nome)}">×</button>
       </div>
-      <div class="prev-basso">
-        <span class="coppia">il
-          <select class="mini-campo" data-prev-giorno="${p.id}" aria-label="Giorno del mese">${giorni}</select>
-        </span>
-        <span class="coppia">
-          <select class="mini-campo" data-prev-ogni="${p.id}" aria-label="Ogni quanti mesi">${passi}</select>
-        </span>
-        <span class="coppia">da
-          <input class="mini-campo" type="month" data-prev-da="${p.id}" value="${p.da}" aria-label="Primo mese" />
-        </span>
-        ${p.a
-          ? `<span class="coppia">fino a
-               <input class="mini-campo" type="month" data-prev-a="${p.id}" value="${p.a}" aria-label="Ultimo mese, svuota se non finisce" />
-             </span>`
-          : `<button type="button" class="aggiungi-fine" data-prev-fine="${p.id}">+ scadenza</button>`}
-        ${stato_}
-      </div>
+      <details class="prev-ogni" ${periodiAperti.has(p.id) ? "open" : ""} data-periodo="${p.id}">
+        <summary>
+          <span class="prev-sunto">${esc(sintesiPeriodo(p))}</span>
+          ${stato_}
+        </summary>
+        <div class="prev-basso">
+          <span class="coppia">il
+            <select class="mini-campo" data-prev-giorno="${p.id}" aria-label="Giorno del mese">${giorni}</select>
+          </span>
+          <span class="coppia">
+            <select class="mini-campo" data-prev-ogni="${p.id}" aria-label="Ogni quanti mesi">${passi}</select>
+          </span>
+          <span class="coppia">da
+            <input class="mini-campo" type="month" data-prev-da="${p.id}" value="${p.da}" aria-label="Primo mese" />
+          </span>
+          ${p.a
+            ? `<span class="coppia">fino a
+                 <input class="mini-campo" type="month" data-prev-a="${p.id}" value="${p.a}" aria-label="Ultimo mese, svuota se non finisce" />
+               </span>`
+            : `<button type="button" class="aggiungi-fine" data-prev-fine="${p.id}">+ scadenza</button>`}
+        </div>
+      </details>
     </div>${quiConferma("previsione", p.id)}`;
 }
 
@@ -1970,6 +2037,19 @@ boxConti.addEventListener("click", e => {
   }
 });
 
+// il campo dell'importo segue il numero che si scrive, così l'euro gli resta accanto
+const ecoImporto = el => { el.parentElement.dataset.eco = el.value; };
+boxConti.addEventListener("input", e => {
+  if (e.target.dataset.prevImporto) ecoImporto(e.target);
+});
+
+// "toggle" non risale dal <details>: va ascoltato in fase di cattura
+boxConti.addEventListener("toggle", e => {
+  const d = e.target.dataset && e.target.dataset.periodo;
+  if (!d) return;
+  if (e.target.open) periodiAperti.add(d); else periodiAperti.delete(d);
+}, true);
+
 boxConti.addEventListener("change", e => {
   const el = e.target;
 
@@ -1985,7 +2065,14 @@ boxConti.addEventListener("change", e => {
       else p.importo = Math.abs(v);
       el.value = fmtNum(p.importo);
     }
-    else if (el.dataset.prevGiorno) p.giorno = +el.value;
+    if (el.dataset.prevNome || el.dataset.prevImporto) {
+      const cestino = boxConti.querySelector(`.previsione [data-chiedi="previsione:${p.id}"]`);
+      if (cestino) cestino.setAttribute("aria-label", "Elimina " + p.nome);
+      if (el.dataset.prevImporto) ecoImporto(el);
+      salva(); aggiornaCifre();
+      return;
+    }
+    if (el.dataset.prevGiorno) p.giorno = +el.value;
     else if (el.dataset.prevOgni) p.ogni = +el.value;
     else if (el.dataset.prevDa) { if (el.value) p.da = el.value; else el.value = p.da; }
     else if (el.dataset.prevA) {
