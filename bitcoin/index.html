@@ -95,7 +95,7 @@
   }
   .barra-dentro {
     max-width: 720px; margin: 0 auto; padding: 0 16px;
-    display: flex; align-items: center; gap: 12px;
+    display: flex; align-items: center; gap: 10px; position: relative;
   }
   .marchio {
     display: flex; align-items: center; gap: 9px;
@@ -157,10 +157,43 @@
   button.chip:hover { border-color: var(--linea-forte); }
   .chip.azione { color: var(--testo); background: var(--superficie); box-shadow: var(--ombra); }
 
-  /* ---------- barra di composizione ---------- */
-  .composizione { display: flex; gap: 3px; height: 10px; margin-top: 18px; }
-  .composizione span { border-radius: 3px; min-width: 4px; transition: flex-grow .3s ease; }
-  .composizione.debiti-barra { height: 6px; margin-top: 6px; opacity: .85; }
+  /* ---------- torta della composizione ---------- */
+  .torta-zona {
+    display: flex; align-items: center; gap: 22px; flex-wrap: wrap;
+    padding: 18px 18px 16px; justify-content: center;
+  }
+  .torta { width: 190px; flex: none; }
+  .torta svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .torta .fetta { cursor: pointer; transition: opacity .15s; }
+  .torta .fetta:hover { opacity: .78; }
+  /* le scritte al centro non devono rubare il clic alle fette */
+  .torta .centro-eti, .torta .centro-val { pointer-events: none; }
+  .torta .centro-eti { fill: var(--fioco); font-size: 9px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+  .torta .centro-val { fill: var(--testo); font-size: 17px; font-weight: 700; }
+  .torta-nota { flex: 1; min-width: 180px; font-size: 13px; color: var(--tenue); line-height: 1.6; }
+  .torta-nota b { color: var(--testo); font-weight: 600; }
+  .torta-nota .debito { color: var(--c-debiti); font-weight: 600; }
+
+  /* ---------- tasto e tendina del nuovo conto ---------- */
+  .tondo {
+    width: 32px; height: 32px; flex: none; border-radius: 10px; cursor: pointer;
+    border: 1px solid var(--linea-forte); background: var(--superficie); color: var(--tenue);
+    font-size: 19px; line-height: 1; display: grid; place-items: center; padding: 0;
+  }
+  .tondo:hover { color: var(--testo); border-color: var(--tenue); }
+  .tondo[aria-expanded="true"] { background: var(--testo); border-color: var(--testo); color: var(--sfondo); }
+
+  .tendina {
+    position: absolute; top: calc(100% + 6px); left: 16px; z-index: 50;
+    width: min(420px, calc(100vw - 32px));
+    background: var(--superficie); border: 1px solid var(--linea);
+    border-radius: var(--r-g); box-shadow: var(--ombra-alta);
+  }
+  .tendina[hidden] { display: none; }
+  .tendina-dentro { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .tendina-titolo { font-size: 13px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; color: var(--fioco); }
+  .tendina .fila { display: flex; gap: 8px; }
+
 
   /* ---------- pillole delle categorie ---------- */
   .pillole {
@@ -464,6 +497,7 @@
 <body>
   <header class="barra" id="barra">
     <div class="barra-dentro">
+      <button class="tondo" id="apri-menu" aria-haspopup="dialog" aria-expanded="false" aria-label="Aggiungi un conto">+</button>
       <div class="marchio">
         <span class="segno">€</span>
         <span class="nome-app">Finanze</span>
@@ -478,6 +512,16 @@
         <button id="mese-su" aria-label="Mese successivo">›</button>
       </div>
     </div>
+    <div class="tendina" id="pannello" role="dialog" aria-label="Nuovo conto" hidden>
+      <div class="tendina-dentro">
+        <div class="tendina-titolo">Nuovo conto</div>
+        <div class="scelta-tipi" id="scelta-tipi"></div>
+        <div class="fila">
+          <input class="campo largo" id="nuovo-nome" aria-label="Nome del nuovo conto" />
+          <button class="mini pieno" id="crea-conto">Crea</button>
+        </div>
+      </div>
+    </div>
   </header>
 
   <main>
@@ -489,8 +533,7 @@
         <span class="chip" id="chip-conta" hidden></span>
         <button type="button" class="chip azione" id="copia" hidden>Copia dal mese scorso</button>
       </div>
-      <div class="composizione" id="composizione" hidden></div>
-      <div class="composizione debiti-barra" id="composizione-debiti" hidden></div>
+
     </section>
 
     <nav class="pillole" id="pillole" role="tablist" aria-label="Categorie"></nav>
@@ -506,6 +549,10 @@
 
     <section class="scheda" id="scheda-categorie" hidden>
       <div class="intestazione"><h2>Composizione</h2></div>
+      <div class="torta-zona">
+        <div class="torta" id="torta"></div>
+        <div class="torta-nota" id="torta-nota"></div>
+      </div>
       <div id="elenco-categorie"></div>
     </section>
 
@@ -539,14 +586,16 @@
 const $ = id => document.getElementById(id);
 const G = 86400e3;
 
+/* Solo investimenti e wallet digitali hanno sottoconti: un conto in banca è
+   già di per sé un conto, e sta su una riga sola. */
 const TIPI = {
-  banca:        { nome: "Banca",            sotto: true },
-  contanti:     { nome: "Contanti",         sotto: true },
-  cauzione:     { nome: "Cauzione affitto", sotto: false },
+  banca:        { nome: "Banca" },
+  contanti:     { nome: "Contanti" },
+  cauzione:     { nome: "Cauzione affitto" },
   investimenti: { nome: "Investimenti",     sotto: true, titoli: true },
-  btc:          { nome: "Wallet BTC",       sotto: false, auto: true },
+  btc:          { nome: "Wallet BTC",       auto: true },
   digitale:     { nome: "Wallet digitali",  sotto: true },
-  debiti:       { nome: "Tasse e debiti",   sotto: true, segno: -1 }
+  debiti:       { nome: "Tasse e debiti",   segno: -1 }
 };
 const ORDINE = Object.keys(TIPI);
 const tintaDi = t => `var(--c-${t})`;
@@ -579,6 +628,33 @@ function salva() {
   catch (_) { avvisa("Non riesco a salvare: lo spazio del browser è pieno o bloccato."); }
 }
 const nuovoId = () => "v" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+/* Banca, contanti, cauzione e debiti avevano sottoconti e ora no. I saldi erano
+   salvati sotto l'id di ogni sottoconto: qui vengono sommati nel conto, mese per
+   mese, prima di buttare via le vecchie chiavi. Senza questo passaggio i numeri
+   già inseriti resterebbero nello storage senza più nessuno che li legge. */
+function fondiSottoconti() {
+  let toccati = 0;
+  for (const c of stato.conti) {
+    if (TIPI[c.tipo].sotto || !Array.isArray(c.voci) || !c.voci.length) continue;
+    const ids = c.voci.map(v => v.id);
+    // i mesi in cui almeno un sottoconto aveva un valore scritto a mano
+    const mesi = Object.keys(stato.saldi).filter(m => ids.some(id => typeof stato.saldi[m][id] === "number")).sort();
+    for (const m of mesi) {
+      stato.saldi[m][c.id] = ids.reduce((somma, id) => somma + valoreVoce(id, m).valore, 0);
+    }
+    for (const id of ids) {
+      for (const m of Object.keys(stato.saldi)) {
+        delete stato.saldi[m][id];
+        if (!Object.keys(stato.saldi[m]).length) delete stato.saldi[m];
+      }
+    }
+    delete c.voci;
+    toccati++;
+  }
+  if (toccati) salva();
+  return toccati;
+}
 
 /* ---------- mesi ---------- */
 const chiaveMese = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -1078,7 +1154,6 @@ const esc = t => String(t == null ? "" : t)
 
 let tab = "tutto";
 let daEliminare = null;      // { che: "conto"|"voce"|"titolo"|"indirizzo", id, conto, nome }
-let moduloAperto = false;
 let tipoNuovo = ORDINE[0];
 let daMettereAFuoco = null;
 
@@ -1157,7 +1232,7 @@ const categorieAttive = () => ORDINE.filter(t => contiDi(t).length);
 function renderPillole() {
   const attive = categorieAttive();
   const barra = $("pillole");
-  barra.hidden = attive.length < 2;
+  barra.hidden = !attive.length;
   if (barra.hidden) { barra.innerHTML = ""; return; }
 
   const voce = (id, nome) => `
@@ -1184,7 +1259,6 @@ function renderSommario() {
   const delta = $("chip-delta"), conta = $("chip-conta"), copia = $("copia");
   if (!quali.length) {
     delta.hidden = conta.hidden = copia.hidden = true;
-    renderComposizione([]);
     return;
   }
 
@@ -1202,14 +1276,12 @@ function renderSommario() {
   const n = daAggiornare(tab);
   conta.hidden = copia.hidden = !n;
   if (n) conta.textContent = `${n} ${n === 1 ? "voce da aggiornare" : "voci da aggiornare"}`;
-
-  renderComposizione(fette());
 }
 
 // le fette della barra: le categorie sulla panoramica, i conti dentro una categoria
 function fette() {
   if (tab === "tutto") {
-    return categorieAttive().map(t => ({ nome: TIPI[t].nome, v: totaleDi(t, mese), tinta: tintaDi(t) }));
+    return categorieAttive().map(t => ({ id: t, nome: TIPI[t].nome, v: totaleDi(t, mese), tinta: tintaDi(t) }));
   }
   const conti = contiDi(tab);
   if (conti.length < 2) return [];
@@ -1224,33 +1296,59 @@ function renderComposizione(parti) {
   const giu = parti.filter(p => p.v < 0);
   const attivo = su.reduce((s, p) => s + p.v, 0);
   const passivo = -giu.reduce((s, p) => s + p.v, 0);
+  const torta = $("torta"), nota = $("torta-nota");
 
-  const barra = $("composizione");
-  barra.hidden = su.length < 2;
-  if (!barra.hidden) {
-    barra.innerHTML = su.map(p =>
-      `<span style="flex:${(p.v / attivo * 100).toFixed(2)};background:${p.tinta};opacity:${p.opacita || 1}"
-             title="${esc(p.nome)} · ${esc(fmtEur(p.v))}"></span>`).join("");
-    barra.setAttribute("aria-label", "Composizione: " + su.map(p => `${p.nome} ${fmtEur(p.v)}`).join(", "));
+  if (!su.length || attivo <= 0) {
+    torta.innerHTML = "";
+    nota.textContent = passivo ? `Per ora ci sono solo debiti: ${fmtEur(passivo)}.` : "Inserisci un saldo per vedere la composizione.";
+    return;
   }
 
-  // i debiti come quota di quanto si possiede: una barra sotto, non una fetta
-  const sotto = $("composizione-debiti");
-  sotto.hidden = !passivo || !attivo;
-  if (!sotto.hidden) {
-    const quota = Math.min(100, passivo / attivo * 100);
-    sotto.innerHTML = `<span style="flex:${quota.toFixed(2)};background:var(--c-debiti)"
-        title="Debiti ${esc(fmtEur(passivo))}"></span><span style="flex:${(100 - quota).toFixed(2)};background:var(--linea)"></span>`;
-    sotto.setAttribute("aria-label", `Debiti ${fmtEur(passivo)}, pari al ${Math.round(quota)}% di quanto possiedi`);
+  const R = 88, RI = 56, C = 100;
+  const sulCerchio = (ang, r) => [(C + r * Math.cos(ang)).toFixed(2), (C + r * Math.sin(ang)).toFixed(2)];
+  const centro = `
+    <text class="centro-eti" x="${C}" y="${C - 8}" text-anchor="middle">${passivo ? "Attività" : "Totale"}</text>
+    <text class="centro-val" x="${C}" y="${C + 14}" text-anchor="middle">${fmtEur0(attivo)}</text>`;
+
+  let disegno;
+  if (su.length === 1) {
+    // una fetta sola: un arco da 360 gradi degenera, qui serve un anello pieno
+    disegno = `<circle class="fetta" cx="${C}" cy="${C}" r="${(R + RI) / 2}" fill="none"
+        stroke="${su[0].tinta}" stroke-width="${R - RI}" ${su[0].id ? `data-tab="${su[0].id}"` : ""}
+      ><title>${esc(su[0].nome)} · ${esc(fmtEur(su[0].v))} · 100%</title></circle>`;
+  } else {
+    let ang = -Math.PI / 2;
+    disegno = su.map(p => {
+      const quota = p.v / attivo;
+      const fine = ang + quota * Math.PI * 2;
+      const grande = quota > .5 ? 1 : 0;
+      const [x0, y0] = sulCerchio(ang, R), [x1, y1] = sulCerchio(fine, R);
+      const [x2, y2] = sulCerchio(fine, RI), [x3, y3] = sulCerchio(ang, RI);
+      ang = fine;
+      return `<path class="fetta" ${p.id ? `data-tab="${p.id}"` : ""}
+          d="M${x0} ${y0} A${R} ${R} 0 ${grande} 1 ${x1} ${y1} L${x2} ${y2} A${RI} ${RI} 0 ${grande} 0 ${x3} ${y3} Z"
+          fill="${p.tinta}" opacity="${p.opacita || 1}" stroke="var(--superficie)" stroke-width="2"
+        ><title>${esc(p.nome)} · ${esc(fmtEur(p.v))} · ${Math.round(quota * 100)}%</title></path>`;
+    }).join("");
   }
+
+  torta.innerHTML = `<svg viewBox="0 0 200 200" role="img"
+      aria-label="Composizione: ${esc(su.map(x => `${x.nome} ${fmtEur(x.v)}`).join(", "))}">
+      ${disegno}${centro}</svg>`;
+
+  const massima = su.reduce((x, y) => y.v > x.v ? y : x);
+  nota.innerHTML =
+    `<div>La fetta più grande è <b>${esc(massima.nome)}</b>, il ${Math.round(massima.v / attivo * 100)}% di quanto possiedi.</div>` +
+    (passivo ? `<div style="margin-top:7px">Hai <span class="debito">${esc(fmtEur(passivo))}</span> di debiti, pari al ${Math.round(passivo / attivo * 100)}% delle attività.</div>` : "");
 }
 
 /* ---------- elenco delle categorie ---------- */
 function renderCategorie() {
   const attive = categorieAttive();
   const scheda = $("scheda-categorie");
-  scheda.hidden = tab !== "tutto" || attive.length < 2;
+  scheda.hidden = tab !== "tutto" || !attive.length;
   if (scheda.hidden) return;
+  renderComposizione(fette());
   $("elenco-categorie").innerHTML = attive.map(t => {
     const n = contiDi(t).length;
     return `<button type="button" class="voce-cat" data-tab="${t}" style="--tinta:${tintaDi(t)}">
@@ -1289,8 +1387,9 @@ function barraConferma() {
 const quiConferma = (che, id) => daEliminare && daEliminare.che === che && daEliminare.id === id ? barraConferma() : "";
 
 function renderConti() {
-  const quali = contiDi(tab);
-  if (!quali.length) { boxConti.innerHTML = ""; return; }
+  // in panoramica restano solo sommario, andamento e composizione: i conti si
+  // aprono entrando nella loro categoria
+  const quali = tab === "tutto" ? [] : contiDi(tab);
   boxConti.innerHTML = quali.map(cartaConto).join("");
 }
 
@@ -1498,40 +1597,33 @@ async function mostraPrezzo() {
     : `fonte: ${d.fonte}`;
 }
 
-/* ---------- nuovo conto ---------- */
+/* ---------- nuovo conto: solo dal menu in alto a sinistra ---------- */
 function renderZonaNuovo() {
   const zona = $("zona-nuovo");
-  if (!stato.conti.length && !moduloAperto) {
-    zona.innerHTML = `<section class="scheda"><div class="benvenuto">
-        <h2>Comincia da un conto</h2>
-        <p>Scegli una categoria, dagli un nome e scrivi quanto c'è dentro. Ogni mese torni qui e aggiorni i numeri: il grafico si costruisce da solo.</p>
-        <button class="mini pieno" style="--tinta:var(--c-banca)" id="apri-modulo">Aggiungi il primo conto</button>
-      </div></section>`;
-    return;
-  }
-  if (!moduloAperto) {
-    zona.innerHTML = `<button class="grosso" id="apri-modulo">+ Nuovo conto</button>`;
-    return;
-  }
-  zona.innerHTML = `<section class="scheda">
-      <div class="intestazione"><h2>Nuovo conto</h2>
-        <button class="bottoncino" id="chiudi-modulo" aria-label="Chiudi">×</button></div>
-      <div class="corpo">
-        <div class="scelta-tipi" id="scelta-tipi">
-          ${ORDINE.map(t => `<button type="button" data-tipo="${t}" style="--tinta:${tintaDi(t)}"
-             class="${t === tipoNuovo ? "on" : ""}"><span class="punto"></span>${TIPI[t].nome}</button>`).join("")}
-        </div>
-      </div>
-      <div class="modulo">
-        <div class="fila">
-          <input class="campo largo" id="nuovo-nome" placeholder="Nome del conto, es. ${esempioNome(tipoNuovo)}"
-                 aria-label="Nome del nuovo conto" />
-          <button class="mini pieno" id="crea-conto" style="--tinta:${tintaDi(tipoNuovo)}">Crea</button>
-        </div>
-      </div>
-    </section>`;
-  const campo = $("nuovo-nome");
-  if (campo) campo.focus();
+  zona.innerHTML = stato.conti.length ? "" : `
+    <section class="scheda"><div class="benvenuto">
+      <h2>Comincia da un conto</h2>
+      <p>Apri il menu <b>+</b> in alto a sinistra, scegli una categoria e dagli un nome. Ogni mese torni qui e aggiorni i numeri: il grafico si costruisce da solo.</p>
+      <button class="mini pieno" style="--tinta:var(--c-banca)" id="apri-da-benvenuto">Aggiungi il primo conto</button>
+    </div></section>`;
+}
+
+let menuAperto = false;
+
+function apriMenu(apri) {
+  menuAperto = apri;
+  $("pannello").hidden = !apri;
+  $("apri-menu").setAttribute("aria-expanded", String(apri));
+  if (apri) { renderSceltaTipi(); $("nuovo-nome").focus(); }
+  else $("apri-menu").focus();
+}
+
+function renderSceltaTipi() {
+  $("scelta-tipi").innerHTML = ORDINE.map(t =>
+    `<button type="button" data-tipo="${t}" style="--tinta:${tintaDi(t)}"
+             class="${t === tipoNuovo ? "on" : ""}"><span class="punto"></span>${TIPI[t].nome}</button>`).join("");
+  $("nuovo-nome").placeholder = "Nome del conto, es. " + esempioNome(tipoNuovo);
+  $("crea-conto").style.setProperty("--tinta", tintaDi(tipoNuovo));
 }
 
 const esempioNome = t => ({
@@ -1728,6 +1820,10 @@ $("elenco-categorie").addEventListener("click", e => {
   const b = e.target.closest("button[data-tab]");
   if (b) vaiA(b.dataset.tab);
 });
+$("torta").addEventListener("click", e => {
+  const f = e.target.closest("[data-tab]");
+  if (f) vaiA(f.getAttribute("data-tab"));
+});
 
 $("periodi").addEventListener("click", e => {
   const b = e.target.closest("button[data-periodo]");
@@ -1763,18 +1859,25 @@ $("chip").addEventListener("click", e => {
   });
   if (!quante) { delete stato.saldi[mese]; avvisa("In " + etichettaBreve(prec) + " non c'è nulla da copiare."); return; }
   salva(); renderPresto();
-  avvisa(`Copiati ${quante} valori da ${etichettaBreve(prec)}.`);
+  avvisa(quante === 1
+    ? `Copiato 1 valore da ${etichettaBreve(prec)}.`
+    : `Copiati ${quante} valori da ${etichettaBreve(prec)}.`);
 });
 
 /* nuovo conto */
-$("zona-nuovo").addEventListener("click", e => {
-  if (e.target.closest("#apri-modulo")) { moduloAperto = true; renderZonaNuovo(); return; }
-  if (e.target.closest("#chiudi-modulo")) { moduloAperto = false; renderZonaNuovo(); return; }
+$("apri-menu").addEventListener("click", () => apriMenu(!menuAperto));
+$("zona-nuovo").addEventListener("click", e => { if (e.target.closest("#apri-da-benvenuto")) apriMenu(true); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && menuAperto) apriMenu(false); });
+document.addEventListener("pointerdown", e => {
+  if (menuAperto && !e.target.closest("#pannello") && !e.target.closest("#apri-menu")) apriMenu(false);
+});
+
+$("pannello").addEventListener("click", e => {
   const t = e.target.closest("[data-tipo]");
-  if (t) { tipoNuovo = t.dataset.tipo; renderZonaNuovo(); return; }
+  if (t) { tipoNuovo = t.dataset.tipo; renderSceltaTipi(); $("nuovo-nome").focus(); return; }
   if (e.target.closest("#crea-conto")) creaConto();
 });
-$("zona-nuovo").addEventListener("keydown", e => {
+$("pannello").addEventListener("keydown", e => {
   if (e.key === "Enter" && e.target.id === "nuovo-nome") { e.preventDefault(); creaConto(); }
 });
 
@@ -1785,8 +1888,9 @@ function creaConto() {
   if (TIPI[tipoNuovo].titoli) c.titoli = [];
   if (tipoNuovo === "btc") c.indirizzi = [];
   stato.conti.push(c);
-  moduloAperto = false;
-  tab = tipoNuovo;
+  $("nuovo-nome").value = "";
+  apriMenu(false);
+  tab = tipoNuovo;                       // si apre subito la categoria creata
   salva(); render();
   if (tipoNuovo === "btc") { mostraPrezzo(); aggiornaBitcoin(); }
 }
@@ -1811,6 +1915,7 @@ async function aggiornaBitcoin() {
   render();
 }
 
+fondiSottoconti();
 render();
 osserva.observe($("cifrone"));
 aggiornaBitcoin();
