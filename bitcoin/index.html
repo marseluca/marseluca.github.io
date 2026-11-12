@@ -34,6 +34,7 @@
     --c-btc: #ef8f1c;
     --c-digitale: #db2777;
     --c-debiti: #dc2626;
+    --c-previste: #475569;
 
     --su-tinta: #ffffff;
 
@@ -65,11 +66,15 @@
       --c-btc: #fbbf24;
       --c-digitale: #f472b6;
       --c-debiti: #f87171;
+      --c-previste: #94a3b8;
       --su-tinta: #0f1419;
     }
   }
 
   * { box-sizing: border-box; }
+  /* l'attributo hidden perde contro qualunque display dichiarato nel foglio:
+     senza questa riga i chip nascosti restano in pagina */
+  [hidden] { display: none !important; }
   html { -webkit-text-size-adjust: 100%; }
 
   body {
@@ -210,6 +215,7 @@
   }
   .pillole button .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--tinta); flex: none; }
   .pillole button:hover { color: var(--testo); border-color: var(--linea-forte); }
+  .pillole .stacco { flex: none; width: 1px; background: var(--linea); margin: 4px 3px; }
   .pillole button.on {
     color: var(--su-tinta); background: var(--tinta); border-color: var(--tinta); font-weight: 600;
   }
@@ -346,6 +352,33 @@
   .campo::placeholder { color: var(--fioco); }
   .campo.largo { flex: 1; min-width: 140px; }
 
+  /* ---------- entrate e uscite previste ---------- */
+  .previsione { display: block; }
+  .prev-alto { display: flex; align-items: center; gap: 10px; }
+  .prev-basso {
+    display: flex; align-items: center; gap: 6px 10px; flex-wrap: wrap;
+    margin-top: 9px; font-size: 12.5px; color: var(--tenue);
+  }
+  .coppia { display: inline-flex; align-items: center; gap: 5px; flex: 0 1 auto; min-width: 0; }
+  .coppia input[type="month"] { max-width: 150px; }
+  .aggiungi-fine {
+    font: inherit; font-size: 12.5px; padding: 4px 8px; border-radius: 7px; cursor: pointer;
+    border: 1px dashed var(--linea-forte); background: transparent; color: var(--fioco);
+  }
+  .aggiungi-fine:hover { color: var(--tinta); border-color: var(--tinta); }
+  .mini-campo {
+    font: inherit; font-size: 13px; padding: 5px 7px; border-radius: 8px;
+    border: 1px solid var(--linea); background: var(--superficie-2); color: var(--testo);
+  }
+  .mini-campo:focus { outline: none; border-color: var(--tinta); background: var(--superficie); }
+  .quando-cade { flex: 1; min-width: 130px; text-align: right; font-size: 12px; color: var(--fioco); }
+  .quando-cade.adesso { color: var(--tinta); font-weight: 600; }
+  .quando-cade.finita { color: var(--fioco); font-style: italic; }
+  .conto.entrate { --tinta: var(--positivo); }
+  .conto.uscite { --tinta: var(--negativo); }
+  .conto.uscite .tot-conto { color: var(--negativo); }
+  .conto.entrate .tot-conto { color: var(--positivo); }
+
   /* ---------- indirizzi bitcoin ---------- */
   .indirizzo { display: flex; align-items: center; gap: 10px; padding: 11px 18px; border-top: 1px solid var(--linea); }
   .indirizzo .codice {
@@ -462,6 +495,10 @@
   @media (max-width: 360px) {
     .passi .mese-ora { min-width: 104px; font-size: 13px; }
   }
+  @media (max-width: 560px) {
+    .mini-campo { font-size: 16px; padding: 6px; }
+    .quando-cade { flex: 1 1 100%; text-align: left; margin-top: 2px; }
+  }
 
   @media (max-width: 560px) {
     /* .titolo-basso .soldi vince per specificità: va nominato, o resta a 14px */
@@ -519,10 +556,12 @@
     <section class="sommario">
       <div class="occhiello" id="occhiello">Patrimonio netto</div>
       <div class="cifrone num" id="cifrone">—</div>
+      <!-- il bottone sta per primo: i chip dopo cambiano testo e compaiono o
+           spariscono, e lo facevano slittare mentre ci si cliccava sopra -->
       <div class="riga-chip" id="chip">
+        <button type="button" class="chip azione" id="copia" hidden>Copia dal mese scorso</button>
         <span class="chip" id="chip-delta" hidden></span>
         <span class="chip" id="chip-conta" hidden></span>
-        <button type="button" class="chip azione" id="copia" hidden>Copia dal mese scorso</button>
       </div>
 
     </section>
@@ -597,6 +636,10 @@ const tintaDi = t => `var(--c-${t})`;
      conti: [{ id, tipo, nome, voci: [{id, nome}], indirizzi: [{addr}] }]
      saldi: { "2026-11": { "<idVoce>": importo } }
    I conti senza sottoconti portano il loro importo sotto il proprio id.
+     previsioni: [{ id, nome, importo, verso: 1|-1, giorno, ogni, da, a }]
+   Una previsione cade il giorno `giorno` di ogni `ogni` mesi a partire dal mese
+   `da`, e smette dopo il mese `a` se c'è. L'importo si scrive positivo: il verso
+   dice se entra o esce, come per i debiti.
    Un mese senza un importo per una voce eredita l'ultimo inserito prima di
    quel mese: in un registro mensile un conto che non cambia non si riscrive. */
 const CHIAVE_STATO = "finanze_v1";
@@ -605,9 +648,11 @@ let stato = carica();
 function carica() {
   try {
     const s = JSON.parse(localStorage.getItem(CHIAVE_STATO));
-    if (s && Array.isArray(s.conti)) return { conti: s.conti, saldi: s.saldi || {} };
+    if (s && Array.isArray(s.conti)) {
+      return { conti: s.conti, saldi: s.saldi || {}, previsioni: s.previsioni || [] };
+    }
   } catch (_) { /* stato illeggibile: si riparte puliti */ }
-  return { conti: [], saldi: {} };
+  return { conti: [], saldi: {}, previsioni: [] };
 }
 function salva() {
   try { localStorage.setItem(CHIAVE_STATO, JSON.stringify(stato)); }
@@ -739,6 +784,54 @@ function totaleConto(c, m) {
 const contiDi = t => t === "tutto" ? stato.conti : stato.conti.filter(c => c.tipo === t);
 const totaleDi = (t, m) => contiDi(t).reduce((s, c) => s + totaleConto(c, m), 0);
 const totaleMese = m => totaleDi("tutto", m);
+
+/* ---------- entrate e uscite previste ---------- */
+const PASSI = [1, 2, 3, 4, 6, 12];
+const nomePasso = n => n === 1 ? "ogni mese" : n === 12 ? "ogni anno" : `ogni ${n} mesi`;
+const MESI_PROIEZIONE = 12;
+
+const distanzaMesi = (a, b) => {
+  const [aa, am] = a.split("-").map(Number), [ba, bm] = b.split("-").map(Number);
+  return (ba - aa) * 12 + (bm - am);
+};
+// il 31 in un mese da 30 giorni cade l'ultimo giorno, non il primo di quello dopo
+const giorniDelMese = m => { const [a, n] = m.split("-").map(Number); return new Date(a, n, 0).getDate(); };
+const giornoReale = (giorno, m) => Math.min(giorno, giorniDelMese(m));
+
+const previsioni = () => stato.previsioni || (stato.previsioni = []);
+
+function cadeNel(p, m) {
+  const d = distanzaMesi(p.da, m);
+  if (d < 0 || d % (p.ogni || 1)) return false;
+  return !p.a || distanzaMesi(p.a, m) <= 0;
+}
+
+function prossimaDopo(p, m) {
+  let k = m;
+  for (let i = 0; i <= 240; i++) {
+    if (cadeNel(p, k)) return k;
+    if (p.a && distanzaMesi(p.a, k) >= 0) return null;
+    k = spostaMese(k, 1);
+  }
+  return null;
+}
+
+const previsteDel = m => previsioni().filter(p => cadeNel(p, m));
+const attesoDel = m => previsteDel(m).reduce((s, p) => s + p.verso * p.importo, 0);
+const attesoVerso = (m, verso) => previsteDel(m)
+  .filter(p => p.verso === verso).reduce((s, p) => s + p.importo, 0);
+
+// dal patrimonio di oggi in avanti, un mese alla volta
+function proiezione(quanti = MESI_PROIEZIONE) {
+  const punti = [[dataMese(MESE_OGGI).getTime(), totaleMese(MESE_OGGI)]];
+  let valore = punti[0][1], k = MESE_OGGI;
+  for (let i = 0; i < quanti; i++) {
+    k = spostaMese(k, 1);
+    valore += attesoDel(k);
+    punti.push([dataMese(k).getTime(), valore]);
+  }
+  return punti;
+}
 
 function mesiDelGrafico(scopo) {
   const conti = contiDi(scopo);
@@ -1154,7 +1247,7 @@ function daAggiornare(scopo) {
 }
 
 function render() {
-  if (tab !== "tutto" && !contiDi(tab).length) tab = "tutto";
+  if (tab !== "tutto" && tab !== "previste" && !contiDi(tab).length) tab = "tutto";
   renderBarra();
   renderPillole();
   renderSommario();
@@ -1163,7 +1256,7 @@ function render() {
   renderGrafico();
   renderZonaNuovo();
   if (daMettereAFuoco) {
-    const el = boxConti.querySelector(`[data-rinomina="${daMettereAFuoco}"]`);
+    const el = boxConti.querySelector(`[data-rinomina="${daMettereAFuoco}"], [data-prev-nome="${daMettereAFuoco}"]`);
     if (el) { el.focus(); el.select(); }
     daMettereAFuoco = null;
   }
@@ -1192,12 +1285,16 @@ function renderPresto() {
 }
 
 /* ---------- barra in alto ---------- */
+const ultimoMese = () => tab === "previste" ? spostaMese(MESE_OGGI, 24) : MESE_OGGI;
+
 function renderBarra() {
   $("mese-testo").textContent = dataMese(mese).toLocaleDateString("it-IT", { month: "long", year: "numeric" });
   $("mese").value = mese;
-  $("mese").max = MESE_OGGI;
-  $("mese-su").disabled = mese >= MESE_OGGI;
-  $("riassunto-barra").textContent = stato.conti.length ? fmtEur0(totaleDi(tab, mese)) : "";
+  $("mese").max = ultimoMese();
+  $("mese-su").disabled = mese >= ultimoMese();
+  $("riassunto-barra").textContent = tab === "previste"
+    ? (previsioni().length ? fmtEur0(attesoDel(mese)) : "")
+    : (stato.conti.length ? fmtEur0(totaleDi(tab, mese)) : "");
 }
 
 // il totale compare nella barra quando il titolone esce dallo schermo
@@ -1212,21 +1309,22 @@ const categorieAttive = () => ORDINE.filter(t => contiDi(t).length);
 function renderPillole() {
   const attive = categorieAttive();
   const barra = $("pillole");
-  barra.hidden = !attive.length;
-  if (barra.hidden) { barra.innerHTML = ""; return; }
+  barra.hidden = false;
 
   const voce = (id, nome) => `
     <button type="button" role="tab" data-tab="${id}" aria-selected="${id === tab}"
             class="${id === tab ? "on" : ""}" style="--tinta:${tintaDi(id)}">
       <span class="punto"></span>${esc(nome)}
     </button>`;
-  barra.innerHTML = voce("tutto", "Tutto") + attive.map(t => voce(t, TIPI[t].nome)).join("");
+  barra.innerHTML = (attive.length ? voce("tutto", "Tutto") + attive.map(t => voce(t, TIPI[t].nome)).join("") : "")
+    + `<span class="stacco"></span>` + voce("previste", "Previste");
   const attiva = barra.querySelector("button.on");
   if (attiva) attiva.scrollIntoView({ block: "nearest", inline: "nearest" });
 }
 
 /* ---------- sommario ---------- */
 function renderSommario() {
+  if (tab === "previste") return renderSommarioPreviste();
   const quali = contiDi(tab);
   $("occhiello").textContent = tab === "tutto" ? "Patrimonio netto" : TIPI[tab].nome;
   const tot = totaleDi(tab, mese);
@@ -1253,8 +1351,11 @@ function renderSommario() {
     delta.textContent = `${diff > 0 ? "↑" : "↓"} ${diff > 0 ? "+" : "−"}${fmtEur(Math.abs(diff))} su ${etichettaBreve(prec)}`;
   }
 
+  // il contatore va e viene, il bottone no: sparendo sotto il dito mentre si
+  // scrive un importo si mangiava il clic
   const n = daAggiornare(tab);
-  conta.hidden = copia.hidden = !n;
+  conta.hidden = !n;
+  copia.hidden = false;
   if (n) conta.textContent = `${n} ${n === 1 ? "voce da aggiornare" : "voci da aggiornare"}`;
 }
 
@@ -1359,7 +1460,7 @@ const chiedo = (che, id) => `data-chiedi="${che}:${id}"`;
 function barraConferma() {
   if (!daEliminare) return "";
   return `<div class="conferma">
-      <span class="dice">Elimino <b>${esc(daEliminare.nome)}</b> e i suoi valori di tutti i mesi?</span>
+      <span class="dice">Elimino <b>${esc(daEliminare.nome)}</b>${daEliminare.che === "previsione" ? "" : " e i suoi valori di tutti i mesi"}?</span>
       <button type="button" class="annulla" data-annulla>Annulla</button>
       <button type="button" class="via" data-conferma>Elimina</button>
     </div>`;
@@ -1367,10 +1468,72 @@ function barraConferma() {
 const quiConferma = (che, id) => daEliminare && daEliminare.che === che && daEliminare.id === id ? barraConferma() : "";
 
 function renderConti() {
+  if (tab === "previste") { boxConti.innerHTML = cartePreviste(); return; }
   // in panoramica restano solo sommario, andamento e composizione: i conti si
   // aprono entrando nella loro categoria
   const quali = tab === "tutto" ? [] : contiDi(tab);
   boxConti.innerHTML = quali.map(cartaConto).join("");
+}
+
+function cartePreviste() {
+  return [1, -1].map(verso => {
+    const righe = previsioni().filter(p => p.verso === verso);
+    const titolo = verso === 1 ? "Entrate" : "Uscite";
+    const somma = righe.filter(p => cadeNel(p, mese)).reduce((s, p) => s + p.importo, 0);
+    return `<section class="scheda conto ${verso === 1 ? "entrate" : "uscite"}">
+      <div class="intestazione">
+        <span class="punto-cat"></span>
+        <h2 style="flex:1;margin:0;font-size:16px;font-weight:600">${titolo}</h2>
+        ${somma ? `<span class="tot-conto num">${verso === 1 ? "+" : "−"}${fmtEur(somma)}</span>` : ""}
+      </div>
+      ${righe.map(rigaPrevisione).join("") || `<div class="stato">Nessuna ${verso === 1 ? "entrata" : "uscita"} ricorrente.</div>`}
+      <div class="piede-scheda">
+        <button class="mini" data-nuova-prev="${verso}">+ ${verso === 1 ? "Entrata" : "Uscita"}</button>
+      </div>
+    </section>`;
+  }).join("");
+}
+
+function rigaPrevisione(p) {
+  const qui = cadeNel(p, mese);
+  const poi = qui ? null : prossimaDopo(p, mese);
+  const stato_ = qui
+    ? `<span class="quando-cade adesso">cade il ${giornoReale(p.giorno, mese)} ${dataMese(mese).toLocaleDateString("it-IT", { month: "long" })}</span>`
+    : poi
+      ? `<span class="quando-cade">prossima: ${etichettaBreve(poi)}</span>`
+      : `<span class="quando-cade finita">finita</span>`;
+
+  const giorni = Array.from({ length: 31 }, (_, i) => i + 1)
+    .map(g => `<option value="${g}" ${g === p.giorno ? "selected" : ""}>${g}</option>`).join("");
+  const passi = PASSI.map(n => `<option value="${n}" ${n === (p.ogni || 1) ? "selected" : ""}>${nomePasso(n)}</option>`).join("");
+
+  return `
+    <div class="riga previsione">
+      <div class="prev-alto">
+        <input class="etichetta" data-prev-nome="${p.id}" value="${esc(p.nome)}" aria-label="Nome" />
+        <input class="soldi num" data-prev-importo="${p.id}" type="text" inputmode="decimal"
+               value="${fmtNum(p.importo)}" aria-label="Importo di ${esc(p.nome)}" />
+        <span class="valuta">€</span>
+        <button class="bottoncino" ${chiedo("previsione", p.id)} aria-label="Elimina ${esc(p.nome)}">×</button>
+      </div>
+      <div class="prev-basso">
+        <span class="coppia">il
+          <select class="mini-campo" data-prev-giorno="${p.id}" aria-label="Giorno del mese">${giorni}</select>
+        </span>
+        <span class="coppia">
+          <select class="mini-campo" data-prev-ogni="${p.id}" aria-label="Ogni quanti mesi">${passi}</select>
+        </span>
+        <span class="coppia">da
+          <input class="mini-campo" type="month" data-prev-da="${p.id}" value="${p.da}" aria-label="Primo mese" />
+        </span>
+        ${p.a
+          ? `<span class="coppia">fino a
+               <input class="mini-campo" type="month" data-prev-a="${p.id}" value="${p.a}" aria-label="Ultimo mese, svuota se non finisce" />
+             </span>`
+          : `<button type="button" class="aggiungi-fine" data-prev-fine="${p.id}">+ scadenza</button>`}
+        ${stato_}
+      </div>
+    </div>${quiConferma("previsione", p.id)}`;
 }
 
 function cartaConto(c) {
@@ -1457,7 +1620,63 @@ function corpoBtc(c) {
 }
 
 /* ---------- grafici ---------- */
+/* In questa scheda il grande numero è il saldo atteso del mese scelto, e i due
+   chip separano quanto entra da quanto esce. */
+function renderSommarioPreviste() {
+  const entra = attesoVerso(mese, 1), esce = attesoVerso(mese, -1);
+  const netto = entra - esce;
+  $("occhiello").textContent = "Saldo previsto del mese";
+  $("cifrone").textContent = previsioni().length ? fmtEur(netto) : "—";
+  $("cifrone").style.color = !previsioni().length ? "" : netto >= 0 ? "var(--positivo)" : "var(--negativo)";
+
+  const delta = $("chip-delta"), conta = $("chip-conta"), copia = $("copia");
+  copia.hidden = true;
+  delta.hidden = !entra;
+  delta.className = "chip su num";
+  delta.textContent = `↑ ${fmtEur(entra)} in entrata`;
+  conta.hidden = !esce;
+  conta.className = "chip giu num";
+  conta.textContent = `↓ ${fmtEur(esce)} in uscita`;
+}
+
+function renderGraficoPreviste() {
+  $("titolo-grafico").textContent = `Proiezione a ${MESI_PROIEZIONE} mesi`;
+  if (!previsioni().length || !stato.conti.length) {
+    graficoPatrimonio.messaggio(stato.conti.length
+      ? "Aggiungi un'entrata o un'uscita per vedere dove porta."
+      : "Serve almeno un conto per proiettare il patrimonio.");
+    $("piede-periodo").textContent = "";
+    $("piede-nota").textContent = "";
+    return;
+  }
+  const punti = proiezione();
+  const valori = punti.map(x => x[1]);
+  const mesi = punti.map((_, i) => spostaMese(MESE_OGGI, i));
+
+  graficoPatrimonio.disegna(punti, {
+    titolo: `Proiezione del patrimonio a ${MESI_PROIEZIONE} mesi`,
+    tinta: tintaDi("previste"),
+    valore: fmtEur0,
+    quando: (t, i) => (i ? "previsto · " : "oggi · ") + etichettaMese(mesi[i]),
+    tacche: () => {
+      const passo = Math.max(1, Math.ceil(mesi.length / 6));
+      return mesi.filter((_, i) => i % passo === 0 || i === mesi.length - 1)
+        .map(m => [dataMese(m).getTime(), dataMese(m).toLocaleDateString("it-IT", { month: "short", year: "2-digit" })]);
+    }
+  });
+
+  const fine = valori[valori.length - 1], ora = valori[0];
+  $("piede-periodo").textContent =
+    `da ${fmtEur0(ora)} a ${fmtEur0(fine)} · ${fine >= ora ? "+" : "−"}${fmtEur0(Math.abs(fine - ora))} in ${MESI_PROIEZIONE} mesi`;
+  $("piede-nota").textContent = "proiezione sulle sole ricorrenze inserite";
+}
+
 function renderGrafico() {
+  if (tab === "previste") {
+    $("scheda-prezzo").hidden = true;
+    $("scheda-grafico").hidden = false;
+    return renderGraficoPreviste();
+  }
   const btc = tab === "btc";
   $("scheda-prezzo").hidden = !btc || !contiDi("btc").length;
   $("scheda-grafico").hidden = btc;
@@ -1577,7 +1796,10 @@ function scorda(chiave) {
   }
 }
 
+const trovaPrevisione = id => previsioni().find(p => p.id === id);
+
 function nomeDa(che, id) {
+  if (che === "previsione") return (trovaPrevisione(id) || {}).nome;
   if (che === "conto") return (trovaConto(id) || {}).nome;
   if (che === "voce") { const c = contoDiVoce(id); return c && c.voci.find(v => v.id === id).nome; }
   return "questo indirizzo";
@@ -1591,6 +1813,8 @@ function eliminaDavvero() {
     scorda(c.id);
     stato.conti = stato.conti.filter(x => x.id !== id);
     delete btcDati[id];
+  } else if (che === "previsione") {
+    stato.previsioni = previsioni().filter(x => x.id !== id);
   } else if (che === "voce") {
     const c = contoDiVoce(id);
     c.voci = c.voci.filter(v => v.id !== id);
@@ -1611,11 +1835,31 @@ boxConti.addEventListener("click", e => {
   if (b.dataset.chiedi) {
     const [che, ...resto] = b.dataset.chiedi.split(":");
     const id = resto.join(":");
-    daEliminare = { che, id, nome: nomeDa(che, id), conto: b.closest(".conto") && b.closest(".conto").querySelector("[data-rinomina]").dataset.rinomina };
+    const scheda = b.closest(".conto");
+    const titolare = scheda && scheda.querySelector("[data-rinomina]");
+    daEliminare = { che, id, nome: nomeDa(che, id), conto: titolare && titolare.dataset.rinomina };
     renderPresto(); return;
   }
   if (b.hasAttribute("data-annulla")) { daEliminare = null; renderPresto(); return; }
   if (b.hasAttribute("data-conferma")) { eliminaDavvero(); return; }
+
+  if (b.dataset.prevFine) {
+    const p = trovaPrevisione(b.dataset.prevFine);
+    if (p) { p.a = distanzaMesi(p.da, mese) > 0 ? mese : p.da; salva(); renderPresto(); }
+    return;
+  }
+
+  if (b.dataset.nuovaVoce === undefined && b.dataset.nuovaPrev) {
+    const verso = +b.dataset.nuovaPrev;
+    const p = {
+      id: nuovoId(), nome: verso === 1 ? "Nuova entrata" : "Nuova uscita",
+      importo: 0, verso, giorno: 1, ogni: 1, da: mese > MESE_OGGI ? mese : MESE_OGGI, a: null
+    };
+    previsioni().push(p);
+    daMettereAFuoco = p.id;
+    salva(); renderPresto();
+    return;
+  }
 
   if (b.dataset.nuovaVoce) {
     const c = trovaConto(b.dataset.nuovaVoce);
@@ -1639,6 +1883,33 @@ boxConti.addEventListener("click", e => {
 
 boxConti.addEventListener("change", e => {
   const el = e.target;
+
+  const idPrev = el.dataset.prevNome || el.dataset.prevImporto || el.dataset.prevGiorno
+              || el.dataset.prevOgni || el.dataset.prevDa || el.dataset.prevA;
+  if (idPrev) {
+    const p = trovaPrevisione(idPrev);
+    if (!p) return;
+    if (el.dataset.prevNome) { p.nome = el.value.trim() || "Senza nome"; el.value = p.nome; }
+    else if (el.dataset.prevImporto) {
+      const v = leggiImporto(el.value);
+      if (v === null) avvisa("Non ho capito quell'importo. Scrivilo come 1.234,56");
+      else p.importo = Math.abs(v);
+      el.value = fmtNum(p.importo);
+    }
+    else if (el.dataset.prevGiorno) p.giorno = +el.value;
+    else if (el.dataset.prevOgni) p.ogni = +el.value;
+    else if (el.dataset.prevDa) { if (el.value) p.da = el.value; else el.value = p.da; }
+    else if (el.dataset.prevA) {
+      p.a = el.value || null;
+      // una fine prima dell'inizio non vuol dire niente: la rifiuto e lo dico
+      if (p.a && distanzaMesi(p.da, p.a) < 0) {
+        p.a = null; el.value = "";
+        avvisa("La fine non può venire prima dell'inizio.");
+      }
+    }
+    salva(); renderPresto();
+    return;
+  }
 
   if (el.dataset.rinomina) {
     const id = el.dataset.rinomina;
@@ -1675,6 +1946,7 @@ boxConti.addEventListener("change", e => {
 boxConti.addEventListener("keydown", e => {
   if (e.key !== "Enter") return;
   const el = e.target;
+  if (el.dataset.prevNome || el.dataset.prevImporto) { e.preventDefault(); el.blur(); return; }
   if (el.dataset.importo) {                   // un mese intero si compila a tastiera
     e.preventDefault();
     const campi = [...boxConti.querySelectorAll(".soldi")];
@@ -1695,6 +1967,7 @@ boxConti.addEventListener("keydown", e => {
 function vaiA(t) {
   if (t === tab) return;
   tab = t;
+  if (tab !== "previste" && mese > MESE_OGGI) mese = MESE_OGGI;   // i consuntivi si fermano a oggi
   daEliminare = null;
   grafici.forEach(g => g.sblocca());
   render();
@@ -1728,13 +2001,13 @@ $("periodi").addEventListener("click", e => {
 
 /* mesi */
 function vaiAlMese(k) {
-  mese = k > MESE_OGGI ? MESE_OGGI : k;
+  mese = k > ultimoMese() ? ultimoMese() : k;
   daEliminare = null;
   renderPresto();
 }
 $("mese").addEventListener("change", e => { if (e.target.value) vaiAlMese(e.target.value); });
 $("mese-giu").addEventListener("click", () => vaiAlMese(spostaMese(mese, -1)));
-$("mese-su").addEventListener("click", () => { if (mese < MESE_OGGI) vaiAlMese(spostaMese(mese, 1)); });
+$("mese-su").addEventListener("click", () => { if (mese < ultimoMese()) vaiAlMese(spostaMese(mese, 1)); });
 
 $("chip").addEventListener("click", e => {
   if (!e.target.closest("#copia")) return;
