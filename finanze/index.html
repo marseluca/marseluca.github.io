@@ -998,8 +998,22 @@ const attesoDel = m => previsteDel(m).reduce((s, p) => s + p.verso * p.importo, 
 /* I tre mesi che chiudono sul mese scelto. Non vanno oltre il mese corrente:
    più in là non c'è ancora un effettivo da confrontare con il previsto. */
 function ultimiTre(m) {
-  const fine = distanzaMesi(m, MESE_OGGI) < 0 ? MESE_OGGI : m;
-  return { da: spostaMese(fine, -2), a: fine };
+  // il mese scelto resta fuori: finché è in corso i suoi conti non sono chiusi
+  const base = distanzaMesi(m, MESE_OGGI) < 0 ? MESE_OGGI : m;
+  const a = spostaMese(base, -1);
+  return { da: spostaMese(a, -2), a };
+}
+
+// "da ago a ott 2026", o il nome del mese quando la finestra ne contiene uno solo
+const periodoDi = ({ da, a }) => da === a
+  ? etichettaMese(a)
+  : `da ${etichettaBreve(da)} a ${etichettaBreve(a)}`;
+
+// entrate (verso 1) o uscite (verso -1) attese in tutta la finestra
+function attesoVersoTra(da, a, verso) {
+  let somma = 0;
+  for (let k = da; distanzaMesi(k, a) >= 0; k = spostaMese(k, 1)) somma += attesoVerso(k, verso);
+  return somma;
 }
 
 // quanto ci si aspettava di mettere da parte in tutta la finestra
@@ -1519,7 +1533,7 @@ function renderBarra() {
   $("mese").max = ultimoMese();
   $("mese-su").disabled = mese >= ultimoMese();
   const sommato = tab === "previste"
-    ? (previsioni().length ? fmtEur(attesoDel(mese)) : "")
+    ? (previsioni().length ? fmtEur(attesoTra(ultimiTre(mese).da, ultimiTre(mese).a)) : "")
     : (stato.conti.length ? fmtEur(totaleDi(tab, mese)) : "");
   $("riassunto-barra").textContent = sommato && velato(sommato);
   $("riassunto-barra").classList.toggle("nascosto", !!sommato && !saldiVisibili);
@@ -1721,7 +1735,7 @@ function renderConti() {
 function cartePreviste() {
   return [1, -1].map(verso => {
     const righe = previsioni().filter(p => p.verso === verso);
-    const titolo = verso === 1 ? "Entrate" : "Uscite";
+    const titolo = (verso === 1 ? "Entrate" : "Uscite") + " · " + etichettaBreve(mese);
     const somma = righe.filter(p => cadeNel(p, mese)).reduce((s, p) => s + p.importo, 0);
     return `<section class="scheda conto ${verso === 1 ? "entrate" : "uscite"}">
       <div class="intestazione">
@@ -1873,9 +1887,10 @@ function corpoBtc(c) {
 /* In questa scheda il grande numero è il saldo atteso del mese scelto, e i due
    chip separano quanto entra da quanto esce. */
 function renderSommarioPreviste() {
-  const entra = attesoVerso(mese, 1), esce = attesoVerso(mese, -1);
+  const f = ultimiTre(mese);
+  const entra = attesoVersoTra(f.da, f.a, 1), esce = attesoVersoTra(f.da, f.a, -1);
   const netto = entra - esce;
-  $("occhiello").textContent = "Saldo previsto del mese";
+  $("occhiello").textContent = "Previsto " + periodoDi(f);
   scriviCifrone(previsioni().length ? fmtEur(netto) : "—",
     !previsioni().length ? "" : netto >= 0 ? "var(--positivo)" : "var(--negativo)");
 
@@ -1900,24 +1915,21 @@ const classeSegno = v => v > 0 ? " su" : v < 0 ? " giu" : "";
    patrimonio, quindi sta sotto lo stesso velo dei saldi; il previsto no, è già
    scritto nelle due barre qui sopra. */
 function scartoDelMese() {
-  const { da, a } = ultimiTre(mese);
-  const periodo = etichettaBreve(da) === etichettaBreve(a)
-    ? etichettaMese(a)
-    : `da ${etichettaBreve(da)} a ${etichettaBreve(a)}`;
-
+  const f = ultimiTre(mese);
+  const periodo = periodoDi(f);
   const cella = (et, testo, classe) =>
     `<div class="scarto-voce"><span class="et">${et}</span><span class="val num${classe || ""}">${esc(testo)}</span></div>`;
 
-  const previsto = attesoTra(da, a);
-  const vera = variazioneVeraTra(da, a);
+  const previsto = attesoTra(f.da, f.a);
+  const vera = variazioneVeraTra(f.da, f.a);
 
   if (vera === null) {
     return `<div class="scarto">
-        ${cella("Previsto, 3 mesi", conSegno(previsto))}
-        ${cella("Effettivo, 3 mesi", "—")}
+        ${cella("Previsto", conSegno(previsto))}
+        ${cella("Effettivo", "—")}
         ${cella("Variazione", "—")}
       </div>
-      <div class="scarto-nota">${esc(`Serve il saldo di ${etichettaBreve(spostaMese(da, -1))} per sapere di quanto ci si è mossi davvero ${periodo}.`)}</div>`;
+      <div class="scarto-nota">${esc(`Serve il saldo di ${etichettaBreve(spostaMese(f.da, -1))} per sapere di quanto ci si è mossi davvero ${periodo}.`)}</div>`;
   }
 
   const scarto = vera - previsto;
@@ -1929,23 +1941,19 @@ function scartoDelMese() {
   // il colore va solo sulla variazione: è la cifra che risponde alla domanda,
   // e tre numeri colorati in fila se la mangerebbero
   const corpo = `<div class="scarto">
-      ${cella("Previsto, 3 mesi", conSegno(previsto))}
-      ${cella("Effettivo, 3 mesi", velato(conSegno(vera)))}
+      ${cella("Previsto", conSegno(previsto))}
+      ${cella("Effettivo", velato(conSegno(vera)))}
       ${cella("Variazione", velato(pct), saldiVisibili && quota !== null ? classeSegno(quota) : "")}
     </div>`;
 
-  const nome = etichettaMese(a).split(" ")[0];
-  const inCorso = a === MESE_OGGI
-    ? " " + nome[0].toUpperCase() + nome.slice(1) + " è ancora in corso, l'effettivo può ancora crescere."
-    : "";
-
+  const su = periodo.charAt(0).toUpperCase() + periodo.slice(1);
   let nota;
   if (!saldiVisibili) nota = `Scopri i saldi per vedere come è andata ${periodo}.`;
-  else if (quota === null) nota = `${periodo.charAt(0).toUpperCase() + periodo.slice(1)} non era previsto alcun movimento, quindi non c'è una percentuale: ne sono rimasti ${fmtEur(vera)}.`;
-  else if (scarto === 0) nota = `${periodo.charAt(0).toUpperCase() + periodo.slice(1)} è andata esattamente come previsto.`;
-  else nota = `${periodo.charAt(0).toUpperCase() + periodo.slice(1)} sono rimasti ${fmtEur(Math.abs(scarto))} ${scarto > 0 ? "più" : "meno"} del previsto.`;
+  else if (quota === null) nota = `${su} non era previsto alcun movimento, quindi non c'è una percentuale: ne sono rimasti ${fmtEur(vera)}.`;
+  else if (scarto === 0) nota = `${su} è andata esattamente come previsto.`;
+  else nota = `${su} sono rimasti ${fmtEur(Math.abs(scarto))} ${scarto > 0 ? "più" : "meno"} del previsto.`;
 
-  return corpo + `<div class="scarto-nota">${esc(nota + inCorso)}</div>`;
+  return corpo + `<div class="scarto-nota">${esc(nota)}</div>`;
 }
 
 function renderConfronto() {
@@ -1953,9 +1961,10 @@ function renderConfronto() {
   scheda.hidden = tab !== "previste" || !previsioni().length;
   if (scheda.hidden) return;
 
-  const entra = attesoVerso(mese, 1), esce = attesoVerso(mese, -1);
+  const f = ultimiTre(mese);
+  const entra = attesoVersoTra(f.da, f.a, 1), esce = attesoVersoTra(f.da, f.a, -1);
   const massimo = Math.max(entra, esce);
-  $("confronto-titolo").textContent = "Entrate e uscite · " + etichettaMese(mese);
+  $("confronto-titolo").textContent = "Entrate e uscite · " + periodoDi(f);
 
   const voce = (classe, freccia, nome, v) => `
     <div class="confronto-voce ${classe}">
