@@ -35,14 +35,10 @@
     --negativo: #c4382c;
 
     --c-tutto: #334155;
-    --c-banca: #2563eb;
-    --c-contanti: #16a34a;
-    --c-cauzione: #7c3aed;
-    --c-investimenti: #0d9488;
+    --c-liquidita: #2563eb;
+    --c-immobilizzato: #0d9488;
+    --c-debito: #dc2626;
     --c-btc: #ef8f1c;
-    --c-digitale: #db2777;
-    --c-debiti: #dc2626;
-    --c-previste: #475569;
 
     --su-tinta: #ffffff;
 
@@ -67,14 +63,10 @@
       --negativo: #ff8a7a;
 
       --c-tutto: #94a3b8;
-      --c-banca: #60a5fa;
-      --c-contanti: #4ade80;
-      --c-cauzione: #a78bfa;
-      --c-investimenti: #2dd4bf;
+      --c-liquidita: #60a5fa;
+      --c-immobilizzato: #2dd4bf;
+      --c-debito: #f87171;
       --c-btc: #fbbf24;
-      --c-digitale: #f472b6;
-      --c-debiti: #f87171;
-      --c-previste: #94a3b8;
       --su-tinta: #0f1419;
     }
   }
@@ -130,7 +122,7 @@
   }
   .marchio .segno {
     width: 26px; height: 26px; flex: none; border-radius: 8px;
-    background: linear-gradient(140deg, var(--c-banca), var(--c-investimenti));
+    background: linear-gradient(140deg, var(--c-liquidita), var(--c-immobilizzato));
     color: #fff; display: grid; place-items: center; font-size: 14px; font-weight: 700;
   }
   .marchio .riassunto {
@@ -199,7 +191,7 @@
   .torta .centro-val { fill: var(--testo); font-size: 17px; font-weight: 700; }
   .torta-nota { flex: 1; min-width: 180px; font-size: 13px; color: var(--tenue); line-height: 1.6; }
   .torta-nota b { color: var(--testo); font-weight: 600; }
-  .torta-nota .debito { color: var(--c-debiti); font-weight: 600; }
+  .torta-nota .debito { color: var(--c-debito); font-weight: 600; }
 
   /* ---------- tasto e tendina del nuovo conto ---------- */
   .tondo {
@@ -260,6 +252,16 @@
   .corpo.stretto { padding: 10px 14px 14px; }
 
   /* ---------- elenco delle categorie ---------- */
+  .gruppo-eti + .gruppo-eti { border-top: 1px solid var(--linea); }
+  .gruppo-eti .voce-cat { border-top: 0; padding-bottom: 6px; }
+  .sotto-cat { padding: 0 18px 12px 42px; }
+  .riga-cat {
+    display: flex; align-items: baseline; gap: 10px;
+    padding: 4px 0; font-size: 13.5px; color: var(--tenue);
+  }
+  .riga-cat .nome { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+  .riga-cat .valore { flex: none; color: var(--testo); font-weight: 600; }
+
   .voce-cat {
     display: flex; align-items: center; gap: 12px; width: 100%;
     padding: 13px 18px; background: transparent; border: 0; border-top: 1px solid var(--linea);
@@ -398,125 +400,6 @@
   .campo::placeholder { color: var(--fioco); }
   .campo.largo { flex: 1; min-width: 140px; }
 
-  /* ---------- entrate e uscite previste ---------- */
-  .previsione { display: block; }
-  .prev-alto { display: flex; align-items: center; gap: 6px 10px; flex-wrap: wrap; }
-  .prev-alto .etichetta { flex: 1 1 auto; order: 1; }
-  .prev-alto::after { content: ""; flex: 1 0 100%; height: 0; order: 2; }
-  /* Qui l'importo sta a sinistra, incolonnato col nome, e l'euro gli resta
-     attaccato invece di fluttuare in fondo a un campo di larghezza fissa. La
-     larghezza la detta una copia nascosta del testo nella stessa cella di
-     griglia: l'attributo size sbaglia di una settantina di pixel, perché il
-     browser la stima sulla larghezza media dei caratteri. */
-  .prev-alto .cresce { order: 3; display: inline-grid; max-width: 100%; margin-left: -6px; }
-  .prev-alto .cresce::after,
-  .prev-alto .cresce > .soldi {
-    grid-area: 1 / 1; box-sizing: border-box;
-    font: inherit; font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums;
-    padding: 7px 4px 7px 6px; border: 1px solid transparent; border-radius: 9px;
-  }
-  .prev-alto .cresce::after {
-    content: attr(data-eco); visibility: hidden; white-space: pre;
-  }
-  /* size="1" nel markup toglie al campo la sua larghezza naturale (venti
-     caratteri), altrimenti sarebbe lui a dettare la colonna invece della copia */
-  .prev-alto .cresce > .soldi { width: 100%; min-width: 0; text-align: left; }
-  /* le due regole qui sopra battono per specificità .soldi:hover e .soldi:focus:
-     vanno ridette, o il campo non si accende più quando lo si tocca */
-  .prev-alto .cresce > .soldi:hover { background: var(--superficie-2); }
-  .prev-alto .cresce > .soldi:focus {
-    outline: none; border-color: var(--tinta); background: var(--superficie);
-  }
-  /* il margine negativo annulla i 10px di spazio della riga: senza, fra
-     l'ultima cifra e l'euro restavano undici pixel e sembravano scollegati */
-  .prev-alto .valuta { order: 4; margin-left: -10px; }
-  .prev-alto .bottoncino { order: 5; margin-left: auto; }
-  /* la periodicità è il dettaglio: in chiaro resta solo il riassunto, il resto
-     si apre quando serve. <details> porta da sé tastiera e lettori di schermo. */
-  /* Istogramma orizzontale: due barre sulla stessa scala, ciascuna con la sua
-     etichetta, la freccia e il valore sempre in chiaro. Verde e rosso qui
-     dicono la stessa cosa che dicono in tutta la pagina, ma non sono l'unico
-     segnale: al buio del daltonismo restano parole e frecce. */
-  .confronto-voce + .confronto-voce { margin-top: 14px; }
-  .confronto-alto {
-    display: flex; align-items: baseline; gap: 10px;
-    font-size: 13px; color: var(--tenue); margin-bottom: 6px;
-  }
-  .confronto-alto .chi { flex: 1 1 auto; min-width: 0; font-weight: 600; }
-  .confronto-alto .quanto { font-size: 16px; font-weight: 700; color: var(--testo); }
-  /* la barra parte squadrata dalla base e si arrotonda solo in punta: con
-     tutti e due i capi tondi le barre corte sembrano più corte di quanto sono */
-  .pista {
-    height: 12px; border-radius: 3px; overflow: hidden;
-    background: color-mix(in srgb, var(--tinta) var(--quanta-pista, 13%), transparent);
-  }
-  /* su fondo scuro il 13% sparisce nella scheda e si perde il riferimento del
-     cento per cento, cioè quanto manca alla barra più lunga */
-  @media (prefers-color-scheme: dark) { .pista { --quanta-pista: 26%; } }
-  .pista > i {
-    display: block; height: 100%; min-width: 3px;
-    border-radius: 0 3px 3px 0; background: var(--tinta);
-  }
-  .confronto-voce.entra { --tinta: var(--positivo); }
-  .confronto-voce.esce  { --tinta: var(--negativo); }
-
-  /* Quanto si è mossa davvero la cassa contro quanto era previsto. Tre cifre
-     in fila, che su schermo stretto scendono una sotto l'altra. */
-  .scarto {
-    display: flex; flex-wrap: wrap; gap: 12px 18px;
-    margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--linea);
-  }
-  .scarto-voce { flex: 1 1 110px; min-width: 0; }
-  .scarto-voce .et {
-    display: block; font-size: 11.5px; letter-spacing: .03em;
-    text-transform: uppercase; color: var(--fioco); margin-bottom: 3px;
-  }
-  .scarto-voce .val { font-size: 17px; font-weight: 700; color: var(--testo); }
-  .scarto-voce .val.su { color: var(--positivo); }
-  .scarto-voce .val.giu { color: var(--negativo); }
-  .scarto-nota { margin-top: 10px; font-size: 12.5px; color: var(--tenue); }
-
-  .prev-ogni { margin-top: 7px; }
-  .prev-ogni > summary {
-    display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px;
-    list-style: none; cursor: pointer; border-radius: 8px;
-    padding: 4px 6px; margin-left: -6px;
-    font-size: 12.5px; color: var(--tenue);
-  }
-  .prev-ogni > summary::-webkit-details-marker { display: none; }
-  .prev-ogni > summary:hover { background: var(--superficie-2); }
-  .prev-ogni > summary:focus-visible { outline: 2px solid var(--tinta); }
-  .prev-ogni > summary::before {
-    content: ""; flex: none; width: 6px; height: 6px; margin: -2px 2px 0 0;
-    border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
-    transform: rotate(-45deg); transition: transform .15s;
-  }
-  .prev-ogni[open] > summary::before { transform: rotate(45deg); margin-top: -4px; }
-  .prev-sunto { flex: 0 1 auto; min-width: 0; }
-  .prev-basso {
-    display: flex; align-items: center; gap: 6px 10px; flex-wrap: wrap;
-    margin: 8px 0 2px; font-size: 12.5px; color: var(--tenue);
-  }
-  .coppia { display: inline-flex; align-items: center; gap: 5px; flex: 0 1 auto; min-width: 0; }
-  .coppia input[type="month"] { max-width: 150px; }
-  .aggiungi-fine {
-    font: inherit; font-size: 12.5px; padding: 4px 8px; border-radius: 7px; cursor: pointer;
-    border: 1px dashed var(--linea-forte); background: transparent; color: var(--fioco);
-  }
-  .aggiungi-fine:hover { color: var(--tinta); border-color: var(--tinta); }
-  .mini-campo {
-    font: inherit; font-size: 13px; padding: 5px 7px; border-radius: 8px;
-    border: 1px solid var(--linea); background: var(--superficie-2); color: var(--testo);
-  }
-  .mini-campo:focus { outline: none; border-color: var(--tinta); background: var(--superficie); }
-  .quando-cade { flex: 1; min-width: 130px; text-align: right; font-size: 12px; color: var(--fioco); }
-  .quando-cade.adesso { color: var(--tinta); font-weight: 600; }
-  .quando-cade.finita { color: var(--fioco); font-style: italic; }
-  .conto.entrate { --tinta: var(--positivo); }
-  .conto.uscite { --tinta: var(--negativo); }
-  .conto.uscite .tot-conto { color: var(--negativo); }
-  .conto.entrate .tot-conto { color: var(--positivo); }
-
   /* ---------- indirizzi bitcoin ---------- */
   .indirizzo { display: flex; align-items: center; gap: 10px; padding: 11px 18px; border-top: 1px solid var(--linea); }
   .indirizzo .codice {
@@ -585,6 +468,20 @@
   }
   .grosso:hover { color: var(--testo); border-color: var(--tenue); background: var(--superficie); }
 
+  .spunta {
+    display: flex; align-items: flex-start; gap: 8px; margin-top: 11px;
+    font-size: 12.5px; color: var(--tenue); cursor: pointer;
+  }
+  .spunta input { margin: 2px 0 0; accent-color: var(--c-btc); flex: none; }
+  /* l'etichetta di una categoria si cambia dal piede della sua scheda */
+  .scelta-eti { display: flex; align-items: center; gap: 7px; margin-right: auto; }
+  .scelta-eti .dice-eti { font-size: 12.5px; color: var(--fioco); }
+  .mini-campo {
+    font: inherit; font-size: 13px; color: var(--testo);
+    background: var(--superficie-2); border: 1px solid var(--linea);
+    border-radius: 8px; padding: 5px 7px;
+  }
+  .mini-campo:focus { outline: none; border-color: var(--tinta); background: var(--superficie); }
   .scelta-tipi { display: flex; flex-wrap: wrap; gap: 7px; }
   .scelta-tipi button {
     font: inherit; font-size: 13.5px; font-weight: 500; cursor: pointer;
@@ -624,7 +521,6 @@
   }
   @media (max-width: 560px) {
     .mini-campo { font-size: 16px; padding: 6px; }
-    .quando-cade { flex: 1 1 auto; min-width: 0; text-align: left; margin-top: 0; }
   }
 
   @media (max-width: 560px) {
@@ -647,7 +543,7 @@
     .rotella { animation: none; }
     .marchio .riassunto, .composizione span { transition: none; }
   }
-  :focus-visible { outline: 2px solid var(--c-banca); outline-offset: 2px; border-radius: 6px; }
+  :focus-visible { outline: 2px solid var(--c-liquidita); outline-offset: 2px; border-radius: 6px; }
 </style>
 </head>
 <body>
@@ -668,14 +564,18 @@
         <button id="mese-su" aria-label="Mese successivo">›</button>
       </div>
     </div>
-    <div class="tendina" id="pannello" role="dialog" aria-label="Nuovo conto" hidden>
+    <div class="tendina" id="pannello" role="dialog" aria-label="Nuova categoria" hidden>
       <div class="tendina-dentro">
-        <div class="tendina-titolo">Nuovo conto</div>
+        <div class="tendina-titolo">Nuova categoria</div>
         <div class="scelta-tipi" id="scelta-tipi"></div>
         <div class="fila">
-          <input class="campo largo" id="nuovo-nome" aria-label="Nome del nuovo conto" />
+          <input class="campo largo" id="nuovo-nome" aria-label="Nome della nuova categoria" />
           <button class="mini pieno" id="crea-conto">Crea</button>
         </div>
+        <label class="spunta">
+          <input type="checkbox" id="nuovo-btc" />
+          <span>È un wallet Bitcoin: il saldo lo legge dalla blockchain</span>
+        </label>
       </div>
     </div>
   </header>
@@ -702,12 +602,6 @@
     </section>
 
     <nav class="pillole" id="pillole" role="tablist" aria-label="Categorie"></nav>
-
-    <section class="scheda" id="scheda-confronto" hidden>
-      <div class="intestazione"><h2 id="confronto-titolo">Entrate e uscite</h2></div>
-      <div class="corpo" id="confronto"></div>
-      <div class="piedino"><span id="confronto-piede"></span></div>
-    </section>
 
     <section class="scheda" id="scheda-grafico">
       <div class="intestazione"><h2 id="titolo-grafico">Andamento</h2></div>
@@ -746,7 +640,7 @@
     <div id="zona-nuovo"></div>
 
     <footer class="nota-piede">
-      <button class="mini" id="installa" hidden style="--tinta:var(--c-banca);margin-bottom:12px">Installa l'app</button><br />
+      <button class="mini" id="installa" hidden style="--tinta:var(--c-liquidita);margin-bottom:12px">Installa l'app</button><br />
       I dati restano su questo dispositivo · saldi Bitcoin via Blockstream · prezzi CoinGecko, Kraken, Bitstamp<br />
       <a href="../bitcoin/walletreader.html">Lettore di wallet Bitcoin</a>
     </footer>
@@ -760,28 +654,33 @@ const G = 86400e3;
 
 /* Solo investimenti e wallet digitali hanno sottoconti: un conto in banca è
    già di per sé un conto, e sta su una riga sola. */
-const TIPI = {
-  banca:        { nome: "Banca" },
-  contanti:     { nome: "Contanti" },
-  cauzione:     { nome: "Cauzione affitto" },
-  investimenti: { nome: "Investimenti",     sotto: true, vocePerNome: "investimento" },
-  btc:          { nome: "Wallet BTC",       auto: true },
-  digitale:     { nome: "Wallet digitali",  sotto: true, vocePerNome: "sottoconto" },
-  debiti:       { nome: "Tasse e debiti",   segno: -1 }
+/* Le categorie le scrive chi usa la pagina: qui restano solo le tre etichette
+   con cui si raggruppano, e il segno che portano nei totali. */
+const ETICHETTE = {
+  liquidita:     { nome: "Liquidità" },
+  immobilizzato: { nome: "Immobilizzato" },
+  debito:        { nome: "Debito", segno: -1 }
 };
-const ORDINE = Object.keys(TIPI);
-const tintaDi = t => `var(--c-${t})`;
+const ORDINE = Object.keys(ETICHETTE);
+const ETICHETTA_PREDEFINITA = "liquidita";
+const nomeEtichetta = e => (ETICHETTE[e] || ETICHETTE[ETICHETTA_PREDEFINITA]).nome;
+const segnoEtichetta = e => (ETICHETTE[e] || {}).segno || 1;
+// la tinta segue l'etichetta; il wallet bitcoin tiene la sua, come scheda a parte
+const tintaDi = t => `var(--c-${t === "btc" ? "btc" : (ETICHETTE[t] ? t : ETICHETTA_PREDEFINITA)})`;
 
 /* ---------- stato ---------- */
 /* Tutto resta nel browser: i saldi sono dati personali e non hanno motivo di
    uscire da questo dispositivo. Struttura:
-     conti: [{ id, tipo, nome, voci: [{id, nome}], indirizzi: [{addr}] }]
+     conti: [{ id, nome, etichetta, voci: [{id, nome}], btc: true, indirizzi: [{addr}] }]
      saldi: { "2026-11": { "<idVoce>": importo } }
-   I conti senza sottoconti portano il loro importo sotto il proprio id.
-     previsioni: [{ id, nome, importo, verso: 1|-1, giorno, ogni, da, a }]
-   Una previsione cade il giorno `giorno` di ogni `ogni` mesi a partire dal mese
-   `da`, e smette dopo il mese `a` se c'è. L'importo si scrive positivo: il verso
-   dice se entra o esce, come per i debiti.
+   La chiave si chiama ancora "conti" per i dati già salvati, ma dentro ci sono
+   le categorie: ognuna ha un'etichetta fra le tre e i suoi sottoconti, e il
+   saldo sta sempre su un sottoconto, mai sulla categoria. Quella del wallet
+   bitcoin fa eccezione: porta btc:true, non ha sottoconti e il saldo lo legge
+   dalla blockchain.
+     previsioni: [...]
+   Le previsioni non si vedono più in pagina: la scheda che le mostrava è stata
+   tolta per ripensarla, e i dati restano dove sono perché tornino con lei.
    Un mese senza un importo per una voce eredita l'ultimo inserito prima di
    quel mese: in un registro mensile un conto che non cambia non si riscrive. */
 const CHIAVE_STATO = "finanze_v1";
@@ -839,43 +738,46 @@ function migraTitoli() {
   return toccati;
 }
 
-function fondiSottoconti() {
+
+/* I sette tipi fissi diventano categorie con un'etichetta. Nomi e saldi non si
+   toccano: il conto che prima stava dentro "Banca" adesso è lui la categoria,
+   e quello che prima era il suo importo diventa il suo primo sottoconto, con lo
+   stesso id, così tutti i mesi già scritti continuano a valere. */
+const ETICHETTA_DEL_TIPO = {
+  banca: "liquidita", contanti: "liquidita", digitale: "liquidita", btc: "liquidita",
+  cauzione: "immobilizzato", investimenti: "immobilizzato",
+  debiti: "debito"
+};
+
+function migraEtichette() {
   let toccati = 0;
   for (const c of stato.conti) {
-    if (TIPI[c.tipo].sotto || !Array.isArray(c.voci) || !c.voci.length) continue;
-    const ids = c.voci.map(v => v.id);
-    // i mesi in cui almeno un sottoconto aveva un valore scritto a mano
-    const mesi = Object.keys(stato.saldi).filter(m => ids.some(id => typeof stato.saldi[m][id] === "number")).sort();
-    for (const m of mesi) {
-      stato.saldi[m][c.id] = ids.reduce((somma, id) => somma + valoreVoce(id, m).valore, 0);
-    }
-    for (const id of ids) {
-      for (const m of Object.keys(stato.saldi)) {
-        delete stato.saldi[m][id];
-        if (!Object.keys(stato.saldi[m]).length) delete stato.saldi[m];
-      }
-    }
-    delete c.voci;
+    if (ETICHETTE[c.etichetta] && !("tipo" in c)) continue;
+    const vecchio = c.tipo;
+    if (!ETICHETTE[c.etichetta]) c.etichetta = ETICHETTA_DEL_TIPO[vecchio] || ETICHETTA_PREDEFINITA;
+    if (vecchio === "btc") c.btc = true;
+    // i tipi senza sottoconti portavano l'importo sotto l'id della categoria
+    if (!c.btc && !(Array.isArray(c.voci) && c.voci.length)) c.voci = [{ id: c.id, nome: c.nome }];
+    delete c.tipo;
     toccati++;
   }
   return toccati;
 }
 
-/* Un tipo che non esiste più farebbe fallire ogni lettura di TIPI e lascerebbe
-   la pagina bianca, senza modo di rimediare: i dati sono solo qui dentro. Meglio
-   riportare il conto a "banca", che non perde né il nome né i saldi. */
+/* Un'etichetta che non esiste farebbe sbagliare ogni totale e lascerebbe la
+   pagina bianca, senza modo di rimediare: i dati sono solo qui dentro. */
 function sanaTipi() {
   let toccati = 0;
   for (const c of stato.conti) {
-    if (TIPI[c.tipo]) continue;
-    c.tipo = "banca";
+    if (ETICHETTE[c.etichetta]) continue;
+    c.etichetta = ETICHETTA_PREDEFINITA;
     toccati++;
   }
   return toccati;
 }
 
 function migra() {
-  if (sanaTipi() + migraTitoli() + fondiSottoconti()) salva();
+  if (migraTitoli() + migraEtichette() + sanaTipi()) salva();
 }
 
 /* ---------- mesi ---------- */
@@ -925,10 +827,11 @@ const fmtAsse = v => Math.abs(v) >= 1000
 /* ---------- lettura dei saldi ---------- */
 const mesiConDati = () => Object.keys(stato.saldi).sort();
 
+/* Il saldo sta sempre su un sottoconto, mai sulla categoria: così aggiungerne
+   un secondo non sposta da nessuna parte l'importo già scritto. La categoria
+   del wallet bitcoin non ne ha: il suo saldo arriva dalla blockchain. */
 function vociDi(c) {
-  if (c.tipo === "btc") return [];
-  if (TIPI[c.tipo].sotto) return c.voci || [];
-  return [{ id: c.id, nome: c.nome, unica: true }];
+  return c.btc ? [] : (c.voci || []);
 }
 
 function valoreVoce(voceId, m) {
@@ -943,134 +846,34 @@ function valoreVoce(voceId, m) {
 }
 
 function totaleConto(c, m) {
-  if (c.tipo === "btc") return valoreBtc(c, m);
+  if (c.btc) return segnoEtichetta(c.etichetta) * valoreBtc(c, m);
   const somma = vociDi(c).reduce((s, v) => s + valoreVoce(v.id, m).valore, 0);
-  return (TIPI[c.tipo].segno || 1) * somma;
+  return segnoEtichetta(c.etichetta) * somma;
 }
 
-const contiDi = t => t === "tutto" ? stato.conti : stato.conti.filter(c => c.tipo === t);
+/* "tutto" sono tutte le categorie, "btc" la sola scheda del wallet, gli altri
+   nomi sono etichette. */
+const contiDi = t => t === "tutto" ? stato.conti
+  : t === "btc" ? stato.conti.filter(c => c.btc)
+  : stato.conti.filter(c => c.etichetta === t);
 const totaleDi = (t, m) => contiDi(t).reduce((s, c) => s + totaleConto(c, m), 0);
 const totaleMese = m => totaleDi("tutto", m);
-
-/* ---------- entrate e uscite previste ---------- */
-const PASSI = [1, 2, 3, 4, 6, 12];
-const nomePasso = n => n === 1 ? "ogni mese" : n === 12 ? "ogni anno" : `ogni ${n} mesi`;
-// come si legge la ricorrenza quando la periodicità è chiusa
-function sintesiPeriodo(p) {
-  const o = p.ogni || 1;
-  const passo = o === 1 ? "di ogni mese" : o === 12 ? "di ogni anno" : `ogni ${o} mesi`;
-  let t = `il ${p.giorno} ${passo}`;
-  if (distanzaMesi(MESE_OGGI, p.da) > 0) t += `, da ${etichettaBreve(p.da)}`;
-  if (p.a) t += `, fino a ${etichettaBreve(p.a)}`;
-  return t;
-}
-const MESI_PROIEZIONE = 12;
 
 const distanzaMesi = (a, b) => {
   const [aa, am] = a.split("-").map(Number), [ba, bm] = b.split("-").map(Number);
   return (ba - aa) * 12 + (bm - am);
 };
-// il 31 in un mese da 30 giorni cade l'ultimo giorno, non il primo di quello dopo
-const giorniDelMese = m => { const [a, n] = m.split("-").map(Number); return new Date(a, n, 0).getDate(); };
-const giornoReale = (giorno, m) => Math.min(giorno, giorniDelMese(m));
 
-const previsioni = () => stato.previsioni || (stato.previsioni = []);
-
-function cadeNel(p, m) {
-  const d = distanzaMesi(p.da, m);
-  if (d < 0 || d % (p.ogni || 1)) return false;
-  return !p.a || distanzaMesi(p.a, m) <= 0;
-}
-
-function prossimaDopo(p, m) {
-  let k = m;
-  for (let i = 0; i <= 240; i++) {
-    if (cadeNel(p, k)) return k;
-    if (p.a && distanzaMesi(p.a, k) >= 0) return null;
-    k = spostaMese(k, 1);
-  }
-  return null;
-}
-
-const previsteDel = m => previsioni().filter(p => cadeNel(p, m));
-const attesoDel = m => previsteDel(m).reduce((s, p) => s + p.verso * p.importo, 0);
-
-/* I tre mesi che chiudono sul mese scelto. Non vanno oltre il mese corrente:
-   più in là non c'è ancora un effettivo da confrontare con il previsto. */
-function ultimiTre(m) {
-  // il mese scelto resta fuori: finché è in corso i suoi conti non sono chiusi
-  const base = distanzaMesi(m, MESE_OGGI) < 0 ? MESE_OGGI : m;
-  const a = spostaMese(base, -1);
-  return { da: spostaMese(a, -2), a };
-}
-
-// "da ago a ott 2026", o il nome del mese quando la finestra ne contiene uno solo
-const periodoDi = ({ da, a }) => da === a
-  ? etichettaMese(a)
-  : `da ${etichettaBreve(da)} a ${etichettaBreve(a)}`;
-
-// entrate (verso 1) o uscite (verso -1) attese in tutta la finestra
-function attesoVersoTra(da, a, verso) {
-  let somma = 0;
-  for (let k = da; distanzaMesi(k, a) >= 0; k = spostaMese(k, 1)) somma += attesoVerso(k, verso);
-  return somma;
-}
-
-// quanto ci si aspettava di mettere da parte in tutta la finestra
-function attesoTra(da, a) {
-  let somma = 0;
-  for (let k = da; distanzaMesi(k, a) >= 0; k = spostaMese(k, 1)) somma += attesoDel(k);
-  return somma;
-}
-
-/* Di quanto si è mosso davvero il patrimonio fra l'inizio e la fine della
-   finestra. Restituisce null quando la domanda non ha risposta: serve il saldo
-   del mese prima della finestra, e prima del primo saldo registrato il
-   confronto sarebbe con uno zero che non vuol dire "non avevo niente" ma
-   "non lo so". */
-function variazioneVeraTra(da, a) {
-  const noti = mesiDelGrafico("tutto");
-  const prima = spostaMese(da, -1);
-  if (!noti.length || prima < noti[0]) return null;
-  return totaleMese(a) - totaleMese(prima);
-}
-const attesoVerso = (m, verso) => previsteDel(m)
-  .filter(p => p.verso === verso).reduce((s, p) => s + p.importo, 0);
-
-/* Del mese in corso contano solo le voci che devono ancora cadere: quelle del
-   5 non tornano più indietro se oggi è il 20. Dei mesi successivi conta tutto. */
-function attesoResiduo(m) {
-  if (m !== MESE_OGGI) return attesoDel(m);
-  const oggi = new Date().getDate();
-  return previsteDel(m)
-    .filter(x => giornoReale(x.giorno, m) >= oggi)
-    .reduce((somma, x) => somma + x.verso * x.importo, 0);
-}
-
-/* Il grafico parte da zero adesso e accumula: dice quanto ci si aspetta di
-   mettere da parte, non dove arriva il patrimonio. I punti cadono a fine mese,
-   perché è lì che il conto del mese è chiuso. */
-function proiezione(quanti = MESI_PROIEZIONE) {
-  const punti = [[Date.now(), 0]];
-  const mesi = [MESE_OGGI];
-  let valore = attesoResiduo(MESE_OGGI), k = MESE_OGGI;
-  punti.push([fineMese(k), valore]);
-  for (let i = 0; i < quanti; i++) {
-    k = spostaMese(k, 1);
-    valore += attesoDel(k);
-    punti.push([fineMese(k), valore]);
-    mesi.push(k);
-  }
-  return { punti, mesi };
-}
-
+/* I mesi che il grafico può disegnare: dal primo in cui questa scheda ha un
+   saldo scritto fino a oggi. I wallet bitcoin portano anche i mesi che hanno
+   ricostruito da soli dalla catena. */
 function mesiDelGrafico(scopo) {
   const conti = contiDi(scopo);
   const chiavi = new Set();
   conti.forEach(c => vociDi(c).forEach(v => chiavi.add(v.id)));
 
   let primo = mesiConDati().find(m => Object.keys(stato.saldi[m]).some(k => chiavi.has(k))) || null;
-  conti.forEach(c => {                       // i mesi ricostruiti dei wallet bitcoin
+  conti.forEach(c => {
     const d = btcDati[c.id];
     if (!d) return;
     const suoi = Object.keys(d.satsMensile).sort();
@@ -1464,6 +1267,7 @@ const esc = t => String(t == null ? "" : t)
 let tab = "tutto";
 let daEliminare = null;      // { che: "conto"|"voce"|"titolo"|"indirizzo", id, conto, nome }
 let tipoNuovo = ORDINE[0];
+let nuovoEBtc = false;
 let daMettereAFuoco = null;
 
 /* Quante voci di questa scheda non hanno ancora un valore di questo mese:
@@ -1471,24 +1275,23 @@ let daMettereAFuoco = null;
 function daAggiornare(scopo) {
   let n = 0;
   contiDi(scopo).forEach(c => {
-    if (c.tipo === "btc") return;              // si legge da sé
+    if (c.btc) return;                         // si legge da sé
     vociDi(c).forEach(v => { const d = valoreVoce(v.id, mese); if (d.ereditato || d.vuoto) n++; });
   });
   return n;
 }
 
 function render() {
-  if (tab !== "tutto" && tab !== "previste" && !contiDi(tab).length) tab = "tutto";
+  if (tab !== "tutto" && !contiDi(tab).length) tab = "tutto";
   renderBarra();
   renderPillole();
   renderSommario();
   renderCategorie();
-  renderConfronto();
   renderConti();
   renderGrafico();
   renderZonaNuovo();
   if (daMettereAFuoco) {
-    const el = boxConti.querySelector(`[data-rinomina="${daMettereAFuoco}"], [data-prev-nome="${daMettereAFuoco}"]`);
+    const el = boxConti.querySelector(`[data-rinomina="${daMettereAFuoco}"]`);
     if (el) { el.focus(); el.select(); }
     daMettereAFuoco = null;
   }
@@ -1500,22 +1303,18 @@ function aggiornaCifre() {
   renderBarra();
   renderSommario();
   // stesso motivo: qui si riscrivono solo gli importi, non l'elenco
+  document.querySelectorAll("#elenco-categorie [data-eti]").forEach(el => {
+    el.textContent = fmtEur(totaleDi(el.dataset.eti, mese));
+  });
   document.querySelectorAll("#elenco-categorie [data-cat]").forEach(el => {
-    el.textContent = fmtEur(totaleDi(el.dataset.cat, mese));
+    const c = trovaConto(el.dataset.cat);
+    if (c) el.textContent = fmtEur(totaleConto(c, mese));
   });
   stato.conti.forEach(c => {
     const el = boxConti.querySelector(`[data-tot="${c.id}"]`);
     if (el) el.textContent = fmtEur(totaleConto(c, mese));
   });
-  boxConti.querySelectorAll("[data-tot-verso]").forEach(el => {
-    const verso = +el.dataset.totVerso;
-    const somma = previsioni().filter(p => p.verso === verso && cadeNel(p, mese))
-      .reduce((s, p) => s + p.importo, 0);
-    el.textContent = (verso === 1 ? "+" : "−") + fmtEur(somma);
-    el.hidden = !somma;
-  });
   renderGrafico();
-  renderConfronto();
 }
 
 let renderInCoda = null;
@@ -1525,16 +1324,14 @@ function renderPresto() {
 }
 
 /* ---------- barra in alto ---------- */
-const ultimoMese = () => tab === "previste" ? spostaMese(MESE_OGGI, 24) : MESE_OGGI;
+const ultimoMese = () => MESE_OGGI;
 
 function renderBarra() {
   $("mese-testo").textContent = dataMese(mese).toLocaleDateString("it-IT", { month: "long", year: "numeric" });
   $("mese").value = mese;
   $("mese").max = ultimoMese();
   $("mese-su").disabled = mese >= ultimoMese();
-  const sommato = tab === "previste"
-    ? (previsioni().length ? fmtEur(attesoTra(ultimiTre(mese).da, ultimiTre(mese).a)) : "")
-    : (stato.conti.length ? fmtEur(totaleDi(tab, mese)) : "");
+  const sommato = stato.conti.length ? fmtEur(totaleDi(tab, mese)) : "";
   $("riassunto-barra").textContent = sommato && velato(sommato);
   $("riassunto-barra").classList.toggle("nascosto", !!sommato && !saldiVisibili);
 }
@@ -1546,7 +1343,10 @@ const osserva = new IntersectionObserver(
 );
 
 /* ---------- pillole ---------- */
+const nomeScheda = t => t === "tutto" ? "Patrimonio netto" : t === "btc" ? "Wallet BTC" : nomeEtichetta(t);
+
 const categorieAttive = () => ORDINE.filter(t => contiDi(t).length);
+const cEBitcoin = () => stato.conti.some(c => c.btc);
 
 function renderPillole() {
   const attive = categorieAttive();
@@ -1558,8 +1358,10 @@ function renderPillole() {
             class="${id === tab ? "on" : ""}" style="--tinta:${tintaDi(id)}">
       <span class="punto"></span>${esc(nome)}
     </button>`;
-  barra.innerHTML = (attive.length ? voce("tutto", "Tutto") + attive.map(t => voce(t, TIPI[t].nome)).join("") : "")
-    + `<span class="stacco"></span>` + voce("previste", "Previste");
+  // il wallet bitcoin conta nella sua etichetta, ma tiene anche una scheda sua
+  // per il grafico del prezzo: sta dopo lo stacco, come cosa a parte
+  barra.innerHTML = (attive.length ? voce("tutto", "Tutto") + attive.map(t => voce(t, nomeEtichetta(t))).join("") : "")
+    + (cEBitcoin() ? `<span class="stacco"></span>` + voce("btc", "Wallet BTC") : "");
   const attiva = barra.querySelector("button.on");
   if (attiva) attiva.scrollIntoView({ block: "nearest", inline: "nearest" });
 }
@@ -1581,13 +1383,12 @@ function mostraSaldi(si) {
   const b = $("occhio");
   b.setAttribute("aria-pressed", String(si));
   b.setAttribute("aria-label", si ? "Nascondi i saldi" : "Mostra i saldi");
-  renderBarra(); renderSommario(); renderCategorie(); renderConfronto();
+  renderBarra(); renderSommario(); renderCategorie();
 }
 
 function renderSommario() {
-  if (tab === "previste") return renderSommarioPreviste();
   const quali = contiDi(tab);
-  $("occhiello").textContent = tab === "tutto" ? "Patrimonio netto" : TIPI[tab].nome;
+  $("occhiello").textContent = nomeScheda(tab);
   const tot = totaleDi(tab, mese);
   scriviCifrone(quali.length ? fmtEur(tot) : "—", tab === "tutto" ? "" : tintaDi(tab));
 
@@ -1619,7 +1420,7 @@ function renderSommario() {
 // le fette della barra: le categorie sulla panoramica, i conti dentro una categoria
 function fette() {
   if (tab === "tutto") {
-    return categorieAttive().map(t => ({ id: t, nome: TIPI[t].nome, v: totaleDi(t, mese), tinta: tintaDi(t) }));
+    return categorieAttive().map(t => ({ id: t, nome: nomeEtichetta(t), v: totaleDi(t, mese), tinta: tintaDi(t) }));
   }
   const conti = contiDi(tab);
   if (conti.length < 2) return [];
@@ -1687,17 +1488,27 @@ function renderCategorie() {
   scheda.hidden = tab !== "tutto" || !attive.length;
   if (scheda.hidden) return;
   renderComposizione(fette());
+  /* Una sezione per etichetta: il totale dell'etichetta in testa, e sotto
+     quanto porta ogni categoria che ci sta dentro. */
   $("elenco-categorie").innerHTML = attive.map(t => {
-    const n = contiDi(t).length;
-    return `<button type="button" class="voce-cat" data-tab="${t}" style="--tinta:${tintaDi(t)}">
-      <span class="punto"></span>
-      <span class="testo">
-        <span class="titolo-cat">${TIPI[t].nome}</span>
-        <span class="sotto">${n} ${n === 1 ? "conto" : "conti"}</span>
-      </span>
-      <span class="valore num" data-cat="${t}">${fmtEur(totaleDi(t, mese))}</span>
-      <span class="freccia">›</span>
-    </button>`;
+    const dentro = contiDi(t);
+    return `<div class="gruppo-eti" style="--tinta:${tintaDi(t)}">
+      <button type="button" class="voce-cat" data-tab="${t}">
+        <span class="punto"></span>
+        <span class="testo">
+          <span class="titolo-cat">${esc(nomeEtichetta(t))}</span>
+          <span class="sotto">${dentro.length} ${dentro.length === 1 ? "categoria" : "categorie"}</span>
+        </span>
+        <span class="valore num" data-eti="${t}">${esc(fmtEur(totaleDi(t, mese)))}</span>
+        <span class="freccia">›</span>
+      </button>
+      <div class="sotto-cat">
+        ${dentro.map(c => `<div class="riga-cat">
+            <span class="nome">${esc(c.nome)}</span>
+            <span class="valore num" data-cat="${c.id}">${esc(fmtEur(totaleConto(c, mese)))}</span>
+          </div>`).join("")}
+      </div>
+    </div>`;
   }).join("");
 }
 
@@ -1717,7 +1528,7 @@ const chiedo = (che, id) => `data-chiedi="${che}:${id}"`;
 function barraConferma() {
   if (!daEliminare) return "";
   return `<div class="conferma">
-      <span class="dice">Elimino <b>${esc(daEliminare.nome)}</b>${daEliminare.che === "previsione" ? "" : " e i suoi valori di tutti i mesi"}?</span>
+      <span class="dice">Elimino <b>${esc(daEliminare.nome)}</b> e i suoi valori di tutti i mesi?</span>
       <button type="button" class="annulla" data-annulla>Annulla</button>
       <button type="button" class="via" data-conferma>Elimina</button>
     </div>`;
@@ -1725,125 +1536,66 @@ function barraConferma() {
 const quiConferma = (che, id) => daEliminare && daEliminare.che === che && daEliminare.id === id ? barraConferma() : "";
 
 function renderConti() {
-  if (tab === "previste") { boxConti.innerHTML = cartePreviste(); return; }
   // in panoramica restano solo sommario, andamento e composizione: i conti si
   // aprono entrando nella loro categoria
   const quali = tab === "tutto" ? [] : contiDi(tab);
   boxConti.innerHTML = quali.map(cartaConto).join("");
 }
 
-function cartePreviste() {
-  return [1, -1].map(verso => {
-    const righe = previsioni().filter(p => p.verso === verso);
-    const titolo = (verso === 1 ? "Entrate" : "Uscite") + " · " + etichettaBreve(mese);
-    const somma = righe.filter(p => cadeNel(p, mese)).reduce((s, p) => s + p.importo, 0);
-    return `<section class="scheda conto ${verso === 1 ? "entrate" : "uscite"}">
-      <div class="intestazione">
-          <h2 style="flex:1;margin:0;font-size:16px;font-weight:600">${titolo}</h2>
-        <span class="tot-conto num" data-tot-verso="${verso}" ${somma ? "" : "hidden"}>${verso === 1 ? "+" : "−"}${fmtEur(somma)}</span>
-      </div>
-      ${righe.map(rigaPrevisione).join("") || `<div class="stato">Nessuna ${verso === 1 ? "entrata" : "uscita"} ricorrente.</div>`}
-      <div class="piede-scheda">
-        <button class="mini" data-nuova-prev="${verso}">+ ${verso === 1 ? "Entrata" : "Uscita"}</button>
-      </div>
-    </section>`;
-  }).join("");
-}
 
-const periodiAperti = new Set();
-
-function rigaPrevisione(p) {
-  const qui = cadeNel(p, mese);
-  const poi = qui ? null : prossimaDopo(p, mese);
-  const stato_ = qui
-    ? `<span class="quando-cade adesso">cade il ${giornoReale(p.giorno, mese)} ${dataMese(mese).toLocaleDateString("it-IT", { month: "long" })}</span>`
-    : poi
-      ? `<span class="quando-cade">prossima: ${etichettaBreve(poi)}</span>`
-      : `<span class="quando-cade finita">finita</span>`;
-
-  const giorni = Array.from({ length: 31 }, (_, i) => i + 1)
-    .map(g => `<option value="${g}" ${g === p.giorno ? "selected" : ""}>${g}</option>`).join("");
-  const passi = PASSI.map(n => `<option value="${n}" ${n === (p.ogni || 1) ? "selected" : ""}>${nomePasso(n)}</option>`).join("");
-
-  return `
-    <div class="riga previsione">
-      <div class="prev-alto">
-        <input class="etichetta" data-prev-nome="${p.id}" value="${esc(p.nome)}" aria-label="Nome" />
-        <span class="cresce" data-eco="${esc(fmtNum(p.importo))}">
-          <input class="soldi num" data-prev-importo="${p.id}" type="text" inputmode="decimal"
-                 size="1" value="${fmtNum(p.importo)}" aria-label="Importo di ${esc(p.nome)}" />
-        </span>
-        <span class="valuta">€</span>
-        <button class="bottoncino" ${chiedo("previsione", p.id)} aria-label="Elimina ${esc(p.nome)}">×</button>
-      </div>
-      <details class="prev-ogni" ${periodiAperti.has(p.id) ? "open" : ""} data-periodo="${p.id}">
-        <summary>
-          <span class="prev-sunto">${esc(sintesiPeriodo(p))}</span>
-          ${stato_}
-        </summary>
-        <div class="prev-basso">
-          <span class="coppia">il
-            <select class="mini-campo" data-prev-giorno="${p.id}" aria-label="Giorno del mese">${giorni}</select>
-          </span>
-          <span class="coppia">
-            <select class="mini-campo" data-prev-ogni="${p.id}" aria-label="Ogni quanti mesi">${passi}</select>
-          </span>
-          <span class="coppia">da
-            <input class="mini-campo" type="month" data-prev-da="${p.id}" value="${p.da}" aria-label="Primo mese" />
-          </span>
-          ${p.a
-            ? `<span class="coppia">fino a
-                 <input class="mini-campo" type="month" data-prev-a="${p.id}" value="${p.a}" aria-label="Ultimo mese, svuota se non finisce" />
-               </span>`
-            : `<button type="button" class="aggiungi-fine" data-prev-fine="${p.id}">+ scadenza</button>`}
-        </div>
-      </details>
-    </div>${quiConferma("previsione", p.id)}`;
-}
 
 function cartaConto(c) {
-  const tipo = TIPI[c.tipo];
-  const neg = tipo.segno < 0;
-  const righe = (c.voci || []);
-  // il totale in alto solo se somma più righe: con una riga sola ripeteva
-  // la stessa cifra due volte nella stessa scheda
-  const mostraTotale = c.tipo === "btc" || righe.length > 1;
+  const neg = segnoEtichetta(c.etichetta) < 0;
+  const righe = vociDi(c);
+  /* Con un sottoconto solo il saldo sta sulla riga del nome: il totale sarebbe
+     la stessa cifra scritta due volte nella stessa scheda. */
+  const unaSola = !c.btc && righe.length === 1;
 
   const testa = dentro => `
     <div class="intestazione">
-      <input class="nome-conto" data-rinomina="${c.id}" value="${esc(c.nome)}" aria-label="Nome del conto" />
+      <input class="nome-conto" data-rinomina="${c.id}" value="${esc(c.nome)}" aria-label="Nome della categoria" />
       ${dentro}
       <button class="bottoncino" ${chiedo("conto", c.id)} aria-label="Elimina ${esc(c.nome)}">×</button>
     </div>`;
 
+  const sceltaEtichetta = `
+    <label class="scelta-eti">
+      <span class="dice-eti">Etichetta</span>
+      <select class="mini-campo" data-etichetta="${c.id}" aria-label="Etichetta di ${esc(c.nome)}">
+        ${ORDINE.map(e => `<option value="${e}" ${e === c.etichetta ? "selected" : ""}>${esc(nomeEtichetta(e))}</option>`).join("")}
+      </select>
+    </label>`;
+
+  const piede = dentro => `<div class="piede-scheda">${sceltaEtichetta}${dentro}</div>`;
+
   const guscio = (intestazione, corpo) =>
-    `<section class="scheda conto ${neg ? "negativo" : ""}" style="--tinta:${tintaDi(c.tipo)}">
+    `<section class="scheda conto ${neg ? "negativo" : ""}" style="--tinta:${tintaDi(c.btc ? "btc" : c.etichetta)}">
        ${intestazione}${quiConferma("conto", c.id)}${corpo}
      </section>`;
 
-  if (c.tipo === "btc") {
-    return guscio(testa(`<span class="tot-conto num" data-tot="${c.id}">${fmtEur(totaleConto(c, mese))}</span>`), corpoBtc(c));
+  if (c.btc) {
+    return guscio(testa(`<span class="tot-conto num" data-tot="${c.id}">${fmtEur(totaleConto(c, mese))}</span>`),
+      corpoBtc(c) + piede(""));
   }
 
-  if (!tipo.sotto) {
-    // conto e saldo sulla stessa riga: nient'altro da mostrare
-    return guscio(testa(`${campoSoldi(c.id, "Saldo di " + etichettaMese(mese))}<span class="valuta">€</span>`), "");
+  if (unaSola) {
+    return guscio(testa(`${campoSoldi(righe[0].id, "Saldo di " + etichettaMese(mese))}<span class="valuta">€</span>`),
+      piede(`<button class="mini" data-nuova-voce="${c.id}">+ Sottoconto</button>`));
   }
 
-  const nomeVoce = tipo.vocePerNome === "investimento" ? "Investimento" : "Sottoconto";
   const elenco = righe.map(v => `
     <div class="riga">
-      <input class="etichetta" data-rinomina="${v.id}" value="${esc(v.nome)}" aria-label="Nome ${nomeVoce.toLowerCase()}" />
+      <input class="etichetta" data-rinomina="${v.id}" value="${esc(v.nome)}" aria-label="Nome sottoconto" />
       ${campoSoldi(v.id, v.nome)}
       <span class="valuta">€</span>
       <button class="bottoncino" ${chiedo("voce", v.id)} aria-label="Elimina ${esc(v.nome)}">×</button>
     </div>${quiConferma("voce", v.id)}`).join("");
 
   return guscio(
-    testa(mostraTotale ? `<span class="tot-conto num" data-tot="${c.id}">${fmtEur(totaleConto(c, mese))}</span>` : ""),
-    `${elenco || `<div class="stato">Nessun ${nomeVoce.toLowerCase()}.</div>`}
+    testa(`<span class="tot-conto num" data-tot="${c.id}">${fmtEur(totaleConto(c, mese))}</span>`),
+    `${elenco || `<div class="stato">Nessun sottoconto.</div>`}
      ${neg ? `<div class="avvertenza" style="padding-top:12px">Scrivi quanto devi, con il segno più: nei totali entra in negativo.</div>` : ""}
-     <div class="piede-scheda"><button class="mini" data-nuova-voce="${c.id}">+ ${nomeVoce}</button></div>`);
+     ${piede(`<button class="mini" data-nuova-voce="${c.id}">+ Sottoconto</button>`)}`);
 }
 
 function corpoBtc(c) {
@@ -1884,152 +1636,18 @@ function corpoBtc(c) {
 }
 
 /* ---------- grafici ---------- */
-/* In questa scheda il grande numero è il saldo atteso del mese scelto, e i due
-   chip separano quanto entra da quanto esce. */
-function renderSommarioPreviste() {
-  const f = ultimiTre(mese);
-  const entra = attesoVersoTra(f.da, f.a, 1), esce = attesoVersoTra(f.da, f.a, -1);
-  const netto = entra - esce;
-  $("occhiello").textContent = "Previsto " + periodoDi(f);
-  scriviCifrone(previsioni().length ? fmtEur(netto) : "—",
-    !previsioni().length ? "" : netto >= 0 ? "var(--positivo)" : "var(--negativo)");
-
-  const delta = $("chip-delta"), conta = $("chip-conta");
-  delta.hidden = !entra || !saldiVisibili;
-  delta.className = "chip su num";
-  delta.textContent = `↑ ${fmtEur(entra)} in entrata`;
-  conta.hidden = !esce || !saldiVisibili;
-  conta.className = "chip giu num";
-  conta.textContent = `↓ ${fmtEur(esce)} in uscita`;
-}
-
-/* Le due barre del mese, sulla stessa scala: il confronto si legge dalla
-   lunghezza, non dai numeri. La più lunga arriva in fondo, l'altra sta in
-   proporzione; se sono tutte e due a zero la scheda sparisce. */
 /* Il segno davanti serve: "1.400" e "−1.400" sono due mesi opposti, e la riga
    si legge di sfuggita. Lo zero resta senza segno. */
 const conSegno = v => (v > 0 ? "+" : v < 0 ? "−" : "") + fmtEur(Math.abs(v));
 const classeSegno = v => v > 0 ? " su" : v < 0 ? " giu" : "";
 
-/* Previsto, effettivo e la distanza fra i due. L'effettivo è un movimento del
-   patrimonio, quindi sta sotto lo stesso velo dei saldi; il previsto no, è già
-   scritto nelle due barre qui sopra. */
-function scartoDelMese() {
-  const f = ultimiTre(mese);
-  const periodo = periodoDi(f);
-  const cella = (et, testo, classe) =>
-    `<div class="scarto-voce"><span class="et">${et}</span><span class="val num${classe || ""}">${esc(testo)}</span></div>`;
-
-  const previsto = attesoTra(f.da, f.a);
-  const vera = variazioneVeraTra(f.da, f.a);
-
-  if (vera === null) {
-    return `<div class="scarto">
-        ${cella("Previsto", conSegno(previsto))}
-        ${cella("Effettivo", "—")}
-        ${cella("Variazione", "—")}
-      </div>
-      <div class="scarto-nota">${esc(`Serve il saldo di ${etichettaBreve(spostaMese(f.da, -1))} per sapere di quanto ci si è mossi davvero ${periodo}.`)}</div>`;
-  }
-
-  const scarto = vera - previsto;
-  /* La variazione è lo scarto letto in percentuale sul previsto. Con un
-     previsto a zero non esiste una percentuale: non si divide, si dice. */
-  const quota = previsto === 0 ? null : Math.round(scarto / Math.abs(previsto) * 100);
-  const pct = quota === null ? "—" : (quota > 0 ? "+" : quota < 0 ? "−" : "") + Math.abs(quota) + "%";
-
-  // il colore va solo sulla variazione: è la cifra che risponde alla domanda,
-  // e tre numeri colorati in fila se la mangerebbero
-  const corpo = `<div class="scarto">
-      ${cella("Previsto", conSegno(previsto))}
-      ${cella("Effettivo", velato(conSegno(vera)))}
-      ${cella("Variazione", velato(pct), saldiVisibili && quota !== null ? classeSegno(quota) : "")}
-    </div>`;
-
-  const su = periodo.charAt(0).toUpperCase() + periodo.slice(1);
-  let nota;
-  if (!saldiVisibili) nota = `Scopri i saldi per vedere come è andata ${periodo}.`;
-  else if (quota === null) nota = `${su} non era previsto alcun movimento, quindi non c'è una percentuale: ne sono rimasti ${fmtEur(vera)}.`;
-  else if (scarto === 0) nota = `${su} è andata esattamente come previsto.`;
-  else nota = `${su} sono rimasti ${fmtEur(Math.abs(scarto))} ${scarto > 0 ? "più" : "meno"} del previsto.`;
-
-  return corpo + `<div class="scarto-nota">${esc(nota)}</div>`;
-}
-
-function renderConfronto() {
-  const scheda = $("scheda-confronto");
-  scheda.hidden = tab !== "previste" || !previsioni().length;
-  if (scheda.hidden) return;
-
-  const f = ultimiTre(mese);
-  const entra = attesoVersoTra(f.da, f.a, 1), esce = attesoVersoTra(f.da, f.a, -1);
-  const massimo = Math.max(entra, esce);
-  $("confronto-titolo").textContent = "Entrate e uscite · " + periodoDi(f);
-
-  const voce = (classe, freccia, nome, v) => `
-    <div class="confronto-voce ${classe}">
-      <div class="confronto-alto">
-        <span class="chi">${freccia} ${nome}</span>
-        <span class="quanto num">${esc(fmtEur(v))}</span>
-      </div>
-      <div class="pista" role="img" aria-label="${nome}: ${esc(fmtEur(v))}">
-        <i style="width:${massimo ? (v / massimo * 100).toFixed(1) : 0}%"></i>
-      </div>
-    </div>`;
-
-  $("confronto").innerHTML =
-    voce("entra", "↑", "Entrate", entra) + voce("esce", "↓", "Uscite", esce) + scartoDelMese();
-
-  const netto = entra - esce;
-  $("confronto-piede").textContent = netto === 0
-    ? (massimo ? "Entrate e uscite si pareggiano." : "Nessuna ricorrenza cade questo mese.")
-    : netto > 0
-      ? `Restano ${fmtEur(netto)}, il ${Math.round(netto / entra * 100)}% di quanto entra.`
-      : `Mancano ${fmtEur(-netto)}: si spende ${esce && entra ? Math.round(esce / entra * 100) + "% di quanto entra" : "senza nulla in entrata"}.`;
-}
-
-function renderGraficoPreviste() {
-  $("titolo-grafico").textContent = `Accumulo atteso in ${MESI_PROIEZIONE} mesi`;
-  if (!previsioni().length) {
-    graficoPatrimonio.messaggio("Aggiungi un'entrata o un'uscita per vedere dove porta.");
-    $("piede-periodo").textContent = "";
-    $("piede-nota").textContent = "";
-    return;
-  }
-  const { punti, mesi } = proiezione();
-  const valori = punti.map(x => x[1]);
-
-  graficoPatrimonio.disegna(punti, {
-    titolo: `Quanto ci si aspetta di accumulare nei prossimi ${MESI_PROIEZIONE} mesi`,
-    tinta: tintaDi("previste"),
-    valore: v => (v > 0 ? "+" : v < 0 ? "−" : "") + fmtEur0(Math.abs(v)),
-    quando: (t, i) => i === 0 ? "oggi" : "a fine " + etichettaMese(mesi[i - 1]),
-    tacche: () => {
-      const passo = Math.max(1, Math.ceil(mesi.length / 6));
-      return mesi.filter((_, i) => i % passo === 0 || i === mesi.length - 1)
-        .map(m => [fineMese(m), dataMese(m).toLocaleDateString("it-IT", { month: "short", year: "2-digit" })]);
-    }
-  });
-
-  const fine = valori[valori.length - 1];
-  const minimo = Math.min(...valori), massimo = Math.max(...valori);
-  $("piede-periodo").textContent =
-    `da oggi: ${fine >= 0 ? "+" : "−"}${fmtEur0(Math.abs(fine))} in ${MESI_PROIEZIONE} mesi · tra ${fmtEur0(minimo)} e ${fmtEur0(massimo)}`;
-  $("piede-nota").textContent = "parte da zero adesso, sulle sole ricorrenze inserite";
-}
-
 function renderGrafico() {
-  if (tab === "previste") {
-    $("scheda-prezzo").hidden = true;
-    $("scheda-grafico").hidden = false;
-    return renderGraficoPreviste();
-  }
   const btc = tab === "btc";
   $("scheda-prezzo").hidden = !btc || !contiDi("btc").length;
   $("scheda-grafico").hidden = btc;
   if (btc) return;
 
-  $("titolo-grafico").textContent = tab === "tutto" ? "Andamento del patrimonio" : "Andamento · " + TIPI[tab].nome;
+  $("titolo-grafico").textContent = tab === "tutto" ? "Andamento del patrimonio" : "Andamento · " + nomeScheda(tab);
   const mesi = mesiDelGrafico(tab);
   if (mesi.length < 2 || !contiDi(tab).length) {
     graficoPatrimonio.messaggio(stato.conti.length
@@ -2102,9 +1720,9 @@ function renderZonaNuovo() {
   const zona = $("zona-nuovo");
   zona.innerHTML = stato.conti.length ? "" : `
     <section class="scheda"><div class="benvenuto">
-      <h2>Comincia da un conto</h2>
-      <p>Apri il menu <b>+</b> in alto a sinistra, scegli una categoria e dagli un nome. Ogni mese torni qui e aggiorni i numeri: il grafico si costruisce da solo.</p>
-      <button class="mini pieno" style="--tinta:var(--c-banca)" id="apri-da-benvenuto">Aggiungi il primo conto</button>
+      <h2>Comincia da una categoria</h2>
+      <p>Apri il menu <b>+</b> in alto a sinistra, dai un nome alla categoria e scegli se è liquidità, immobilizzato o debito. Ogni mese torni qui e aggiorni i numeri: il grafico si costruisce da solo.</p>
+      <button class="mini pieno" style="--tinta:var(--c-liquidita)" id="apri-da-benvenuto">Aggiungi la prima categoria</button>
     </div></section>`;
 }
 
@@ -2121,15 +1739,14 @@ function apriMenu(apri) {
 function renderSceltaTipi() {
   $("scelta-tipi").innerHTML = ORDINE.map(t =>
     `<button type="button" data-tipo="${t}" style="--tinta:${tintaDi(t)}"
-             class="${t === tipoNuovo ? "on" : ""}"><span class="punto"></span>${TIPI[t].nome}</button>`).join("");
-  $("nuovo-nome").placeholder = "Nome del conto, es. " + esempioNome(tipoNuovo);
-  $("crea-conto").style.setProperty("--tinta", tintaDi(tipoNuovo));
+             class="${t === tipoNuovo ? "on" : ""}"><span class="punto"></span>${esc(nomeEtichetta(t))}</button>`).join("");
+  $("nuovo-nome").placeholder = "Nome della categoria, es. " + esempioNome(tipoNuovo);
+  $("crea-conto").style.setProperty("--tinta", tintaDi(nuovoEBtc ? "btc" : tipoNuovo));
+  $("nuovo-btc").checked = nuovoEBtc;
 }
 
-const esempioNome = t => ({
-  banca: "Intesa", contanti: "Portafoglio", cauzione: "Cauzione di casa",
-  investimenti: "Degiro", btc: "Wallet freddo", digitale: "PayPal", debiti: "Mutuo"
-}[t] || "");
+const esempioNome = t => nuovoEBtc ? "Wallet freddo"
+  : ({ liquidita: "Intesa", immobilizzato: "Degiro", debito: "Mutuo" }[t] || "");
 
 /* ---------- azioni ---------- */
 const trovaConto = id => stato.conti.find(c => c.id === id);
@@ -2143,10 +1760,7 @@ function scorda(chiave) {
   }
 }
 
-const trovaPrevisione = id => previsioni().find(p => p.id === id);
-
 function nomeDa(che, id) {
-  if (che === "previsione") return (trovaPrevisione(id) || {}).nome;
   if (che === "conto") return (trovaConto(id) || {}).nome;
   if (che === "voce") { const c = contoDiVoce(id); return c && c.voci.find(v => v.id === id).nome; }
   return "questo indirizzo";
@@ -2160,8 +1774,6 @@ function eliminaDavvero() {
     scorda(c.id);
     stato.conti = stato.conti.filter(x => x.id !== id);
     delete btcDati[id];
-  } else if (che === "previsione") {
-    stato.previsioni = previsioni().filter(x => x.id !== id);
   } else if (che === "voce") {
     const c = contoDiVoce(id);
     c.voci = c.voci.filter(v => v.id !== id);
@@ -2190,27 +1802,9 @@ boxConti.addEventListener("click", e => {
   if (b.hasAttribute("data-annulla")) { daEliminare = null; renderPresto(); return; }
   if (b.hasAttribute("data-conferma")) { eliminaDavvero(); return; }
 
-  if (b.dataset.prevFine) {
-    const p = trovaPrevisione(b.dataset.prevFine);
-    if (p) { p.a = distanzaMesi(p.da, mese) > 0 ? mese : p.da; salva(); renderPresto(); }
-    return;
-  }
-
-  if (b.dataset.nuovaVoce === undefined && b.dataset.nuovaPrev) {
-    const verso = +b.dataset.nuovaPrev;
-    const p = {
-      id: nuovoId(), nome: verso === 1 ? "Nuova entrata" : "Nuova uscita",
-      importo: 0, verso, giorno: 1, ogni: 1, da: mese > MESE_OGGI ? mese : MESE_OGGI, a: null
-    };
-    previsioni().push(p);
-    daMettereAFuoco = p.id;
-    salva(); renderPresto();
-    return;
-  }
-
   if (b.dataset.nuovaVoce) {
     const c = trovaConto(b.dataset.nuovaVoce);
-    const v = { id: nuovoId(), nome: TIPI[c.tipo].vocePerNome === "investimento" ? "Nuovo investimento" : "Nuovo sottoconto" };
+    const v = { id: nuovoId(), nome: "Nuovo sottoconto" };
     (c.voci = c.voci || []).push(v);
     daMettereAFuoco = v.id;
     salva(); renderPresto(); return;
@@ -2228,53 +1822,12 @@ boxConti.addEventListener("click", e => {
   }
 });
 
-// il campo dell'importo segue il numero che si scrive, così l'euro gli resta accanto
-const ecoImporto = el => { el.parentElement.dataset.eco = el.value; };
-boxConti.addEventListener("input", e => {
-  if (e.target.dataset.prevImporto) ecoImporto(e.target);
-});
-
-// "toggle" non risale dal <details>: va ascoltato in fase di cattura
-boxConti.addEventListener("toggle", e => {
-  const d = e.target.dataset && e.target.dataset.periodo;
-  if (!d) return;
-  if (e.target.open) periodiAperti.add(d); else periodiAperti.delete(d);
-}, true);
-
 boxConti.addEventListener("change", e => {
   const el = e.target;
 
-  const idPrev = el.dataset.prevNome || el.dataset.prevImporto || el.dataset.prevGiorno
-              || el.dataset.prevOgni || el.dataset.prevDa || el.dataset.prevA;
-  if (idPrev) {
-    const p = trovaPrevisione(idPrev);
-    if (!p) return;
-    if (el.dataset.prevNome) { p.nome = el.value.trim() || "Senza nome"; el.value = p.nome; }
-    else if (el.dataset.prevImporto) {
-      const v = leggiImporto(el.value);
-      if (v === null) avvisa("Non ho capito quell'importo. Scrivilo come 1234");
-      else p.importo = Math.abs(v);
-      el.value = fmtNum(p.importo);
-    }
-    if (el.dataset.prevNome || el.dataset.prevImporto) {
-      const cestino = boxConti.querySelector(`.previsione [data-chiedi="previsione:${p.id}"]`);
-      if (cestino) cestino.setAttribute("aria-label", "Elimina " + p.nome);
-      if (el.dataset.prevImporto) ecoImporto(el);
-      salva(); aggiornaCifre();
-      return;
-    }
-    if (el.dataset.prevGiorno) p.giorno = +el.value;
-    else if (el.dataset.prevOgni) p.ogni = +el.value;
-    else if (el.dataset.prevDa) { if (el.value) p.da = el.value; else el.value = p.da; }
-    else if (el.dataset.prevA) {
-      p.a = el.value || null;
-      // una fine prima dell'inizio non vuol dire niente: la rifiuto e lo dico
-      if (p.a && distanzaMesi(p.da, p.a) < 0) {
-        p.a = null; el.value = "";
-        avvisa("La fine non può venire prima dell'inizio.");
-      }
-    }
-    salva(); renderPresto();
+  if (el.dataset.etichetta) {
+    const c = trovaConto(el.dataset.etichetta);
+    if (c) { c.etichetta = ETICHETTE[el.value] ? el.value : ETICHETTA_PREDEFINITA; salva(); renderPresto(); }
     return;
   }
 
@@ -2334,7 +1887,7 @@ boxConti.addEventListener("keydown", e => {
 function vaiA(t) {
   if (t === tab) return;
   tab = t;
-  if (tab !== "previste" && mese > MESE_OGGI) mese = MESE_OGGI;   // i consuntivi si fermano a oggi
+  if (mese > MESE_OGGI) mese = MESE_OGGI;   // i consuntivi si fermano a oggi
   daEliminare = null;
   grafici.forEach(g => g.sblocca());
   render();
@@ -2391,23 +1944,25 @@ $("pannello").addEventListener("click", e => {
   if (t) { tipoNuovo = t.dataset.tipo; renderSceltaTipi(); $("nuovo-nome").focus(); return; }
   if (e.target.closest("#crea-conto")) creaConto();
 });
+$("nuovo-btc").addEventListener("change", e => { nuovoEBtc = e.target.checked; renderSceltaTipi(); });
 $("pannello").addEventListener("keydown", e => {
   if (e.key === "Enter" && e.target.id === "nuovo-nome") { e.preventDefault(); creaConto(); }
 });
 
 function creaConto() {
-  const nome = ($("nuovo-nome").value || "").trim() || TIPI[tipoNuovo].nome;
-  const c = { id: nuovoId(), tipo: tipoNuovo, nome };
-  if (TIPI[tipoNuovo].sotto) {
-    c.voci = [{ id: nuovoId(), nome: TIPI[tipoNuovo].vocePerNome === "investimento" ? "Nuovo investimento" : "Principale" }];
-  }
-  if (tipoNuovo === "btc") c.indirizzi = [];
+  const nome = ($("nuovo-nome").value || "").trim() || (nuovoEBtc ? "Wallet BTC" : nomeEtichetta(tipoNuovo));
+  const c = { id: nuovoId(), nome, etichetta: tipoNuovo };
+  if (nuovoEBtc) c.btc = true;
+  else c.voci = [{ id: nuovoId(), nome: "Principale" }];
+  if (nuovoEBtc) c.indirizzi = [];
   stato.conti.push(c);
   $("nuovo-nome").value = "";
+  const eraBtc = nuovoEBtc;
+  nuovoEBtc = false;
   apriMenu(false);
-  tab = tipoNuovo;                       // si apre subito la categoria creata
+  tab = eraBtc ? "btc" : tipoNuovo;      // si apre subito dove è finita
   salva(); render();
-  if (tipoNuovo === "btc") { mostraPrezzo(); aggiornaBitcoin(); }
+  if (eraBtc) { mostraPrezzo(); aggiornaBitcoin(); }
 }
 
 let larghezzaNota = 0, ridisegno = null;
