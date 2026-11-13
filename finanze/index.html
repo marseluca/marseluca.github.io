@@ -281,7 +281,10 @@
 
   .conto > .intestazione .nome-conto { order: 2; flex: 1 1 auto; }
   .conto > .intestazione .etichetta-tipo { order: 2; }
-  .conto > .intestazione::after { content: ""; flex: 1 0 100%; height: 0; order: 3; }
+  /* l'a capo serve a mandare la cifra sotto il nome, liberandogli tutta la
+     riga. Senza cifra non c'è niente da mandare giù, e l'unico effetto
+     sarebbe lasciare il cestino da solo su una riga vuota. */
+  .conto > .intestazione.con-cifra::after { content: ""; flex: 1 0 100%; height: 0; order: 3; }
   .conto > .intestazione .tot-conto { order: 4; margin-left: auto; }
   .conto > .intestazione .soldi { order: 4; margin-left: auto; }
   .conto > .intestazione .valuta { order: 5; }
@@ -475,6 +478,8 @@
   .spunta input { margin: 2px 0 0; accent-color: var(--c-btc); flex: none; }
   /* l'etichetta di una categoria si cambia dal piede della sua scheda */
   .scelta-eti { display: flex; align-items: center; gap: 7px; margin-right: auto; }
+  .piede-scheda .via-categoria { margin-left: auto; --tinta: var(--negativo); }
+  .piede-scheda .via-categoria:hover { color: var(--negativo); border-color: var(--negativo); }
   .scelta-eti .dice-eti { font-size: 12.5px; color: var(--fioco); }
   .mini-campo {
     font: inherit; font-size: 13px; color: var(--testo);
@@ -764,6 +769,20 @@ function migraEtichette() {
   return toccati;
 }
 
+/* Migrando i vecchi tipi ho dato al primo sottoconto il nome della categoria:
+   adesso che la riga si vede sempre, quel nome compariva due volte di seguito.
+   Lo cambio solo dove è esattamente quel caso, cioè dove l'ho scritto io. */
+function sganciaNomiRipetuti() {
+  let toccati = 0;
+  for (const c of stato.conti) {
+    if (c.btc || !Array.isArray(c.voci) || c.voci.length !== 1) continue;
+    if (c.voci[0].nome !== c.nome) continue;
+    c.voci[0].nome = "Saldo";
+    toccati++;
+  }
+  return toccati;
+}
+
 /* Un'etichetta che non esiste farebbe sbagliare ogni totale e lascerebbe la
    pagina bianca, senza modo di rimediare: i dati sono solo qui dentro. */
 function sanaTipi() {
@@ -777,7 +796,7 @@ function sanaTipi() {
 }
 
 function migra() {
-  if (migraTitoli() + migraEtichette() + sanaTipi()) salva();
+  if (migraTitoli() + migraEtichette() + sganciaNomiRipetuti() + sanaTipi()) salva();
 }
 
 /* ---------- mesi ---------- */
@@ -1547,15 +1566,18 @@ function renderConti() {
 function cartaConto(c) {
   const neg = segnoEtichetta(c.etichetta) < 0;
   const righe = vociDi(c);
-  /* Con un sottoconto solo il saldo sta sulla riga del nome: il totale sarebbe
-     la stessa cifra scritta due volte nella stessa scheda. */
-  const unaSola = !c.btc && righe.length === 1;
+  /* Il totale in testa solo quando somma più righe: con un sottoconto solo
+     sarebbe la stessa cifra scritta due volte nella stessa scheda. Ma la riga
+     c'è comunque, anche da sola: la categoria non ha un saldo suo. */
+  const mostraTotale = c.btc || righe.length > 1;
 
+  /* Il cestino della categoria sta nel piede, con gli altri comandi che la
+     riguardano: nell'intestazione rubava al nome la fine della riga, e sotto
+     un nome senza cifra restava da solo su una riga vuota. */
   const testa = dentro => `
-    <div class="intestazione">
+    <div class="intestazione ${dentro ? "con-cifra" : ""}">
       <input class="nome-conto" data-rinomina="${c.id}" value="${esc(c.nome)}" aria-label="Nome della categoria" />
       ${dentro}
-      <button class="bottoncino" ${chiedo("conto", c.id)} aria-label="Elimina ${esc(c.nome)}">×</button>
     </div>`;
 
   const sceltaEtichetta = `
@@ -1566,7 +1588,12 @@ function cartaConto(c) {
       </select>
     </label>`;
 
-  const piede = dentro => `<div class="piede-scheda">${sceltaEtichetta}${dentro}</div>`;
+  // nel piede un cestino senza parole non direbbe se butta via il sottoconto
+  // o tutta la categoria: qui ci vuole la parola
+  const viaCategoria = `<button class="mini via-categoria" ${chiedo("conto", c.id)}
+      aria-label="Elimina la categoria ${esc(c.nome)}">Elimina categoria</button>`;
+
+  const piede = dentro => `<div class="piede-scheda">${sceltaEtichetta}${dentro}${viaCategoria}</div>`;
 
   const guscio = (intestazione, corpo) =>
     `<section class="scheda conto ${neg ? "negativo" : ""}" style="--tinta:${tintaDi(c.btc ? "btc" : c.etichetta)}">
@@ -1578,11 +1605,6 @@ function cartaConto(c) {
       corpoBtc(c) + piede(""));
   }
 
-  if (unaSola) {
-    return guscio(testa(`${campoSoldi(righe[0].id, "Saldo di " + etichettaMese(mese))}<span class="valuta">€</span>`),
-      piede(`<button class="mini" data-nuova-voce="${c.id}">+ Sottoconto</button>`));
-  }
-
   const elenco = righe.map(v => `
     <div class="riga">
       <input class="etichetta" data-rinomina="${v.id}" value="${esc(v.nome)}" aria-label="Nome sottoconto" />
@@ -1592,7 +1614,7 @@ function cartaConto(c) {
     </div>${quiConferma("voce", v.id)}`).join("");
 
   return guscio(
-    testa(`<span class="tot-conto num" data-tot="${c.id}">${fmtEur(totaleConto(c, mese))}</span>`),
+    testa(mostraTotale ? `<span class="tot-conto num" data-tot="${c.id}">${fmtEur(totaleConto(c, mese))}</span>` : ""),
     `${elenco || `<div class="stato">Nessun sottoconto.</div>`}
      ${neg ? `<div class="avvertenza" style="padding-top:12px">Scrivi quanto devi, con il segno più: nei totali entra in negativo.</div>` : ""}
      ${piede(`<button class="mini" data-nuova-voce="${c.id}">+ Sottoconto</button>`)}`);
@@ -1953,10 +1975,11 @@ function creaConto() {
   const nome = ($("nuovo-nome").value || "").trim() || (nuovoEBtc ? "Wallet BTC" : nomeEtichetta(tipoNuovo));
   const c = { id: nuovoId(), nome, etichetta: tipoNuovo };
   if (nuovoEBtc) c.btc = true;
-  else c.voci = [{ id: nuovoId(), nome: "Principale" }];
+  else c.voci = [{ id: nuovoId(), nome: "Nuovo sottoconto" }];
   if (nuovoEBtc) c.indirizzi = [];
   stato.conti.push(c);
   $("nuovo-nome").value = "";
+  if (!nuovoEBtc) daMettereAFuoco = c.voci[0].id;   // il nome del sottoconto si scrive subito
   const eraBtc = nuovoEBtc;
   nuovoEBtc = false;
   apriMenu(false);
