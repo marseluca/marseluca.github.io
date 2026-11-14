@@ -333,6 +333,17 @@
     font: inherit; font-size: 16px; font-weight: 600; letter-spacing: -.01em;
     padding: 3px 6px; margin-left: -6px; border-radius: 7px;
   }
+  /* il titolo del wallet: stessa riga e stesso peso del campo che sostituisce */
+  .conto .nome-conto.fisso {
+    border: 0; background: transparent; text-align: left;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  /* stretto sul testo: allargato a tutta la riga, l'alone del passaggio del
+     mouse diventava una barra grigia larga quanto la scheda */
+  .conto .nome-conto.apre { cursor: pointer; flex: 0 1 auto; }
+  .conto .nome-conto.apre .freccia { color: var(--fioco); font-size: 15px; }
+  .conto .nome-conto.apre:hover { color: var(--tinta); }
+  .conto .nome-conto.apre:hover .freccia { color: var(--tinta); }
   .conto .nome-conto:hover { background: var(--superficie-2); }
   .conto .nome-conto:focus { outline: 2px solid var(--tinta); outline-offset: 0; background: var(--superficie); }
   .conto .tot-conto { font-weight: 700; white-space: nowrap; font-size: 16px; }
@@ -516,11 +527,6 @@
   }
   .grosso:hover { color: var(--testo); border-color: var(--tenue); background: var(--superficie); }
 
-  .spunta {
-    display: flex; align-items: flex-start; gap: 8px; margin-top: 11px;
-    font-size: 12.5px; color: var(--tenue); cursor: pointer;
-  }
-  .spunta input { margin: 2px 0 0; accent-color: var(--c-btc); flex: none; }
   /* l'etichetta di una categoria si cambia dal piede della sua scheda */
   .scelta-eti { display: flex; align-items: center; gap: 7px; margin-right: auto; }
   .piede-scheda .via-categoria { margin-left: auto; --tinta: var(--negativo); }
@@ -532,6 +538,7 @@
     border-radius: 8px; padding: 5px 7px;
   }
   .mini-campo:focus { outline: none; border-color: var(--tinta); background: var(--superficie); }
+  .dice-btc { flex: 1; font-size: 12.5px; color: var(--tenue); }
   .scelta-tipi { display: flex; flex-wrap: wrap; gap: 7px; }
   .scelta-tipi button {
     font: inherit; font-size: 13.5px; font-weight: 500; cursor: pointer;
@@ -620,12 +627,9 @@
         <div class="scelta-tipi" id="scelta-tipi"></div>
         <div class="fila">
           <input class="campo largo" id="nuovo-nome" aria-label="Nome della nuova categoria" />
+          <span class="dice-btc" id="dice-btc" hidden>Il saldo lo legge dalla blockchain</span>
           <button class="mini pieno" id="crea-conto">Crea</button>
         </div>
-        <label class="spunta">
-          <input type="checkbox" id="nuovo-btc" />
-          <span>È un wallet Bitcoin: il saldo lo legge dalla blockchain</span>
-        </label>
       </div>
     </div>
   </header>
@@ -657,9 +661,6 @@
         <select id="scelta-tab" aria-label="Scheda da mostrare"></select>
         <span class="freccia-giu" aria-hidden="true">▾</span>
       </label>
-      <button type="button" data-tab="btc" id="pillola-btc" hidden>
-        <span class="punto"></span>Wallet BTC
-      </button>
     </nav>
 
     <section class="scheda" id="scheda-grafico">
@@ -717,6 +718,8 @@ const ETICHETTE = {
 };
 const ORDINE = Object.keys(ETICHETTE);
 const ETICHETTA_PREDEFINITA = "liquidita";
+// il wallet bitcoin ha un nome fisso: è l'unico conto che non si rinomina
+const NOME_BTC = "Wallet BTC";
 const nomeEtichetta = e => (ETICHETTE[e] || ETICHETTE[ETICHETTA_PREDEFINITA]).nome;
 const segnoEtichetta = e => (ETICHETTE[e] || {}).segno || 1;
 // la tinta segue l'etichetta; il wallet bitcoin tiene la sua, come scheda a parte
@@ -1372,7 +1375,6 @@ const esc = t => String(t == null ? "" : t)
 let tab = "tutto";
 let daEliminare = null;      // { che: "conto"|"voce"|"titolo"|"indirizzo", id, conto, nome }
 let tipoNuovo = ORDINE[0];
-let nuovoEBtc = false;
 let daMettereAFuoco = null;
 
 /* Quante voci di questa scheda non hanno ancora un valore di questo mese:
@@ -1476,13 +1478,6 @@ function renderPillole() {
   tendina.style.setProperty("--tinta", tintaDi(sel.value));
   tendina.classList.toggle("spenta", tab === "btc");
 
-  // il wallet bitcoin tiene una scheda sua per il grafico del prezzo, fuori
-  // dalla tendina: è un posto dove si va, non un modo di raggruppare i conti
-  const bottone = $("pillola-btc");
-  bottone.hidden = !cEBitcoin();
-  bottone.className = tab === "btc" ? "on" : "";
-  bottone.style.setProperty("--tinta", tintaDi("btc"));
-  bottone.setAttribute("aria-pressed", String(tab === "btc"));
 }
 
 /* ---------- sommario ---------- */
@@ -1674,9 +1669,20 @@ function cartaConto(c) {
   /* Il cestino della categoria sta nel piede, con gli altri comandi che la
      riguardano: nell'intestazione rubava al nome la fine della riga, e sotto
      un nome senza cifra restava da solo su una riga vuota. */
+  /* Il wallet bitcoin ha un nome fisso, quindi al posto del campo porta un
+     titolo. Siccome non c'è niente da scriverci, quel titolo fa da porta: è
+     l'unico modo per arrivare alla sua scheda, che dalla tendina in alto non
+     si raggiunge più. */
+  const titolo = c.btc
+    ? (tab === "btc"
+        ? `<span class="nome-conto fisso">${esc(c.nome)}</span>`
+        : `<button type="button" class="nome-conto fisso apre" data-tab="btc"
+                   aria-label="Apri ${esc(c.nome)}">${esc(c.nome)}<span class="freccia">›</span></button>`)
+    : `<input class="nome-conto" data-rinomina="${c.id}" value="${esc(c.nome)}" aria-label="Nome della categoria" />`;
+
   const testa = dentro => `
     <div class="intestazione ${dentro ? "con-cifra" : ""}">
-      <input class="nome-conto" data-rinomina="${c.id}" value="${esc(c.nome)}" aria-label="Nome della categoria" />
+      ${titolo}
       ${dentro}
     </div>`;
 
@@ -1876,16 +1882,25 @@ function apriMenu(apri) {
 }
 
 function renderSceltaTipi() {
-  $("scelta-tipi").innerHTML = ORDINE.map(t =>
+  // il wallet bitcoin sta in fila con le etichette, ma non è un'etichetta: è il
+  // tipo di conto. Ce n'è uno solo, quindi sparisce appena esiste
+  const scelte = ORDINE.map(t => [t, nomeEtichetta(t)]);
+  if (!cEBitcoin()) scelte.push(["btc", NOME_BTC]);
+  if (tipoNuovo === "btc" && cEBitcoin()) tipoNuovo = ORDINE[0];
+
+  $("scelta-tipi").innerHTML = scelte.map(([t, nome]) =>
     `<button type="button" data-tipo="${t}" style="--tinta:${tintaDi(t)}"
-             class="${t === tipoNuovo ? "on" : ""}"><span class="punto"></span>${esc(nomeEtichetta(t))}</button>`).join("");
-  $("nuovo-nome").placeholder = "Nome della categoria, es. " + esempioNome(tipoNuovo);
-  $("crea-conto").style.setProperty("--tinta", tintaDi(nuovoEBtc ? "btc" : tipoNuovo));
-  $("nuovo-btc").checked = nuovoEBtc;
+             class="${t === tipoNuovo ? "on" : ""}"><span class="punto"></span>${esc(nome)}</button>`).join("");
+
+  // il wallet ha un nome fisso: il campo non serve
+  const campo = $("nuovo-nome");
+  campo.hidden = tipoNuovo === "btc";
+  campo.placeholder = "Nome della categoria, es. " + esempioNome(tipoNuovo);
+  $("dice-btc").hidden = tipoNuovo !== "btc";
+  $("crea-conto").style.setProperty("--tinta", tintaDi(tipoNuovo));
 }
 
-const esempioNome = t => nuovoEBtc ? "Wallet freddo"
-  : ({ liquidita: "Intesa", immobilizzato: "Degiro", debito: "Mutuo" }[t] || "");
+const esempioNome = t => ({ liquidita: "Intesa", immobilizzato: "Degiro", debito: "Mutuo" }[t] || "");
 
 /* ---------- azioni ---------- */
 const trovaConto = id => stato.conti.find(c => c.id === id);
@@ -2057,6 +2072,10 @@ $("pillole").addEventListener("click", e => {
   const b = e.target.closest("button[data-tab]");
   if (b) vaiA(b.dataset.tab);
 });
+boxConti.addEventListener("click", e => {
+  const b = e.target.closest("button[data-tab]");
+  if (b) vaiA(b.dataset.tab);
+});
 $("scelta-tab").addEventListener("change", e => vaiA(e.target.value));
 
 // "toggle" non risale dal <details>: va ascoltato in fase di cattura
@@ -2111,26 +2130,23 @@ $("pannello").addEventListener("click", e => {
   if (t) { tipoNuovo = t.dataset.tipo; renderSceltaTipi(); $("nuovo-nome").focus(); return; }
   if (e.target.closest("#crea-conto")) creaConto();
 });
-$("nuovo-btc").addEventListener("change", e => { nuovoEBtc = e.target.checked; renderSceltaTipi(); });
 $("pannello").addEventListener("keydown", e => {
   if (e.key === "Enter" && e.target.id === "nuovo-nome") { e.preventDefault(); creaConto(); }
 });
 
 function creaConto() {
-  const nome = ($("nuovo-nome").value || "").trim() || (nuovoEBtc ? "Wallet BTC" : nomeEtichetta(tipoNuovo));
-  const c = { id: nuovoId(), nome, etichetta: tipoNuovo };
-  if (nuovoEBtc) c.btc = true;
-  else c.voci = [{ id: nuovoId(), nome: "Nuovo sottoconto" }];
-  if (nuovoEBtc) c.indirizzi = [];
+  const btc = tipoNuovo === "btc";
+  const c = btc
+    ? { id: nuovoId(), nome: NOME_BTC, etichetta: ETICHETTA_PREDEFINITA, btc: true, indirizzi: [] }
+    : { id: nuovoId(), nome: ($("nuovo-nome").value || "").trim() || nomeEtichetta(tipoNuovo),
+        etichetta: tipoNuovo, voci: [{ id: nuovoId(), nome: "Nuovo sottoconto" }] };
   stato.conti.push(c);
   $("nuovo-nome").value = "";
-  if (!nuovoEBtc) daMettereAFuoco = c.voci[0].id;   // il nome del sottoconto si scrive subito
-  const eraBtc = nuovoEBtc;
-  nuovoEBtc = false;
+  if (!btc) daMettereAFuoco = c.voci[0].id;   // il nome del sottoconto si scrive subito
   apriMenu(false);
-  tab = eraBtc ? "btc" : tipoNuovo;      // si apre subito dove è finita
+  tab = btc ? "btc" : tipoNuovo;              // si apre subito dove è finita
   salva(); render();
-  if (eraBtc) { mostraPrezzo(); aggiornaBitcoin(); }
+  if (btc) { mostraPrezzo(); aggiornaBitcoin(); }
 }
 
 let larghezzaNota = 0, ridisegno = null;
