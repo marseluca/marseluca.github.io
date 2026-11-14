@@ -214,12 +214,32 @@
   .tendina .fila { display: flex; gap: 8px; }
 
 
-  /* ---------- pillole delle categorie ---------- */
-  .pillole {
-    display: flex; gap: 7px; overflow-x: auto; margin: 20px -16px 18px; padding: 2px 16px 8px;
-    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  /* ---------- scelta della scheda ---------- */
+  .pillole { display: flex; align-items: center; gap: 8px; margin: 20px 0 18px; flex-wrap: wrap; }
+
+  /* La tendina è un <select> vero: tastiera, lettori di schermo e la rotella
+     del telefono vengono con lui. Il pallino accanto porta il colore
+     dell'etichetta scelta, che dentro un <option> non si può disegnare. */
+  .tendina-scheda {
+    position: relative; display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid var(--linea); background: var(--superficie);
+    border-radius: 999px; padding: 0 30px 0 14px; cursor: pointer;
   }
-  .pillole::-webkit-scrollbar { display: none; }
+  .tendina-scheda:hover { border-color: var(--linea-forte); }
+  .tendina-scheda:focus-within { border-color: var(--tinta); }
+  .tendina-scheda .punto { width: 9px; height: 9px; border-radius: 50%; background: var(--tinta); flex: none; }
+  .tendina-scheda select {
+    appearance: none; border: 0; background: transparent; cursor: pointer;
+    font: inherit; font-size: 14px; font-weight: 600; color: var(--testo);
+    padding: 9px 0; max-width: 60vw; text-overflow: ellipsis;
+  }
+  .tendina-scheda select:focus { outline: none; }
+  .tendina-scheda .freccia-giu {
+    position: absolute; right: 13px; color: var(--fioco); font-size: 12px; pointer-events: none;
+  }
+  /* quando comanda il wallet, la tendina non è quella che decide cosa si vede */
+  .tendina-scheda.spenta { opacity: .5; }
+
   .pillole button {
     flex: none; display: inline-flex; align-items: center; gap: 7px;
     border: 1px solid var(--linea); background: var(--superficie); color: var(--tenue);
@@ -229,7 +249,6 @@
   }
   .pillole button .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--tinta); flex: none; }
   .pillole button:hover { color: var(--testo); border-color: var(--linea-forte); }
-  .pillole .stacco { flex: none; width: 1px; background: var(--linea); margin: 4px 3px; }
   .pillole button.on {
     color: var(--su-tinta); background: var(--tinta); border-color: var(--tinta); font-weight: 600;
   }
@@ -277,7 +296,16 @@
   .voce-cat .freccia { color: var(--fioco); font-size: 15px; }
 
   /* ---------- conti ---------- */
-  .conto > .intestazione { border-bottom: 1px solid var(--linea); flex-wrap: wrap; row-gap: 4px; }
+  /* Più strette in verticale delle altre schede: di queste ce n'è una fila, e
+     ogni riga porta già il nome sopra e l'importo sotto. */
+  .scheda.conto { margin-bottom: 10px; }
+  .conto > .intestazione { padding-top: 10px; padding-bottom: 10px; }
+  .conto .riga { padding-top: 6px; padding-bottom: 6px; row-gap: 0; }
+  .conto .riga .soldi { padding-top: 4px; padding-bottom: 4px; }
+  .conto .indirizzo { padding-top: 8px; padding-bottom: 8px; }
+  .conto .piede-scheda { padding-top: 9px; padding-bottom: 9px; }
+  .conto .stato { padding: 18px; }
+  .conto > .intestazione { border-bottom: 1px solid var(--linea); flex-wrap: wrap; row-gap: 2px; }
 
   .conto > .intestazione .nome-conto { order: 2; flex: 1 1 auto; }
   .conto > .intestazione .etichetta-tipo { order: 2; }
@@ -412,6 +440,23 @@
   .indirizzo .quanto { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .indirizzo .quanto b { font-weight: 600; }
   .indirizzo .quanto small { display: block; color: var(--fioco); font-size: 11.5px; }
+  .mesi-mano { padding: 10px 18px 12px; border-top: 1px solid var(--linea); }
+  .mesi-mano > summary {
+    list-style: none; cursor: pointer; font-size: 12.5px; color: var(--tenue);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .mesi-mano > summary::-webkit-details-marker { display: none; }
+  .mesi-mano > summary::before {
+    content: ""; flex: none; width: 6px; height: 6px; margin: -2px 2px 0 0;
+    border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+    transform: rotate(-45deg); transition: transform .15s;
+  }
+  .mesi-mano[open] > summary::before { transform: rotate(45deg); margin-top: -4px; }
+  .mesi-mano > summary + * { margin-top: 8px; }
+  .riga-mese { display: flex; align-items: center; gap: 10px; padding: 3px 0; }
+  .riga-mese .quando { flex: 0 0 76px; font-size: 12.5px; color: var(--tenue); }
+  .riga-mese .mini-campo { flex: 0 1 170px; min-width: 0; margin-left: auto; text-align: right; }
+  .riga-mese .unita { flex: none; font-size: 11.5px; color: var(--fioco); }
 
   /* ---------- grafici ---------- */
   .grafico { --tinta: var(--c-tutto); padding: 4px 10px 0; touch-action: pan-y; }
@@ -606,15 +651,20 @@
 
     </section>
 
-    <nav class="pillole" id="pillole" role="tablist" aria-label="Categorie"></nav>
+    <nav class="pillole" id="pillole" aria-label="Scheda da mostrare">
+      <label class="tendina-scheda" id="tendina-scheda">
+        <span class="punto" id="punto-scheda"></span>
+        <select id="scelta-tab" aria-label="Scheda da mostrare"></select>
+        <span class="freccia-giu" aria-hidden="true">▾</span>
+      </label>
+      <button type="button" data-tab="btc" id="pillola-btc" hidden>
+        <span class="punto"></span>Wallet BTC
+      </button>
+    </nav>
 
     <section class="scheda" id="scheda-grafico">
       <div class="intestazione"><h2 id="titolo-grafico">Andamento</h2></div>
       <div class="grafico" id="grafico-patrimonio"></div>
-      <div class="piedino">
-        <span id="piede-periodo"></span>
-        <span id="piede-nota"></span>
-      </div>
     </section>
 
     <section class="scheda" id="scheda-categorie" hidden>
@@ -645,8 +695,7 @@
     <div id="zona-nuovo"></div>
 
     <footer class="nota-piede">
-      <button class="mini" id="installa" hidden style="--tinta:var(--c-liquidita);margin-bottom:12px">Installa l'app</button><br />
-      I dati restano su questo dispositivo · saldi Bitcoin via Blockstream · prezzi CoinGecko, Kraken, Bitstamp<br />
+      <button class="mini" id="installa" hidden style="--tinta:var(--c-liquidita);margin-bottom:12px">Installa l'app</button>
       <a href="../bitcoin/walletreader.html">Lettore di wallet Bitcoin</a>
     </footer>
   </main>
@@ -839,6 +888,15 @@ const fmtEur = v => v.toLocaleString("it-IT", SOLDI);
 const fmtEur0 = fmtEur;
 const fmtNum = v => Math.round(v).toLocaleString("it-IT", { maximumFractionDigits: 0, useGrouping: "always" });
 const fmtBtc = sats => (sats / 1e8).toLocaleString("it-IT", { minimumFractionDigits: 8, maximumFractionDigits: 8 });
+// l'ultimo separatore è il decimale, come per gli euro, ma qui non si arrotonda
+function leggiBtc(testo) {
+  let t = String(testo).trim().replace(/[^\d.,]/g, "");
+  if (!t) return null;
+  const ultimo = Math.max(t.lastIndexOf(","), t.lastIndexOf("."));
+  if (ultimo >= 0) t = t.slice(0, ultimo).replace(/[.,]/g, "") + "." + t.slice(ultimo + 1).replace(/[.,]/g, "");
+  const v = parseFloat(t);
+  return isFinite(v) && v >= 0 ? Math.round(v * 1e8) : null;
+}
 const fmtAsse = v => Math.abs(v) >= 1000
   ? "€ " + (v / 1000).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "k"
   : "€ " + Math.round(v);
@@ -889,7 +947,10 @@ const distanzaMesi = (a, b) => {
 function mesiDelGrafico(scopo) {
   const conti = contiDi(scopo);
   const chiavi = new Set();
-  conti.forEach(c => vociDi(c).forEach(v => chiavi.add(v.id)));
+  conti.forEach(c => {
+    vociDi(c).forEach(v => chiavi.add(v.id));
+    if (c.btc) chiavi.add(chiaveBtc(c.id));
+  });
 
   let primo = mesiConDati().find(m => Object.keys(stato.saldi[m]).some(k => chiavi.has(k))) || null;
   conti.forEach(c => {
@@ -1264,10 +1325,35 @@ function satsAlMese(d, m) {
   return prima.length ? d.satsMensile[prima[prima.length - 1]] : 0;
 }
 
+/* Quando la catena non arriva — storico troppo lungo per leggerlo tutto,
+   lettura fallita, wallet più vecchio di quello che l'API restituisce — il
+   mese si può scrivere a mano. Vale solo per il mese in cui è scritto: non si
+   riporta avanti, o coprirebbe letture buone. Sta nei saldi come gli altri
+   importi, sotto una chiave sua, e in satoshi perché è una quantità di
+   bitcoin, non euro. */
+const chiaveBtc = id => id + "#btc";
+/* Quali pannelli sono aperti: ogni importo scritto ridisegna la scheda, e senza
+   memoria il pannello si richiuderebbe sotto le dita a ogni riga compilata. */
+const manoAperta = new Set();
+function satsAMano(conto, m) {
+  const riga = stato.saldi[m];
+  const v = riga && riga[chiaveBtc(conto.id)];
+  return typeof v === "number" ? v : null;
+}
+
+/* I dodici mesi prima di questo: più indietro non si va, perché più indietro
+   non si ricorda. */
+function mesiDaScrivere() {
+  const out = [];
+  for (let i = 1; i <= 12; i++) out.push(spostaMese(MESE_OGGI, -i));
+  return out;
+}
+
 function valoreBtc(conto, m) {
   const d = btcDati[conto.id];
-  if (!d) return 0;
-  const sats = satsAlMese(d, m);
+  const aMano = satsAMano(conto, m);
+  if (aMano === null && !d) return 0;
+  const sats = aMano !== null ? aMano : satsAlMese(d, m);
   if (!sats) return 0;
   const prezzo = m >= MESE_OGGI ? (prezzoOra ?? prezzoAlMese(m)) : prezzoAlMese(m);
   return prezzo ? sats / SAT * prezzo : 0;
@@ -1367,22 +1453,36 @@ const nomeScheda = t => t === "tutto" ? "Patrimonio netto" : t === "btc" ? "Wall
 const categorieAttive = () => ORDINE.filter(t => contiDi(t).length);
 const cEBitcoin = () => stato.conti.some(c => c.btc);
 
+/* L'ultima etichetta scelta: serve quando si guarda il wallet, che nella
+   tendina non c'è, per non far scrivere alla tendina una scheda sbagliata. */
+let ultimaEtichetta = "tutto";
+
 function renderPillole() {
   const attive = categorieAttive();
   const barra = $("pillole");
   barra.hidden = false;
 
-  const voce = (id, nome) => `
-    <button type="button" role="tab" data-tab="${id}" aria-selected="${id === tab}"
-            class="${id === tab ? "on" : ""}" style="--tinta:${tintaDi(id)}">
-      <span class="punto"></span>${esc(nome)}
-    </button>`;
-  // il wallet bitcoin conta nella sua etichetta, ma tiene anche una scheda sua
-  // per il grafico del prezzo: sta dopo lo stacco, come cosa a parte
-  barra.innerHTML = (attive.length ? voce("tutto", "Tutto") + attive.map(t => voce(t, nomeEtichetta(t))).join("") : "")
-    + (cEBitcoin() ? `<span class="stacco"></span>` + voce("btc", "Wallet BTC") : "");
-  const attiva = barra.querySelector("button.on");
-  if (attiva) attiva.scrollIntoView({ block: "nearest", inline: "nearest" });
+  if (tab !== "btc") ultimaEtichetta = tab;
+  const scelto = ultimaEtichetta;
+
+  const sel = $("scelta-tab");
+  sel.innerHTML = attive.length
+    ? [["tutto", "Patrimonio netto"], ...attive.map(t => [t, nomeEtichetta(t)])]
+        .map(([id, nome]) => `<option value="${id}" ${id === scelto ? "selected" : ""}>${esc(nome)}</option>`).join("")
+    : `<option value="tutto">Patrimonio netto</option>`;
+  sel.value = sel.querySelector(`option[value="${scelto}"]`) ? scelto : "tutto";
+
+  const tendina = $("tendina-scheda");
+  tendina.style.setProperty("--tinta", tintaDi(sel.value));
+  tendina.classList.toggle("spenta", tab === "btc");
+
+  // il wallet bitcoin tiene una scheda sua per il grafico del prezzo, fuori
+  // dalla tendina: è un posto dove si va, non un modo di raggruppare i conti
+  const bottone = $("pillola-btc");
+  bottone.hidden = !cEBitcoin();
+  bottone.className = tab === "btc" ? "on" : "";
+  bottone.style.setProperty("--tinta", tintaDi("btc"));
+  bottone.setAttribute("aria-pressed", String(tab === "btc"));
 }
 
 /* ---------- sommario ---------- */
@@ -1582,7 +1682,6 @@ function cartaConto(c) {
 
   const sceltaEtichetta = `
     <label class="scelta-eti">
-      <span class="dice-eti">Etichetta</span>
       <select class="mini-campo" data-etichetta="${c.id}" aria-label="Etichetta di ${esc(c.nome)}">
         ${ORDINE.map(e => `<option value="${e}" ${e === c.etichetta ? "selected" : ""}>${esc(nomeEtichetta(e))}</option>`).join("")}
       </select>
@@ -1591,7 +1690,7 @@ function cartaConto(c) {
   // nel piede un cestino senza parole non direbbe se butta via il sottoconto
   // o tutta la categoria: qui ci vuole la parola
   const viaCategoria = `<button class="mini via-categoria" ${chiedo("conto", c.id)}
-      aria-label="Elimina la categoria ${esc(c.nome)}">Elimina categoria</button>`;
+      aria-label="Elimina la categoria ${esc(c.nome)}">Elimina</button>`;
 
   const piede = dentro => `<div class="piede-scheda">${sceltaEtichetta}${dentro}${viaCategoria}</div>`;
 
@@ -1653,8 +1752,31 @@ function corpoBtc(c) {
     if (d && d.errore) note.push("La lettura non è riuscita (" + esc(d.errore) + "): il saldo può essere parziale.");
   }
 
+  const aMano = indirizzi.length || mesiDaScrivere().some(m => satsAMano(c, m) !== null) ? `
+    <details class="mesi-mano" data-mano="${c.id}" ${manoAperta.has(c.id) ? "open" : ""}>
+      <summary>Mesi scritti a mano</summary>
+      <div class="brindello" style="padding:0 0 8px">
+        Dove la catena non arriva, scrivi quanti bitcoin avevi a fine mese. Vale
+        solo per quel mese, e si torna indietro al massimo di un anno.
+      </div>
+      ${mesiDaScrivere().map(m => {
+        const mio = satsAMano(c, m);
+        const letto = d && d.pronto ? satsAlMese(d, m) : null;
+        return `<div class="riga-mese">
+          <span class="quando">${esc(etichettaBreve(m))}</span>
+          <input class="mini-campo num" data-btc-mano="${c.id}" data-mese="${m}"
+                 type="text" inputmode="decimal" spellcheck="false"
+                 aria-label="Bitcoin a fine ${esc(etichettaBreve(m))}"
+                 value="${mio === null ? "" : esc(fmtBtc(mio))}"
+                 placeholder="${letto === null ? "0,00000000" : esc(fmtBtc(letto))}" />
+          <span class="unita">BTC</span>
+        </div>`;
+      }).join("")}
+    </details>` : "";
+
   return `${righe}${modulo}
-    ${note.map(t => `<div class="avvertenza attenzione">${t}</div>`).join("")}`;
+    ${note.map(t => `<div class="avvertenza attenzione">${t}</div>`).join("")}
+    ${aMano}`;
 }
 
 /* ---------- grafici ---------- */
@@ -1675,8 +1797,6 @@ function renderGrafico() {
     graficoPatrimonio.messaggio(stato.conti.length
       ? "Serve il saldo di almeno due mesi per disegnare l'andamento."
       : "Qui comparirà l'andamento, appena ci sono due mesi di saldi.");
-    $("piede-periodo").textContent = "";
-    $("piede-nota").textContent = "";
     return;
   }
   const punti = mesi.map(m => [dataMese(m).getTime(), totaleDi(tab, m)]);
@@ -1694,9 +1814,6 @@ function renderGrafico() {
     }
   });
 
-  $("piede-periodo").textContent =
-    `${etichettaBreve(mesi[0])} → ${etichettaBreve(mesi[mesi.length - 1])} · min ${fmtEur0(Math.min(...valori))} · max ${fmtEur0(Math.max(...valori))}`;
-  $("piede-nota").textContent = "i mesi senza un nuovo valore tengono l'ultimo inserito";
 }
 
 $("periodi").innerHTML = PERIODI.map(p =>
@@ -1866,6 +1983,26 @@ boxConti.addEventListener("change", e => {
     salva(); return;
   }
 
+  if (el.dataset.btcMano) {
+    const c = trovaConto(el.dataset.btcMano), m = el.dataset.mese;
+    if (!c) return;
+    const testo = el.value.trim();
+    if (!testo && stato.saldi[m]) {
+      delete stato.saldi[m][chiaveBtc(c.id)];
+      if (!Object.keys(stato.saldi[m]).length) delete stato.saldi[m];
+    }
+    else if (testo) {
+      const sats = leggiBtc(testo);
+      if (sats === null) { avvisa("Non ho capito quella quantità. Scrivila come 0,0442"); el.value = ""; }
+      else (stato.saldi[m] = stato.saldi[m] || {})[chiaveBtc(c.id)] = sats;
+    }
+    salva();
+    const ora = satsAMano(c, m);
+    el.value = ora === null ? "" : fmtBtc(ora);
+    aggiornaCifre();
+    return;
+  }
+
   if (el.dataset.importo) {
     const id = el.dataset.importo;
     const testo = el.value.trim();
@@ -1920,6 +2057,14 @@ $("pillole").addEventListener("click", e => {
   const b = e.target.closest("button[data-tab]");
   if (b) vaiA(b.dataset.tab);
 });
+$("scelta-tab").addEventListener("change", e => vaiA(e.target.value));
+
+// "toggle" non risale dal <details>: va ascoltato in fase di cattura
+boxConti.addEventListener("toggle", e => {
+  const id = e.target.dataset && e.target.dataset.mano;
+  if (!id) return;
+  if (e.target.open) manoAperta.add(id); else manoAperta.delete(id);
+}, true);
 $("elenco-categorie").addEventListener("click", e => {
   const b = e.target.closest("button[data-tab]");
   if (b) vaiA(b.dataset.tab);
