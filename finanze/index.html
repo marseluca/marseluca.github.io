@@ -214,45 +214,25 @@
   .tendina .fila { display: flex; gap: 8px; }
 
 
-  /* ---------- scelta della scheda ---------- */
-  .pillole { display: flex; align-items: center; gap: 8px; margin: 20px 0 18px; flex-wrap: wrap; }
-
-  /* La tendina è un <select> vero: tastiera, lettori di schermo e la rotella
-     del telefono vengono con lui. Il pallino accanto porta il colore
-     dell'etichetta scelta, che dentro un <option> non si può disegnare. */
-  .tendina-scheda {
-    position: relative; display: inline-flex; align-items: center; gap: 8px;
-    border: 1px solid var(--linea); background: var(--superficie);
-    border-radius: 999px; padding: 0 30px 0 14px; cursor: pointer;
+  /* ---------- dove sei ---------- */
+  /* Solo la strada percorsa, non le mete possibili: in panoramica non c'è
+     niente da risalire e la riga sparisce del tutto. */
+  .briciole {
+    display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+    margin: 18px 0 16px; font-size: 13.5px;
   }
-  .tendina-scheda:hover { border-color: var(--linea-forte); }
-  .tendina-scheda:focus-within { border-color: var(--tinta); }
-  .tendina-scheda .punto { width: 9px; height: 9px; border-radius: 50%; background: var(--tinta); flex: none; }
-  .tendina-scheda select {
-    appearance: none; border: 0; background: transparent; cursor: pointer;
-    font: inherit; font-size: 14px; font-weight: 600; color: var(--testo);
-    padding: 9px 0; max-width: 60vw; text-overflow: ellipsis;
-  }
-  .tendina-scheda select:focus { outline: none; }
-  .tendina-scheda .freccia-giu {
-    position: absolute; right: 13px; color: var(--fioco); font-size: 12px; pointer-events: none;
-  }
-  /* quando comanda il wallet, la tendina non è quella che decide cosa si vede */
-  .tendina-scheda.spenta { opacity: .5; }
-
-  .pillole button {
-    flex: none; display: inline-flex; align-items: center; gap: 7px;
-    border: 1px solid var(--linea); background: var(--superficie); color: var(--tenue);
+  .briciole button {
+    display: inline-flex; align-items: center; gap: 7px;
+    border: 0; background: transparent; color: var(--tenue);
     font: inherit; font-size: 13.5px; font-weight: 500;
-    padding: 8px 14px; border-radius: 999px; cursor: pointer; white-space: nowrap;
-    transition: border-color .15s, color .15s, background .15s;
+    padding: 5px 8px; margin-left: -8px; border-radius: 8px;
+    cursor: pointer; white-space: nowrap;
   }
-  .pillole button .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--tinta); flex: none; }
-  .pillole button:hover { color: var(--testo); border-color: var(--linea-forte); }
-  .pillole button.on {
-    color: var(--su-tinta); background: var(--tinta); border-color: var(--tinta); font-weight: 600;
-  }
-  .pillole button.on .punto { background: color-mix(in srgb, var(--su-tinta) 85%, transparent); }
+  .briciole button + button { margin-left: 0; }
+  .briciole button .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--tinta); flex: none; }
+  .briciole button:hover { color: var(--testo); background: var(--superficie-2); }
+  .briciole button:focus-visible { outline: 2px solid var(--tinta, var(--testo)); outline-offset: 1px; }
+  .briciole .sep { color: var(--fioco); flex: none; }
 
   /* ---------- schede ---------- */
   .scheda {
@@ -344,7 +324,7 @@
   .conto .nome-conto.apre .freccia { color: var(--fioco); font-size: 15px; }
   .conto .nome-conto.apre:hover { color: var(--tinta); }
   .conto .nome-conto.apre:hover .freccia { color: var(--tinta); }
-  .conto .nome-conto:hover { background: var(--superficie-2); }
+  input.nome-conto:hover, .conto .nome-conto.apre:hover { background: var(--superficie-2); }
   .conto .nome-conto:focus { outline: 2px solid var(--tinta); outline-offset: 0; background: var(--superficie); }
   .conto .tot-conto { font-weight: 700; white-space: nowrap; font-size: 16px; }
   .conto > .intestazione .soldi { margin-right: -4px; }
@@ -663,13 +643,7 @@
 
     </section>
 
-    <nav class="pillole" id="pillole" aria-label="Scheda da mostrare">
-      <label class="tendina-scheda" id="tendina-scheda">
-        <span class="punto" id="punto-scheda"></span>
-        <select id="scelta-tab" aria-label="Scheda da mostrare"></select>
-        <span class="freccia-giu" aria-hidden="true">▾</span>
-      </label>
-    </nav>
+    <nav class="briciole" id="briciole" aria-label="Dove sei" hidden></nav>
 
     <section class="scheda" id="scheda-grafico">
       <div class="intestazione"><h2 id="titolo-grafico">Andamento</h2></div>
@@ -1469,7 +1443,7 @@ const osserva = new IntersectionObserver(
   { threshold: 0, rootMargin: "-56px 0px 0px 0px" }
 );
 
-/* ---------- pillole ---------- */
+/* ---------- dove sei ---------- */
 function nomeScheda(t) {
   if (t === "tutto") return "Patrimonio netto";
   const c = stato.conti.find(x => x.id === t);
@@ -1479,29 +1453,21 @@ function nomeScheda(t) {
 const categorieAttive = () => ORDINE.filter(t => contiDi(t).length);
 const cEBitcoin = () => stato.conti.some(c => c.btc);
 
-/* L'ultima etichetta scelta: serve quando si guarda il wallet, che nella
-   tendina non c'è, per non far scrivere alla tendina una scheda sbagliata. */
-let ultimaEtichetta = "tutto";
-
+/* La strada da dove si sta a casa: in panoramica non c'è, dentro un'etichetta
+   è il patrimonio, dentro un conto è il patrimonio e la sua etichetta. */
 function renderPillole() {
-  const attive = categorieAttive();
-  const barra = $("pillole");
-  barra.hidden = false;
+  const barra = $("briciole");
+  const conto = contoDelTab();
+  const strada = [];
+  if (tab !== "tutto") strada.push(["tutto", "Patrimonio netto", "var(--tenue)"]);
+  if (conto) strada.push([conto.etichetta, nomeEtichetta(conto.etichetta), tintaDi(conto.etichetta)]);
 
-  if (tab === "tutto" || ETICHETTE[tab]) ultimaEtichetta = tab;
-  const scelto = ultimaEtichetta;
-
-  const sel = $("scelta-tab");
-  sel.innerHTML = attive.length
-    ? [["tutto", "Patrimonio netto"], ...attive.map(t => [t, nomeEtichetta(t)])]
-        .map(([id, nome]) => `<option value="${id}" ${id === scelto ? "selected" : ""}>${esc(nome)}</option>`).join("")
-    : `<option value="tutto">Patrimonio netto</option>`;
-  sel.value = sel.querySelector(`option[value="${scelto}"]`) ? scelto : "tutto";
-
-  const tendina = $("tendina-scheda");
-  tendina.style.setProperty("--tinta", tintaDi(sel.value));
-  tendina.classList.toggle("spenta", tab !== ultimaEtichetta);
-
+  barra.hidden = !strada.length;
+  barra.innerHTML = strada.map(([id, nome, tinta], i) =>
+    `${i ? `<span class="sep" aria-hidden="true">›</span>` : ""}
+     <button type="button" data-tab="${id}" style="--tinta:${tinta}">
+       <span class="punto"></span>${esc(nome)}
+     </button>`).join("");
 }
 
 /* ---------- sommario ---------- */
@@ -2108,7 +2074,7 @@ function vaiA(t) {
   if (aperto && aperto.btc) mostraPrezzo();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
-$("pillole").addEventListener("click", e => {
+$("briciole").addEventListener("click", e => {
   const b = e.target.closest("button[data-tab]");
   if (b) vaiA(b.dataset.tab);
 });
@@ -2116,7 +2082,6 @@ boxConti.addEventListener("click", e => {
   const b = e.target.closest("button[data-tab]");
   if (b) vaiA(b.dataset.tab);
 });
-$("scelta-tab").addEventListener("change", e => vaiA(e.target.value));
 
 // "toggle" non risale dal <details>: va ascoltato in fase di cattura
 boxConti.addEventListener("toggle", e => {
