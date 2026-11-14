@@ -539,6 +539,13 @@
   }
   .mini-campo:focus { outline: none; border-color: var(--tinta); background: var(--superficie); }
   .dice-btc { flex: 1; font-size: 12.5px; color: var(--tenue); }
+  /* i nomi si cambiano qui: nelle schede il titolo serve ad aprire il conto */
+  .rinomina-elenco { margin-top: 14px; border-top: 1px solid var(--linea); padding-top: 12px; }
+  .rinomina-elenco .tendina-titolo { margin-bottom: 8px; }
+  .rinomina-riga { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+  .rinomina-riga .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--tinta); flex: none; }
+  .rinomina-riga .campo { flex: 1; min-width: 0; }
+  .rinomina-riga .bloccato { flex: 1; min-width: 0; font-size: 13px; color: var(--fioco); }
   .scelta-tipi { display: flex; flex-wrap: wrap; gap: 7px; }
   .scelta-tipi button {
     font: inherit; font-size: 13.5px; font-weight: 500; cursor: pointer;
@@ -621,7 +628,7 @@
         <button id="mese-su" aria-label="Mese successivo">›</button>
       </div>
     </div>
-    <div class="tendina" id="pannello" role="dialog" aria-label="Nuova categoria" hidden>
+    <div class="tendina" id="pannello" role="dialog" aria-label="Menu dei conti" hidden>
       <div class="tendina-dentro">
         <div class="tendina-titolo">Nuova categoria</div>
         <div class="scelta-tipi" id="scelta-tipi"></div>
@@ -630,6 +637,7 @@
           <span class="dice-btc" id="dice-btc" hidden>Il saldo lo legge dalla blockchain</span>
           <button class="mini pieno" id="crea-conto">Crea</button>
         </div>
+        <div id="zona-rinomina"></div>
       </div>
     </div>
   </header>
@@ -723,7 +731,14 @@ const NOME_BTC = "Wallet BTC";
 const nomeEtichetta = e => (ETICHETTE[e] || ETICHETTE[ETICHETTA_PREDEFINITA]).nome;
 const segnoEtichetta = e => (ETICHETTE[e] || {}).segno || 1;
 // la tinta segue l'etichetta; il wallet bitcoin tiene la sua, come scheda a parte
-const tintaDi = t => `var(--c-${t === "btc" ? "btc" : (ETICHETTE[t] ? t : ETICHETTA_PREDEFINITA)})`;
+/* Una "scheda" è "tutto", un'etichetta, o un conto per id: quest'ultimo è la
+   pagina del singolo conto, col suo saldo e il suo andamento. */
+const tintaConto = c => c.btc ? "var(--c-btc)" : `var(--c-${ETICHETTE[c.etichetta] ? c.etichetta : ETICHETTA_PREDEFINITA})`;
+const tintaDi = t => {
+  const c = stato.conti && stato.conti.find(x => x.id === t);
+  if (c) return tintaConto(c);
+  return `var(--c-${ETICHETTE[t] ? t : ETICHETTA_PREDEFINITA})`;
+};
 
 /* ---------- stato ---------- */
 /* Tutto resta nel browser: i saldi sono dati personali e non hanno motivo di
@@ -931,11 +946,15 @@ function totaleConto(c, m) {
   return segnoEtichetta(c.etichetta) * somma;
 }
 
-/* "tutto" sono tutte le categorie, "btc" la sola scheda del wallet, gli altri
-   nomi sono etichette. */
-const contiDi = t => t === "tutto" ? stato.conti
-  : t === "btc" ? stato.conti.filter(c => c.btc)
-  : stato.conti.filter(c => c.etichetta === t);
+/* "tutto" sono tutte le categorie, un'etichetta sono le sue, un id è il
+   singolo conto di quell'id. */
+function contiDi(t) {
+  if (t === "tutto") return stato.conti;
+  const solo = stato.conti.find(c => c.id === t);
+  if (solo) return [solo];
+  return stato.conti.filter(c => c.etichetta === t);
+}
+const contoDelTab = () => stato.conti.find(c => c.id === tab) || null;
 const totaleDi = (t, m) => contiDi(t).reduce((s, c) => s + totaleConto(c, m), 0);
 const totaleMese = m => totaleDi("tutto", m);
 
@@ -1344,11 +1363,12 @@ function satsAMano(conto, m) {
   return typeof v === "number" ? v : null;
 }
 
-/* I dodici mesi prima di questo: più indietro non si va, perché più indietro
-   non si ricorda. */
+/* Dal mese scorso fino ad agosto 2025, dal più vicino al più lontano: prima di
+   lì non si scrive, perché prima di lì non si ricorda. */
+const PRIMO_MESE_A_MANO = "2025-08";
 function mesiDaScrivere() {
   const out = [];
-  for (let i = 1; i <= 12; i++) out.push(spostaMese(MESE_OGGI, -i));
+  for (let k = spostaMese(MESE_OGGI, -1); k >= PRIMO_MESE_A_MANO; k = spostaMese(k, -1)) out.push(k);
   return out;
 }
 
@@ -1450,7 +1470,11 @@ const osserva = new IntersectionObserver(
 );
 
 /* ---------- pillole ---------- */
-const nomeScheda = t => t === "tutto" ? "Patrimonio netto" : t === "btc" ? "Wallet BTC" : nomeEtichetta(t);
+function nomeScheda(t) {
+  if (t === "tutto") return "Patrimonio netto";
+  const c = stato.conti.find(x => x.id === t);
+  return c ? c.nome : nomeEtichetta(t);
+}
 
 const categorieAttive = () => ORDINE.filter(t => contiDi(t).length);
 const cEBitcoin = () => stato.conti.some(c => c.btc);
@@ -1464,7 +1488,7 @@ function renderPillole() {
   const barra = $("pillole");
   barra.hidden = false;
 
-  if (tab !== "btc") ultimaEtichetta = tab;
+  if (tab === "tutto" || ETICHETTE[tab]) ultimaEtichetta = tab;
   const scelto = ultimaEtichetta;
 
   const sel = $("scelta-tab");
@@ -1476,7 +1500,7 @@ function renderPillole() {
 
   const tendina = $("tendina-scheda");
   tendina.style.setProperty("--tinta", tintaDi(sel.value));
-  tendina.classList.toggle("spenta", tab === "btc");
+  tendina.classList.toggle("spenta", tab !== ultimaEtichetta);
 
 }
 
@@ -1590,9 +1614,11 @@ function renderComposizione(parti) {
       ${disegno}${centro}</svg>`;
 
   const massima = su.reduce((x, y) => y.v > x.v ? y : x);
+  const primo = mesiDelGrafico("tutto")[0];
   nota.innerHTML =
     `<div>La fetta più grande è <b>${esc(massima.nome)}</b>, il ${Math.round(massima.v / attivo * 100)}% di quanto possiedi.</div>` +
-    (passivo ? `<div style="margin-top:7px">Hai <span class="debito">${esc(fmtEur(passivo))}</span> di debiti, pari al ${Math.round(passivo / attivo * 100)}% delle attività.</div>` : "");
+    (passivo ? `<div style="margin-top:7px">Hai <span class="debito">${esc(fmtEur(passivo))}</span> di debiti, pari al ${Math.round(passivo / attivo * 100)}% delle attività.</div>` : "") +
+    (primo ? `<div style="margin-top:7px">Mese di partenza dei dati: <b>${esc(etichettaMese(primo))}</b>.</div>` : "");
 }
 
 /* ---------- elenco delle categorie ---------- */
@@ -1669,16 +1695,13 @@ function cartaConto(c) {
   /* Il cestino della categoria sta nel piede, con gli altri comandi che la
      riguardano: nell'intestazione rubava al nome la fine della riga, e sotto
      un nome senza cifra restava da solo su una riga vuota. */
-  /* Il wallet bitcoin ha un nome fisso, quindi al posto del campo porta un
-     titolo. Siccome non c'è niente da scriverci, quel titolo fa da porta: è
-     l'unico modo per arrivare alla sua scheda, che dalla tendina in alto non
-     si raggiunge più. */
-  const titolo = c.btc
-    ? (tab === "btc"
-        ? `<span class="nome-conto fisso">${esc(c.nome)}</span>`
-        : `<button type="button" class="nome-conto fisso apre" data-tab="btc"
-                   aria-label="Apri ${esc(c.nome)}">${esc(c.nome)}<span class="freccia">›</span></button>`)
-    : `<input class="nome-conto" data-rinomina="${c.id}" value="${esc(c.nome)}" aria-label="Nome della categoria" />`;
+  /* Il titolo non è un campo: è la porta della pagina del conto, dove stanno
+     il suo saldo e il suo andamento. I nomi si cambiano dal menu in alto a
+     sinistra, perché qui il clic serve ad aprire. */
+  const titolo = tab === c.id
+    ? `<span class="nome-conto fisso">${esc(c.nome)}</span>`
+    : `<button type="button" class="nome-conto fisso apre" data-tab="${c.id}"
+               aria-label="Apri ${esc(c.nome)}">${esc(c.nome)}<span class="freccia">›</span></button>`;
 
   const testa = dentro => `
     <div class="intestazione ${dentro ? "con-cifra" : ""}">
@@ -1701,7 +1724,7 @@ function cartaConto(c) {
   const piede = dentro => `<div class="piede-scheda">${sceltaEtichetta}${dentro}${viaCategoria}</div>`;
 
   const guscio = (intestazione, corpo) =>
-    `<section class="scheda conto ${neg ? "negativo" : ""}" style="--tinta:${tintaDi(c.btc ? "btc" : c.etichetta)}">
+    `<section class="scheda conto ${neg ? "negativo" : ""}" style="--tinta:${tintaConto(c)}">
        ${intestazione}${quiConferma("conto", c.id)}${corpo}
      </section>`;
 
@@ -1763,7 +1786,7 @@ function corpoBtc(c) {
       <summary>Mesi scritti a mano</summary>
       <div class="brindello" style="padding:0 0 8px">
         Dove la catena non arriva, scrivi quanti bitcoin avevi a fine mese. Vale
-        solo per quel mese, e si torna indietro al massimo di un anno.
+        solo per quel mese, e si torna indietro fino ad agosto 2025.
       </div>
       ${mesiDaScrivere().map(m => {
         const mio = satsAMano(c, m);
@@ -1792,8 +1815,9 @@ const conSegno = v => (v > 0 ? "+" : v < 0 ? "−" : "") + fmtEur(Math.abs(v));
 const classeSegno = v => v > 0 ? " su" : v < 0 ? " giu" : "";
 
 function renderGrafico() {
-  const btc = tab === "btc";
-  $("scheda-prezzo").hidden = !btc || !contiDi("btc").length;
+  const aperto = contoDelTab();
+  const btc = !!(aperto && aperto.btc);
+  $("scheda-prezzo").hidden = !btc;
   $("scheda-grafico").hidden = btc;
   if (btc) return;
 
@@ -1841,13 +1865,13 @@ async function mostraPrezzo() {
   const su = varPct >= 0;
 
   $("prezzo-btc").textContent = fmtEur0(ultimo);
-  $("prezzo-btc").style.color = tintaDi("btc");
+  $("prezzo-btc").style.color = "var(--c-btc)";
   $("prezzo-chip").innerHTML =
     `<span class="chip ${su ? "su" : "giu"} num">${su ? "↑" : "↓"} ${su ? "+" : "−"}${Math.abs(varPct).toLocaleString("it-IT", { maximumFractionDigits: 1 })}% · ${periodo.desc}</span>`;
 
   graficoPrezzo.disegna(vista, {
     titolo: "Prezzo di Bitcoin in euro · " + periodo.desc,
-    tinta: tintaDi("btc"),
+    tinta: "var(--c-btc)",
     valore: fmtEur0,
     quando: t => new Date(t).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" })
   });
@@ -1877,8 +1901,25 @@ function apriMenu(apri) {
   menuAperto = apri;
   $("pannello").hidden = !apri;
   $("apri-menu").setAttribute("aria-expanded", String(apri));
-  if (apri) { renderSceltaTipi(); $("nuovo-nome").focus(); }
+  if (apri) { renderSceltaTipi(); renderRinomina(); $("nuovo-nome").focus(); }
   else $("apri-menu").focus();
+}
+
+/* L'elenco dei nomi da cambiare. Il wallet bitcoin non c'è: il suo nome è
+   fisso, ed è l'unico conto che non si rinomina. */
+function renderRinomina() {
+  const zona = $("zona-rinomina");
+  if (!stato.conti.length) { zona.innerHTML = ""; return; }
+  zona.innerHTML = `<div class="rinomina-elenco">
+      <div class="tendina-titolo">Rinomina</div>
+      ${stato.conti.map(c => `<div class="rinomina-riga" style="--tinta:${tintaConto(c)}">
+          <span class="punto"></span>
+          ${c.btc
+            ? `<span class="bloccato">${esc(c.nome)} · nome fisso</span>`
+            : `<input class="campo" data-rinomina="${c.id}" value="${esc(c.nome)}"
+                      aria-label="Nome di ${esc(c.nome)}" />`}
+        </div>`).join("")}
+    </div>`;
 }
 
 function renderSceltaTipi() {
@@ -1985,15 +2026,13 @@ boxConti.addEventListener("change", e => {
     return;
   }
 
+  /* Qui dentro restano solo i sottoconti: il nome della categoria si cambia
+     dal menu in alto a sinistra, perché nella scheda il titolo apre il conto. */
   if (el.dataset.rinomina) {
     const id = el.dataset.rinomina;
     const nome = el.value.trim() || "Senza nome";
-    const c = trovaConto(id);
-    if (c) c.nome = nome;
-    else {
-      const p = contoDiVoce(id);
-      if (p) p.voci.find(v => v.id === id).nome = nome;
-    }
+    const padre = contoDiVoce(id);
+    if (padre) padre.voci.find(v => v.id === id).nome = nome;
     el.value = nome;
     salva(); return;
   }
@@ -2065,7 +2104,8 @@ function vaiA(t) {
   daEliminare = null;
   grafici.forEach(g => g.sblocca());
   render();
-  if (tab === "btc") mostraPrezzo();
+  const aperto = contoDelTab();
+  if (aperto && aperto.btc) mostraPrezzo();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 $("pillole").addEventListener("click", e => {
@@ -2130,6 +2170,15 @@ $("pannello").addEventListener("click", e => {
   if (t) { tipoNuovo = t.dataset.tipo; renderSceltaTipi(); $("nuovo-nome").focus(); return; }
   if (e.target.closest("#crea-conto")) creaConto();
 });
+$("pannello").addEventListener("change", e => {
+  const el = e.target;
+  if (!el.dataset.rinomina) return;
+  const c = trovaConto(el.dataset.rinomina);
+  if (!c) return;
+  c.nome = el.value.trim() || "Senza nome";
+  el.value = c.nome;
+  salva(); renderPresto();
+});
 $("pannello").addEventListener("keydown", e => {
   if (e.key === "Enter" && e.target.id === "nuovo-nome") { e.preventDefault(); creaConto(); }
 });
@@ -2144,7 +2193,7 @@ function creaConto() {
   $("nuovo-nome").value = "";
   if (!btc) daMettereAFuoco = c.voci[0].id;   // il nome del sottoconto si scrive subito
   apriMenu(false);
-  tab = btc ? "btc" : tipoNuovo;              // si apre subito dove è finita
+  tab = btc ? c.id : tipoNuovo;               // si apre subito dove è finita
   salva(); render();
   if (btc) { mostraPrezzo(); aggiornaBitcoin(); }
 }
@@ -2199,9 +2248,10 @@ if ("serviceWorker" in navigator) {
 
 /* ---------- avvio ---------- */
 async function aggiornaBitcoin() {
-  const conti = contiDi("btc");
+  const conti = stato.conti.filter(c => c.btc);
   if (!conti.length) return;
-  if (tab === "btc") mostraPrezzo();
+  const aperto = contoDelTab();
+  if (aperto && aperto.btc) mostraPrezzo();
   await caricaLivello("lungo");            // serve a rivalutare i mesi passati
   await caricaPrezzoOra();
   render();

@@ -1,5 +1,5 @@
 /* Service worker di Finanze personali: tiene in cache il guscio dell'app. */
-const CACHE = "finanze-v4";
+const CACHE = "finanze-v5";
 const ASSETS = [
   "./index.html",
   "./finanze.webmanifest",
