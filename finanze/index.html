@@ -520,6 +520,38 @@
     border-radius: 8px; padding: 5px 7px;
   }
   .mini-campo:focus { outline: none; border-color: var(--tinta); background: var(--superficie); }
+  /* ---------- popup delle modifiche ---------- */
+  /* Sta sopra il menu, non dentro: le modifiche sono una cosa a sé, e l'albero
+     resta leggibile dietro invece di aprirsi e richiudersi sotto le dita. */
+  .velo { position: fixed; inset: 0; z-index: 60; background: rgba(8, 12, 18, .38); }
+  .popup {
+    position: fixed; z-index: 61; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: min(360px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow-y: auto;
+    background: var(--superficie); border: 1px solid var(--linea);
+    border-radius: var(--r-g); box-shadow: var(--ombra-alta); padding: 16px;
+  }
+  .popup-occhiello {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11.5px; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--fioco); margin-bottom: 6px;
+  }
+  .popup-occhiello .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--tinta); flex: none; }
+  .popup h2 { margin: 0 0 12px; font-size: 17px; font-weight: 700; overflow-wrap: anywhere; }
+  .popup .riga-campo { margin-bottom: 12px; }
+  .popup .riga-campo > span {
+    display: block; font-size: 12px; color: var(--fioco); margin-bottom: 4px;
+  }
+  .popup .campo, .popup select { width: 100%; }
+  .popup select {
+    font: inherit; font-size: 14px; color: var(--testo);
+    background: var(--superficie-2); border: 1px solid var(--linea);
+    border-radius: 9px; padding: 9px 10px;
+  }
+  .popup select:focus { outline: none; border-color: var(--tinta); background: var(--superficie); }
+  .popup-fondo { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .popup-fondo .via { margin-left: auto; --tinta: var(--negativo); }
+  .popup-fondo .via:hover { color: var(--negativo); border-color: var(--negativo); }
+
   /* ---------- albero dei conti ---------- */
   .ramo + .ramo { border-top: 1px solid var(--linea); padding-top: 10px; }
   .ramo-eti {
@@ -539,12 +571,7 @@
   .nodo-voce .voce-albero { font-size: 13px; color: var(--tenue); }
   .voce-albero:hover { background: var(--superficie-2); }
   .voce-albero.on { background: var(--superficie-2); font-weight: 600; }
-  .azioni-nodo { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 4px 0 8px; }
-  .azioni-nodo .campo { flex: 1 1 140px; min-width: 0; }
-  .azioni-nodo .via { --tinta: var(--negativo); }
-  .azioni-nodo .via:hover { color: var(--negativo); border-color: var(--negativo); }
   .ramo-piede { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 0 2px 16px; }
-  .nodo .conferma { margin: 4px 0 8px; }
 
   .brindello { font-size: 12.5px; color: var(--fioco); }
 
@@ -686,6 +713,9 @@
       <a href="../bitcoin/walletreader.html">Lettore di wallet Bitcoin</a>
     </footer>
   </main>
+
+  <div class="velo" id="velo" hidden></div>
+  <div class="popup" id="popup" role="dialog" aria-modal="true" aria-labelledby="popup-titolo" hidden></div>
 
   <div class="avviso" id="toast" hidden></div>
 
@@ -1672,18 +1702,9 @@ function cartaConto(c) {
       ${dentro}
     </div>`;
 
-  const sceltaEtichetta = `
-    <label class="scelta-eti">
-      <select class="mini-campo" data-etichetta="${c.id}" aria-label="Etichetta di ${esc(c.nome)}">
-        ${ORDINE.map(e => `<option value="${e}" ${e === c.etichetta ? "selected" : ""}>${esc(nomeEtichetta(e))}</option>`).join("")}
-      </select>
-    </label>`;
-
-  /* Nel piede resta solo l'etichetta: aggiungere sottoconti ed eliminare si
-     fanno dal menu in alto, dove si vede l'albero intero e si capisce cosa si
-     sta per buttare via. */
-  const piede = () => `<div class="piede-scheda">${sceltaEtichetta}</div>`;
-
+  /* Qui si scrivono solo i saldi. Cambiare etichetta, aggiungere sottoconti ed
+     eliminare si fanno dal menu in alto, dove si vede l'albero intero e si
+     capisce cosa si sta per toccare. */
   const guscio = (intestazione, corpo) =>
     `<section class="scheda conto ${neg ? "negativo" : ""}" style="--tinta:${tintaConto(c)}">
        ${intestazione}${quiConferma("conto", c.id)}${corpo}
@@ -1691,7 +1712,7 @@ function cartaConto(c) {
 
   if (c.btc) {
     return guscio(testa(`<span class="tot-conto num" data-tot="${c.id}">${fmtEur(totaleConto(c, mese))}</span>`),
-      corpoBtc(c) + piede());
+      corpoBtc(c));
   }
 
   const elenco = righe.map(v => `
@@ -1699,14 +1720,12 @@ function cartaConto(c) {
       <input class="etichetta" data-rinomina="${v.id}" value="${esc(v.nome)}" aria-label="Nome sottoconto" />
       ${campoSoldi(v.id, v.nome)}
       <span class="valuta">€</span>
-      <button class="bottoncino" ${chiedo("voce", v.id)} aria-label="Elimina ${esc(v.nome)}">×</button>
-    </div>${quiConferma("voce", v.id)}`).join("");
+    </div>`).join("");
 
   return guscio(
     testa(mostraTotale ? `<span class="tot-conto num" data-tot="${c.id}">${fmtEur(totaleConto(c, mese))}</span>` : ""),
     `${elenco || `<div class="stato">Nessun sottoconto.</div>`}
-     ${neg ? `<div class="avvertenza" style="padding-top:12px">Scrivi quanto devi, con il segno più: nei totali entra in negativo.</div>` : ""}
-     ${piede()}`);
+     ${neg ? `<div class="avvertenza" style="padding-bottom:12px">Scrivi quanto devi, con il segno più: nei totali entra in negativo.</div>` : ""}`);
 }
 
 function corpoBtc(c) {
@@ -1863,46 +1882,85 @@ function apriMenu(apri) {
   $("pannello").hidden = !apri;
   $("apri-menu").setAttribute("aria-expanded", String(apri));
   if (apri) { renderAlbero(); $("pannello").querySelector("button, input").focus(); }
-  else { nodoAperto = null; daEliminare = null; $("apri-menu").focus(); }
+  else { chiudiPopup(); $("apri-menu").focus(); }
 }
 
-/* Quale nodo dell'albero è aperto sui suoi comandi: uno alla volta, o il menu
-   diventa un muro di campi e cestini. */
-let nodoAperto = null;      // "conto:<id>" oppure "voce:<id>"
-
-function azioniNodo(che, id, nome, dentro) {
-  if (nodoAperto !== che + ":" + id) return "";
-  if (daEliminare && daEliminare.che === che && daEliminare.id === id) return barraConferma();
-  return `<div class="azioni-nodo">
-      ${dentro}
-      <button type="button" class="mini via" ${chiedo(che, id)}
-              aria-label="Elimina ${esc(nome)}">Elimina</button>
-    </div>`;
-}
+/* Su quale nodo è aperto il popup delle modifiche. */
+let popupSu = null;      // "conto:<id>" oppure "voce:<id>"
 
 function nodoVoce(v) {
   return `<div class="nodo nodo-voce">
-      <button type="button" class="voce-albero ${nodoAperto === "voce:" + v.id ? "on" : ""}"
+      <button type="button" class="voce-albero ${popupSu === "voce:" + v.id ? "on" : ""}"
               data-nodo="voce:${v.id}">${esc(v.nome)}</button>
-      ${azioniNodo("voce", v.id, v.nome,
-        `<input class="campo" data-rinomina-menu="${v.id}" value="${esc(v.nome)}"
-                aria-label="Nome di ${esc(v.nome)}" />`)}
     </div>`;
 }
 
 function nodoConto(c) {
-  /* Il wallet bitcoin non si rinomina e non ha sottoconti: dei tre comandi
-     gliene resta uno. */
-  const dentro = c.btc ? "" : `
-    <input class="campo" data-rinomina-menu="${c.id}" value="${esc(c.nome)}"
-           aria-label="Nome di ${esc(c.nome)}" />
-    <button type="button" class="mini" data-nuova-voce="${c.id}">+ Sottoconto</button>`;
   return `<div class="nodo nodo-conto">
-      <button type="button" class="voce-albero ${nodoAperto === "conto:" + c.id ? "on" : ""}"
+      <button type="button" class="voce-albero ${popupSu === "conto:" + c.id ? "on" : ""}"
               data-nodo="conto:${c.id}">${esc(c.nome)}</button>
-      ${azioniNodo("conto", c.id, c.nome, dentro)}
       ${vociDi(c).map(nodoVoce).join("")}
     </div>`;
+}
+
+/* Il popup di un nodo: il wallet bitcoin non si rinomina e non ha sottoconti,
+   quindi dei suoi comandi restano l'etichetta e l'eliminazione. */
+function renderPopup() {
+  const velo = $("velo"), box = $("popup");
+  velo.hidden = box.hidden = !popupSu;
+  if (!popupSu) return;
+
+  const [che, ...resto] = popupSu.split(":");
+  const id = resto.join(":");
+  const conto = che === "conto" ? trovaConto(id) : null;
+  const padre = che === "voce" ? contoDiVoce(id) : null;
+  const voce = padre && padre.voci.find(v => v.id === id);
+  if (!conto && !voce) { popupSu = null; velo.hidden = box.hidden = true; return; }
+
+  const nome = conto ? conto.nome : voce.nome;
+  const tinta = conto ? tintaConto(conto) : tintaConto(padre);
+  const sopra = conto ? nomeEtichetta(conto.etichetta) : padre.nome;
+
+  const campoNome = conto && conto.btc ? "" : `
+    <label class="riga-campo"><span>Nome</span>
+      <input class="campo" data-rinomina-menu="${id}" value="${esc(nome)}" aria-label="Nome" />
+    </label>`;
+
+  const campoEtichetta = conto ? `
+    <label class="riga-campo"><span>Etichetta</span>
+      <select data-etichetta="${conto.id}" aria-label="Etichetta">
+        ${ORDINE.map(e => `<option value="${e}" ${e === conto.etichetta ? "selected" : ""}>${esc(nomeEtichetta(e))}</option>`).join("")}
+      </select>
+    </label>` : "";
+
+  box.style.setProperty("--tinta", tinta);
+  box.innerHTML = `
+    <div class="popup-occhiello"><span class="punto"></span>${esc(sopra)}</div>
+    <h2 id="popup-titolo">${esc(nome)}</h2>
+    ${campoNome}${campoEtichetta}
+    ${daEliminare ? barraConferma() : `
+      <div class="popup-fondo">
+        ${conto && !conto.btc ? `<button type="button" class="mini" data-nuova-voce="${conto.id}">+ Sottoconto</button>` : ""}
+        <button type="button" class="mini" data-chiudi-popup>Chiudi</button>
+        <button type="button" class="mini via" ${chiedo(che, id)}>Elimina</button>
+      </div>`}`;
+
+  const primo = box.querySelector("input, select, button");
+  if (primo) primo.focus();
+}
+
+function apriPopup(su) {
+  popupSu = su;
+  daEliminare = null;
+  renderAlbero();
+  renderPopup();
+}
+
+function chiudiPopup() {
+  popupSu = null;
+  daEliminare = null;
+  renderAlbero();
+  renderPopup();
 }
 
 /* L'albero: etichette, sotto le loro categorie, sotto ancora i sottoconti.
@@ -1990,12 +2048,6 @@ boxConti.addEventListener("click", e => {
 
 boxConti.addEventListener("change", e => {
   const el = e.target;
-
-  if (el.dataset.etichetta) {
-    const c = trovaConto(el.dataset.etichetta);
-    if (c) { c.etichetta = ETICHETTE[el.value] ? el.value : ETICHETTA_PREDEFINITA; salva(); renderPresto(); }
-    return;
-  }
 
   /* Qui dentro restano solo i sottoconti: il nome della categoria si cambia
      dal menu in alto a sinistra, perché nella scheda il titolo apre il conto. */
@@ -2130,37 +2182,44 @@ $("occhio").addEventListener("click", () => mostraSaldi(!saldiVisibili));
 /* nuovo conto */
 $("apri-menu").addEventListener("click", () => apriMenu(!menuAperto));
 $("zona-nuovo").addEventListener("click", e => { if (e.target.closest("#apri-da-benvenuto")) apriMenu(true); });
-document.addEventListener("keydown", e => { if (e.key === "Escape" && menuAperto) apriMenu(false); });
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+  if (popupSu) chiudiPopup();
+  else if (menuAperto) apriMenu(false);
+});
 document.addEventListener("pointerdown", e => {
+  if (popupSu) return;      // il popup ha il suo velo, e sta sopra al menu
   if (menuAperto && !e.target.closest("#pannello") && !e.target.closest("#apri-menu")) apriMenu(false);
 });
 
+// nell'albero si naviga soltanto: ogni nome apre il suo popup
 $("pannello").addEventListener("click", e => {
   const b = e.target.closest("button");
   if (!b) return;
+  if (b.dataset.nodo) { apriPopup(b.dataset.nodo); return; }
+  if (b.dataset.nuovaCat) creaConto(b.dataset.nuovaCat, false);
+  else if (b.dataset.nuovoWallet) creaConto(b.dataset.nuovoWallet, true);
+});
 
-  // aprire un nodo chiude quello di prima: i comandi stanno sotto uno solo
-  if (b.dataset.nodo) {
-    nodoAperto = nodoAperto === b.dataset.nodo ? null : b.dataset.nodo;
-    daEliminare = null;
-    renderAlbero();
-    const campo = $("pannello").querySelector(".azioni-nodo .campo");
-    if (campo) { campo.focus(); campo.select(); }
-    return;
-  }
+/* Nel popup si modifica: nome, etichetta, sottoconto nuovo, eliminazione. */
+$("popup").addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+
+  if (b.hasAttribute("data-chiudi-popup")) { chiudiPopup(); return; }
 
   if (b.dataset.chiedi) {
     const [che, ...resto] = b.dataset.chiedi.split(":");
     const id = resto.join(":");
     daEliminare = { che, id, nome: nomeDa(che, id) };
-    renderAlbero();
+    renderPopup();
     return;
   }
-  if (b.hasAttribute("data-annulla")) { daEliminare = null; renderAlbero(); return; }
+  if (b.hasAttribute("data-annulla")) { daEliminare = null; renderPopup(); return; }
   if (b.hasAttribute("data-conferma")) {
-    nodoAperto = null;
-    eliminaDavvero();
-    renderAlbero();
+    eliminaDavvero();            // azzera daEliminare e ridisegna la pagina
+    popupSu = null;
+    renderAlbero(); renderPopup();
     return;
   }
 
@@ -2168,19 +2227,23 @@ $("pannello").addEventListener("click", e => {
     const c = trovaConto(b.dataset.nuovaVoce);
     const v = { id: nuovoId(), nome: "Nuovo sottoconto" };
     (c.voci = c.voci || []).push(v);
-    nodoAperto = "voce:" + v.id;
-    salva(); renderPresto(); renderAlbero();
-    const campo = $("pannello").querySelector(`[data-rinomina-menu="${v.id}"]`);
+    popupSu = "voce:" + v.id;    // il nome del sottoconto nuovo si scrive subito
+    salva(); renderPresto(); renderAlbero(); renderPopup();
+    const campo = $("popup").querySelector("[data-rinomina-menu]");
     if (campo) { campo.focus(); campo.select(); }
     return;
   }
-
-  if (b.dataset.nuovaCat) creaConto(b.dataset.nuovaCat, false);
-  else if (b.dataset.nuovoWallet) creaConto(b.dataset.nuovoWallet, true);
 });
 
-$("pannello").addEventListener("change", e => {
+$("popup").addEventListener("change", e => {
   const el = e.target;
+
+  if (el.dataset.etichetta) {
+    const c = trovaConto(el.dataset.etichetta);
+    if (c) { c.etichetta = ETICHETTE[el.value] ? el.value : ETICHETTA_PREDEFINITA; salva(); renderPresto(); renderAlbero(); renderPopup(); }
+    return;
+  }
+
   if (!el.dataset.rinominaMenu) return;
   const id = el.dataset.rinominaMenu;
   const nome = el.value.trim() || "Senza nome";
@@ -2191,12 +2254,15 @@ $("pannello").addEventListener("change", e => {
     if (padre) padre.voci.find(v => v.id === id).nome = nome;
   }
   el.value = nome;
-  salva(); renderPresto();
+  salva(); renderPresto(); renderAlbero();
+  $("popup").querySelector("h2").textContent = nome;
 });
 
-$("pannello").addEventListener("keydown", e => {
+$("popup").addEventListener("keydown", e => {
   if (e.key === "Enter" && e.target.dataset.rinominaMenu) { e.preventDefault(); e.target.blur(); }
 });
+
+$("velo").addEventListener("click", chiudiPopup);
 
 /* La categoria nuova prende l'etichetta del ramo da cui si è premuto: nel menu
    si vede dove sta nascendo, quindi non c'è niente da scegliere. */
@@ -2206,12 +2272,12 @@ function creaConto(etichetta, btc) {
     : { id: nuovoId(), nome: "Nuova categoria", etichetta,
         voci: [{ id: nuovoId(), nome: "Nuovo sottoconto" }] };
   stato.conti.push(c);
-  nodoAperto = "conto:" + c.id;
+  popupSu = "conto:" + c.id;
   tab = c.id;              // sotto il menu si vede già dov'è finita
-  salva(); render(); renderAlbero();
+  salva(); render(); renderAlbero(); renderPopup();
   if (btc) { mostraPrezzo(); aggiornaBitcoin(); }
   else {
-    const campo = $("pannello").querySelector(`[data-rinomina-menu="${c.id}"]`);
+    const campo = $("popup").querySelector(`[data-rinomina-menu="${c.id}"]`);
     if (campo) { campo.focus(); campo.select(); }
   }
 }
