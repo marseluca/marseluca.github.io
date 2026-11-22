@@ -220,19 +220,25 @@
   /* Solo la strada percorsa, non le mete possibili: in panoramica non c'è
      niente da risalire e la riga sparisce del tutto. */
   .briciole {
-    display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+    display: flex; align-items: center; gap: 2px;
     margin: 18px 0 16px; font-size: 13.5px;
+    /* una riga sola che scorre: andando a capo la pagina ballava fra una
+       scheda e l'altra a seconda della lunghezza dei nomi */
+    overflow-x: auto; scrollbar-width: none; padding-bottom: 2px;
   }
-  .briciole button {
-    display: inline-flex; align-items: center; gap: 7px;
-    border: 0; background: transparent; color: var(--tenue);
+  .briciole::-webkit-scrollbar { display: none; }
+  .briciole button, .briciole .qui {
+    display: inline-flex; align-items: center; gap: 7px; flex: none;
+    border: 0; background: transparent;
     font: inherit; font-size: 13.5px; font-weight: 500;
-    padding: 5px 8px; margin-left: -8px; border-radius: 8px;
-    cursor: pointer; white-space: nowrap;
+    padding: 6px 9px; border-radius: 9px; white-space: nowrap;
   }
-  .briciole button + button { margin-left: 0; }
-  .briciole button .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--tinta); flex: none; }
+  .briciole button { color: var(--tenue); cursor: pointer; }
+  .briciole .qui { color: var(--testo); font-weight: 600; max-width: 52vw; }
+  .briciole .qui > :last-child { overflow: hidden; text-overflow: ellipsis; }
+  .briciole .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--tinta); flex: none; }
   .briciole button:hover { color: var(--testo); background: var(--superficie-2); }
+  .briciole button:active { background: var(--superficie-2); }
   .briciole button:focus-visible { outline: 2px solid var(--tinta, var(--testo)); outline-offset: 1px; }
   .briciole .sep { color: var(--fioco); flex: none; }
 
@@ -451,6 +457,21 @@
   .riga-mese .mini-campo { flex: 0 1 170px; min-width: 0; margin-left: auto; text-align: right; }
   .riga-mese .unita { flex: none; font-size: 11.5px; color: var(--fioco); }
 
+  /* i tre modi di leggere lo stesso andamento, sotto il grafico */
+  .vista-grafico {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    padding: 10px 18px 12px; border-top: 1px solid var(--linea);
+  }
+  .vista-grafico button {
+    flex: 1 1 auto; border: 1px solid var(--linea); background: var(--superficie);
+    color: var(--tenue); font: inherit; font-size: 12.5px; font-weight: 500;
+    padding: 7px 10px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+  }
+  .vista-grafico button:hover { color: var(--testo); border-color: var(--linea-forte); }
+  .vista-grafico button.on {
+    color: var(--su-tinta); background: var(--tinta); border-color: var(--tinta); font-weight: 600;
+  }
+
   /* ---------- grafici ---------- */
   .grafico { --tinta: var(--c-tutto); padding: 4px 10px 0; touch-action: pan-y; }
   .grafico svg { display: block; width: 100%; height: auto; overflow: visible; cursor: crosshair; }
@@ -458,6 +479,8 @@
   .grafico .grid { stroke: var(--linea); stroke-width: 1; }
   .grafico .zero { stroke: var(--linea-forte); stroke-width: 1.5; }
   .grafico .curve { stroke: var(--tinta); stroke-width: 2.5; fill: none; }
+  .grafico .colonna.su { fill: var(--positivo); }
+  .grafico .colonna.giu { fill: var(--negativo); }
   .grafico .stop-a { stop-color: var(--tinta); stop-opacity: .2; }
   .grafico .stop-b { stop-color: var(--tinta); stop-opacity: 0; }
   .grafico .dot { fill: var(--tinta); }
@@ -679,6 +702,7 @@
     <section class="scheda" id="scheda-grafico">
       <div class="intestazione"><h2 id="titolo-grafico">Andamento</h2></div>
       <div class="grafico" id="grafico-patrimonio"></div>
+      <div class="vista-grafico" id="vista-grafico" role="tablist" aria-label="Come leggere l'andamento"></div>
     </section>
 
     <section class="scheda" id="scheda-categorie" hidden>
@@ -709,8 +733,7 @@
     <div id="zona-nuovo"></div>
 
     <footer class="nota-piede">
-      <button class="mini" id="installa" hidden style="--tinta:var(--c-liquidita);margin-bottom:12px">Installa l'app</button>
-      <a href="../bitcoin/walletreader.html">Lettore di wallet Bitcoin</a>
+      <button class="mini" id="installa" hidden style="--tinta:var(--c-liquidita)">Installa l'app</button>
     </footer>
   </main>
 
@@ -1070,15 +1093,34 @@ function creaGrafico(contenitore) {
     const t0 = punti[0][0], t1 = punti[punti.length - 1][0];
     const lo = Math.min(...punti.map(p => p[1])), hi = Math.max(...punti.map(p => p[1]));
     const margine = (hi - lo) * .12 || Math.abs(hi) * .1 || 1;
-    const yLo = lo >= 0 ? Math.max(0, lo - margine) : lo - margine;
-    const yHi = hi + margine;
+    let yLo = lo >= 0 ? Math.max(0, lo - margine) : lo - margine;
+    let yHi = hi + margine;
+    if ((opzioni || {}).barre) { yLo = Math.min(0, yLo); yHi = Math.max(0, yHi); }
 
-    X = t => PX0 + (t - t0) / ((t1 - t0) || 1) * (PX1 - PX0);
+    /* Con le barre il primo e l'ultimo punto stanno sul bordo, e metà colonna
+       finirebbe fuori: la scala rientra di mezza colonna da ogni lato. */
+    const mezza = opt.barre ? (PX1 - PX0) / Math.max(1, punti.length) / 2 : 0;
+    X = t => (PX0 + mezza) + (t - t0) / ((t1 - t0) || 1) * ((PX1 - mezza) - (PX0 + mezza));
     Y = v => PY1 - (v - yLo) / ((yHi - yLo) || 1) * (PY1 - PY0);
     const r = n => Math.round(n * 10) / 10;
 
     const xy = punti.map(p => [r(X(p[0])), r(Y(p[1]))]);
     const linea = xy.map((p, i) => `${i ? "L" : "M"}${p[0]} ${p[1]}`).join(" ");
+
+    /* Le differenze mese su mese sono quantità separate, non una cosa che
+       scorre: barre, ancorate allo zero, verdi in su e rosse in giù. Il segno
+       si legge anche dal verso, non solo dal colore. */
+    const zero = r(Y(0));
+    const passo = (PX1 - PX0) / Math.max(1, punti.length);
+    const largo = Math.max(3, Math.min(26, passo - 4));
+    const barre = !opt.barre ? "" : punti.map((pt, i) => {
+      const cx = X(pt[0]);
+      const y = r(Y(pt[1]));
+      const alto = Math.max(1.5, Math.abs(y - zero));
+      const su = pt[1] >= 0;
+      return `<rect class="colonna ${su ? "su" : "giu"}" x="${r(cx - largo / 2)}" y="${su ? y : zero}"
+          width="${r(largo)}" height="${r(alto)}" rx="2"><title>${esc((opt.quando || (q => ""))(pt[0], i))}: ${esc((opt.valore || fmtEur0)(pt[1]))}</title></rect>`;
+    }).join("");
     // con valori sotto zero l'area va riempita fino alla linea dello zero,
     // non fino al fondo del riquadro
     const base = yLo <= 0 && yHi >= 0 ? r(Y(0)) : PY1;
@@ -1107,9 +1149,10 @@ function creaGrafico(contenitore) {
           </linearGradient>
         </defs>
         ${assi}${griglia}
-        <path d="${area}" fill="url(#${idSfuma})"/>
-        <path class="curve" d="${linea}" stroke-linejoin="round" stroke-linecap="round"/>
-        <circle class="dot" cx="${fine[0]}" cy="${fine[1]}" r="3.5"/>
+        ${opt.barre ? barre : `
+          <path d="${area}" fill="url(#${idSfuma})"/>
+          <path class="curve" d="${linea}" stroke-linejoin="round" stroke-linecap="round"/>
+          <circle class="dot" cx="${fine[0]}" cy="${fine[1]}" r="3.5"/>`}
         <g class="cross" style="display:none" pointer-events="none">
           <line class="cross-line" y1="${PY0}" y2="${PY1}" stroke-dasharray="3 3"/>
           <circle class="cross-dot" r="4"/>
@@ -1480,21 +1523,31 @@ function nomeScheda(t) {
 const categorieAttive = () => ORDINE.filter(t => contiDi(t).length);
 const cEBitcoin = () => stato.conti.some(c => c.btc);
 
-/* La strada da dove si sta a casa: in panoramica non c'è, dentro un'etichetta
-   è il patrimonio, dentro un conto è il patrimonio e la sua etichetta. */
+/* Tutta la strada, compreso il gradino su cui si sta: senza l'ultimo pezzo il
+   breadcrumb dice da dove si viene ma non dove si è, e con nomi lunghi ci si
+   perde. L'ultimo non è un bottone, perché porterebbe dove si è già. */
 function renderPillole() {
   const barra = $("briciole");
   const conto = contoDelTab();
   const strada = [];
-  if (tab !== "tutto") strada.push(["tutto", "Patrimonio netto", "var(--tenue)"]);
-  if (conto) strada.push([conto.etichetta, nomeEtichetta(conto.etichetta), tintaDi(conto.etichetta)]);
+
+  if (tab !== "tutto") strada.push({ id: "tutto", nome: "Patrimonio netto", tinta: "var(--tenue)" });
+  if (conto) strada.push({ id: conto.etichetta, nome: nomeEtichetta(conto.etichetta), tinta: tintaDi(conto.etichetta) });
+  if (tab !== "tutto") {
+    const qui = conto ? conto : { nome: nomeEtichetta(tab) };
+    strada.push({ nome: qui.nome, tinta: conto ? tintaConto(conto) : tintaDi(tab), qui: true });
+  }
 
   barra.hidden = !strada.length;
-  barra.innerHTML = strada.map(([id, nome, tinta], i) =>
-    `${i ? `<span class="sep" aria-hidden="true">›</span>` : ""}
-     <button type="button" data-tab="${id}" style="--tinta:${tinta}">
-       <span class="punto"></span>${esc(nome)}
-     </button>`).join("");
+  barra.innerHTML = strada.map((p, i) => `
+    ${i ? `<span class="sep" aria-hidden="true">›</span>` : ""}
+    ${p.qui
+      ? `<span class="qui" style="--tinta:${p.tinta}" aria-current="page">
+           <span class="punto"></span>${esc(p.nome)}
+         </span>`
+      : `<button type="button" data-tab="${p.id}" style="--tinta:${p.tinta}">
+           <span class="punto"></span>${esc(p.nome)}
+         </button>`}`).join("");
 }
 
 /* ---------- sommario ---------- */
@@ -1706,7 +1759,7 @@ function cartaConto(c) {
      eliminare si fanno dal menu in alto, dove si vede l'albero intero e si
      capisce cosa si sta per toccare. */
   const guscio = (intestazione, corpo) =>
-    `<section class="scheda conto ${neg ? "negativo" : ""}" style="--tinta:${tintaConto(c)}">
+    `<section class="scheda conto ${neg ? "negativo" : ""}" data-conto="${c.id}" style="--tinta:${tintaConto(c)}">
        ${intestazione}${quiConferma("conto", c.id)}${corpo}
      </section>`;
 
@@ -1794,6 +1847,23 @@ function corpoBtc(c) {
 const conSegno = v => (v > 0 ? "+" : v < 0 ? "−" : "") + fmtEur(Math.abs(v));
 const classeSegno = v => v > 0 ? " su" : v < 0 ? " giu" : "";
 
+/* Tre modi di guardare gli stessi mesi: il saldo com'è, lisciato su tre mesi
+   per togliere i sobbalzi, e quanto è cambiato da un mese all'altro. */
+const VISTE = {
+  saldo:  { bottone: "Saldo",         titolo: "Andamento" },
+  media:  { bottone: "Media 3 mesi",  titolo: "Media a 3 mesi" },
+  delta:  { bottone: "Variazioni",    titolo: "Variazione sul mese prima" }
+};
+let vistaGrafico = "saldo";
+
+// la media dei tre mesi che finiscono qui; i primi due mesi non ne hanno tre
+// dietro, quindi la fanno su quelli che ci sono
+const mediaMobile = (valori, n = 3) => valori.map((_, i) => {
+  const da = Math.max(0, i - n + 1);
+  const fetta = valori.slice(da, i + 1);
+  return fetta.reduce((s, v) => s + v, 0) / fetta.length;
+});
+
 function renderGrafico() {
   const aperto = contoDelTab();
   const btc = !!(aperto && aperto.btc);
@@ -1801,29 +1871,70 @@ function renderGrafico() {
   $("scheda-grafico").hidden = btc;
   if (btc) return;
 
-  $("titolo-grafico").textContent = tab === "tutto" ? "Andamento del patrimonio" : "Andamento · " + nomeScheda(tab);
   const mesi = mesiDelGrafico(tab);
-  if (mesi.length < 2 || !contiDi(tab).length) {
+  const quante = mesi.length;
+  renderVisteGrafico(quante);
+
+  // sempre "cosa · dove": il genitivo dava "Variazione sul mese prima del patrimonio"
+  $("titolo-grafico").textContent = VISTE[vistaGrafico].titolo + " · " + nomeScheda(tab);
+
+  if (quante < 2 || !contiDi(tab).length) {
     graficoPatrimonio.messaggio(stato.conti.length
       ? "Serve il saldo di almeno due mesi per disegnare l'andamento."
       : "Qui comparirà l'andamento, appena ci sono due mesi di saldi.");
     return;
   }
-  const punti = mesi.map(m => [dataMese(m).getTime(), totaleDi(tab, m)]);
-  const valori = punti.map(p => p[1]);
 
-  graficoPatrimonio.disegna(punti, {
-    titolo: `Andamento da ${etichettaBreve(mesi[0])} a ${etichettaBreve(mesi[mesi.length - 1])}`,
+  const valori = mesi.map(m => totaleDi(tab, m));
+  const tempo = mesi.map(m => dataMese(m).getTime());
+
+  let serie, etichette, opzioni = {};
+  if (vistaGrafico === "media") {
+    serie = mediaMobile(valori);
+    etichette = mesi;
+  } else if (vistaGrafico === "delta") {
+    // la prima differenza vuole un mese prima: la serie parte dal secondo
+    serie = valori.slice(1).map((v, i) => v - valori[i]);
+    etichette = mesi.slice(1);
+    opzioni = { barre: true, valore: conSegno };
+  } else {
+    serie = valori;
+    etichette = mesi;
+  }
+
+  const base = vistaGrafico === "delta" ? tempo.slice(1) : tempo;
+  if (serie.length < 2) {
+    graficoPatrimonio.messaggio("Servono almeno tre mesi per vedere le variazioni.");
+    return;
+  }
+
+  graficoPatrimonio.disegna(base.map((t, i) => [t, serie[i]]), {
+    titolo: `${VISTE[vistaGrafico].titolo} da ${etichettaBreve(etichette[0])} a ${etichettaBreve(etichette[etichette.length - 1])}`,
     tinta: tintaDi(tab),
     valore: fmtEur0,
-    quando: (t, i) => etichettaMese(mesi[i]),
+    quando: (t, i) => etichettaMese(etichette[i]),
     tacche: () => {
-      const passo = Math.max(1, Math.ceil(mesi.length / 6));
-      return mesi.filter((_, i) => i % passo === 0 || i === mesi.length - 1)
+      const passo = Math.max(1, Math.ceil(etichette.length / 6));
+      return etichette.filter((_, i) => i % passo === 0 || i === etichette.length - 1)
         .map(m => [dataMese(m).getTime(), dataMese(m).toLocaleDateString("it-IT", { month: "short", year: "2-digit" })]);
-    }
+    },
+    ...opzioni
   });
+}
 
+/* I bottoni si vedono solo quando c'è qualcosa da guardare: con un mese solo
+   non c'è nemmeno una linea, e offrire tre modi di non vederla è una presa in
+   giro. Le variazioni vogliono un mese in più delle altre due. */
+function renderVisteGrafico(quante) {
+  const barra = $("vista-grafico");
+  barra.hidden = quante < 2;
+  if (barra.hidden) return;
+  if (vistaGrafico === "delta" && quante < 3) vistaGrafico = "saldo";
+
+  barra.innerHTML = Object.entries(VISTE).map(([id, v]) => `
+    <button type="button" role="tab" data-vista="${id}" aria-selected="${id === vistaGrafico}"
+            class="${id === vistaGrafico ? "on" : ""}" ${id === "delta" && quante < 3 ? "disabled" : ""}
+            style="--tinta:${tintaDi(tab)}">${esc(v.bottone)}</button>`).join("");
 }
 
 $("periodi").innerHTML = PERIODI.map(p =>
@@ -2027,8 +2138,7 @@ boxConti.addEventListener("click", e => {
     const [che, ...resto] = b.dataset.chiedi.split(":");
     const id = resto.join(":");
     const scheda = b.closest(".conto");
-    const titolare = scheda && scheda.querySelector("[data-rinomina]");
-    daEliminare = { che, id, nome: nomeDa(che, id), conto: titolare && titolare.dataset.rinomina };
+    daEliminare = { che, id, nome: nomeDa(che, id), conto: scheda && scheda.dataset.conto };
     renderPresto(); return;
   }
   if (b.hasAttribute("data-annulla")) { daEliminare = null; renderPresto(); return; }
@@ -2131,6 +2241,14 @@ function vaiA(t) {
   if (aperto && aperto.btc) mostraPrezzo();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
+$("vista-grafico").addEventListener("click", e => {
+  const b = e.target.closest("button[data-vista]");
+  if (!b || b.disabled || b.dataset.vista === vistaGrafico) return;
+  vistaGrafico = b.dataset.vista;
+  graficoPatrimonio.sblocca();
+  renderGrafico();
+});
+
 $("briciole").addEventListener("click", e => {
   const b = e.target.closest("button[data-tab]");
   if (b) vaiA(b.dataset.tab);
